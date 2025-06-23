@@ -64,7 +64,7 @@ class FractureAnalysis:
                                              options=self.optimization_properties,
                                              material=self.material)
             
-            self._init_optimizaton_results(self)
+            self._init_optimizaton_results()
 
         self.integral_properties = integral_properties
         if self.integral_properties is not None:
@@ -105,169 +105,181 @@ class FractureAnalysis:
 
         """
         if self.optimization_properties is not None:
-
-            try:
-                # calculate CJP coefficients with fitting method
-                cjp_results = self.optimization.optimize_cjp_displacements()
-
-                self.cjp_coeffs = cjp_results.x
-                A_r, B_r, B_i, C, E = self.cjp_coeffs
-
-                # from Christopher et al. (2013) "Extension of the CJP model to mixed mode I and mode II" formulas 4-8
-                K_F = np.sqrt(np.pi / 2) * (A_r - 3 * B_r - 8 * E)
-                K_R = -4 * np.sqrt(np.pi / 2) * (2 * B_i + E * np.pi)
-                K_S = -np.sqrt(np.pi / 2) * (A_r + B_r)
-                K_II = 2 * np.sqrt(2 * np.pi) * B_i
-                T = -C
-                # m to mm
-                K_F /= np.sqrt(1000)
-                K_R /= np.sqrt(1000)
-                K_S /= np.sqrt(1000)
-                K_II /= np.sqrt(1000)
-
-                self.res_cjp = {'Error': cjp_results.cost, 'K_F': K_F, 'K_R': K_R, 'K_S': K_S, 'K_II': K_II, 'T': T}
-
-            except:
-                print('CJP optimization failed.')
-                self.res_cjp = {'Error': np.nan, 'K_F': np.nan, 'K_R': np.nan, 'K_S': np.nan, 'K_II': np.nan, 'T': np.nan}
-
-            try:
-                # calculate Williams coefficients with fitting method
-                williams_results = self.optimization.optimize_williams_displacements()
-                self.williams_coeffs = williams_results.x
-                a_n = self.williams_coeffs[:len(self.optimization.terms)]
-                b_n = self.williams_coeffs[len(self.optimization.terms):]
-                self.williams_fit_a_n = {n: a_n[index] for index, n in enumerate(self.optimization.terms)}
-                self.williams_fit_b_n = {n: b_n[index] for index, n in enumerate(self.optimization.terms)}
-
-                # derive stress intensity factors and T-stress [Kuna formula 3.45]
-                K_I = np.sqrt(2 * np.pi) * self.williams_fit_a_n[1] / np.sqrt(1000)
-                K_II = -np.sqrt(2 * np.pi) * self.williams_fit_b_n[1] / np.sqrt(1000)
-                T = 4 * self.williams_fit_a_n[2]
-
-                self.sifs_fit = {'Error': williams_results.cost, 'K_I': K_I, 'K_II': K_II, 'T': T}
-
-            except:
-                print('Williams optimization failed.')
-                self.williams_fit_a_n = {n: np.nan for index, n in enumerate(self.optimization.terms)}
-                self.williams_fit_b_n = {n: np.nan for index, n in enumerate(self.optimization.terms)}
-                self.sifs_fit = {'Error': np.nan, 'K_I': np.nan, 'K_II': np.nan, 'T': np.nan}
+            self._run_cjp_optimization()
+            self._run_williams_optimization()
 
         if self.integral_properties is not None:
-            # calculate Williams coefficients with Bueckner-Chen integral method
-            current_size_left = self.integral_properties.integral_size_left
-            current_size_right = self.integral_properties.integral_size_right
-            current_size_top = self.integral_properties.integral_size_top
-            current_size_bottom = self.integral_properties.integral_size_bottom
+            self._run_line_integrals(progress, task_id)
 
-            if progress is None:
-                iterator = progress_rich.track(range(self.integral_properties.number_of_paths),
-                                               description='Calculating integrals')
-            else:
-                iterator = range(self.integral_properties.number_of_paths)
+    def _run_cjp_optimization(self) -> None:
+        """Perform CJP optimization and store results."""
+        try:
+            cjp_results = self.optimization.optimize_cjp_displacements()
 
-            for n in iterator:
-                # Calculate one integral
-                line_integral, current_int_sizes = self._calc_line_integral(
-                    current_size_left,
-                    current_size_right,
-                    current_size_bottom,
-                    current_size_top,
-                    self.integral_properties.mask_tolerance,
-                    self.integral_properties.buckner_williams_terms
-                )
+            self.cjp_coeffs = cjp_results.x
+            A_r, B_r, B_i, C, E = self.cjp_coeffs
 
-                self.results.append([line_integral.j_integral,
-                                     line_integral.sif_k_j,
-                                     line_integral.sif_k_i,
-                                     line_integral.sif_k_ii,
-                                     line_integral.t_stress_chen,
-                                     line_integral.t_stress_sdm,
-                                     line_integral.t_stress_int])
-                self.williams_int_a_n.append(line_integral.williams_a_n)
-                self.williams_int_b_n.append(line_integral.williams_b_n)
-                self.williams_int.append(line_integral.williams_coefficients)
-                self.int_sizes.append(current_int_sizes)
-                self.integration_points.append([list(line_integral.np_integration_points[:, 0]),
-                                                list(line_integral.np_integration_points[:, 1])])
-                self.num_of_path_nodes.append(line_integral.integration_path.path_properties.number_of_nodes)
-                self.tick_sizes.append(line_integral.integration_path.path_properties.tick_size)
+            # from Christopher et al. (2013) "Extension of the CJP model to mixed mode I and mode II" formulas 4-8
+            K_F = np.sqrt(np.pi / 2) * (A_r - 3 * B_r - 8 * E)
+            K_R = -4 * np.sqrt(np.pi / 2) * (2 * B_i + E * np.pi)
+            K_S = -np.sqrt(np.pi / 2) * (A_r + B_r)
+            K_II = 2 * np.sqrt(2 * np.pi) * B_i
+            T = -C
+            # m to mm
+            K_F /= np.sqrt(1000)
+            K_R /= np.sqrt(1000)
+            K_S /= np.sqrt(1000)
+            K_II /= np.sqrt(1000)
 
-                # Update path
-                current_size_left -= self.integral_properties.paths_distance_left
-                current_size_right += self.integral_properties.paths_distance_right
-                current_size_bottom -= self.integral_properties.paths_distance_bottom
-                current_size_top += self.integral_properties.paths_distance_top
+            self.res_cjp = {'Error': cjp_results.cost, 'K_F': K_F, 'K_R': K_R, 'K_S': K_S, 'K_II': K_II, 'T': T}
 
-                # Update progress bar
-                if progress != "off":
-                    progress[task_id] = {"progress": n + 1, "total": self.integral_properties.number_of_paths}
+        except Exception:
+            print('CJP optimization failed.')
+            self.res_cjp = {'Error': np.nan, 'K_F': np.nan, 'K_R': np.nan, 'K_S': np.nan, 'K_II': np.nan, 'T': np.nan}
 
-            # catch RuntimeWarnings originating from np.nanmean having no valid values
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=RuntimeWarning)
+    def _run_williams_optimization(self) -> None:
+        """Perform Williams optimization and store results."""
+        try:
+            williams_results = self.optimization.optimize_williams_displacements()
+            self.williams_coeffs = williams_results.x
+            a_n = self.williams_coeffs[:len(self.optimization.terms)]
+            b_n = self.williams_coeffs[len(self.optimization.terms):]
+            self.williams_fit_a_n = {n: a_n[index] for index, n in enumerate(self.optimization.terms)}
+            self.williams_fit_b_n = {n: b_n[index] for index, n in enumerate(self.optimization.terms)}
 
-                res_array = np.asarray(self.results)
-                self.williams_int = np.asarray(self.williams_int)
-                self.williams_int_a_n = np.asarray(self.williams_int_a_n)
-                self.williams_int_b_n = np.asarray(self.williams_int_b_n)
+            # derive stress intensity factors and T-stress [Kuna formula 3.45]
+            K_I = np.sqrt(2 * np.pi) * self.williams_fit_a_n[1] / np.sqrt(1000)
+            K_II = -np.sqrt(2 * np.pi) * self.williams_fit_b_n[1] / np.sqrt(1000)
+            T = 4 * self.williams_fit_a_n[2]
 
-                # Calculate means
-                mean_j, mean_sif_j, mean_sif_k_i, mean_sif_k_ii, mean_t_stress_chen, mean_t_stress_sdm, mean_t_stress_int = \
-                    np.nanmean(res_array, axis=0)
-                mean_williams_int_a_n = np.nanmean(self.williams_int_a_n, axis=0)
-                mean_williams_int_b_n = np.nanmean(self.williams_int_b_n, axis=0)
+            self.sifs_fit = {'Error': williams_results.cost, 'K_I': K_I, 'K_II': K_II, 'T': T}
 
-                # Calculate medians
-                med_j, med_sif_j, med_sif_k_i, med_sif_k_ii, med_t_stress_chen, med_t_stress_sdm, med_t_stress_int = \
-                    np.nanmedian(res_array, axis=0)
-                med_williams_int_a_n = np.nanmedian(self.williams_int_a_n, axis=0)
-                med_williams_int_b_n = np.nanmedian(self.williams_int_b_n, axis=0)
+        except Exception:
+            print('Williams optimization failed.')
+            self.williams_fit_a_n = {n: np.nan for index, n in enumerate(self.optimization.terms)}
+            self.williams_fit_b_n = {n: np.nan for index, n in enumerate(self.optimization.terms)}
+            self.sifs_fit = {'Error': np.nan, 'K_I': np.nan, 'K_II': np.nan, 'T': np.nan}
 
-                # Calculate means rejecting outliers
-                rej_out_mean_j, rej_out_mean_sif_j, rej_out_mean_sif_k_i, rej_out_mean_sif_k_ii, \
-                rej_out_mean_t_stress_chen, rej_out_mean_t_stress_sdm, rej_out_mean_t_stress_int = \
-                    self.mean_wo_outliers(res_array, m=2)
+    def _run_line_integrals(self, progress='off', task_id=None) -> None:
+        """Calculate line integrals and aggregate the results."""
+        # calculate Williams coefficients with Bueckner-Chen integral method
+        current_size_left = self.integral_properties.integral_size_left
+        current_size_right = self.integral_properties.integral_size_right
+        current_size_top = self.integral_properties.integral_size_top
+        current_size_bottom = self.integral_properties.integral_size_bottom
 
-                rej_out_mean_williams_int_a_n = self.mean_wo_outliers(self.williams_int_a_n, m=2)
-                rej_out_mean_williams_int_b_n = self.mean_wo_outliers(self.williams_int_b_n, m=2)
+        if progress is None:
+            iterator = progress_rich.track(range(self.integral_properties.number_of_paths),
+                                           description='Calculating integrals')
+        else:
+            iterator = range(self.integral_properties.number_of_paths)
 
-            # calculate SIFs with Bueckner-Chen integral method
-            term_index = self.integral_properties.buckner_williams_terms.index(1)
-            mean_k_i_chen = np.sqrt(2 * np.pi) * mean_williams_int_a_n[term_index] / np.sqrt(1000)
-            med_k_i_chen = np.sqrt(2 * np.pi) * med_williams_int_a_n[term_index] / np.sqrt(1000)
-            rej_out_mean_k_i_chen = np.sqrt(2 * np.pi) * rej_out_mean_williams_int_a_n[term_index] / np.sqrt(1000)
-            mean_k_ii_chen = -np.sqrt(2 * np.pi) * mean_williams_int_b_n[term_index] / np.sqrt(1000)
-            med_k_ii_chen = -np.sqrt(2 * np.pi) * med_williams_int_b_n[term_index] / np.sqrt(1000)
-            rej_out_mean_k_ii_chen = -np.sqrt(2 * np.pi) * rej_out_mean_williams_int_b_n[term_index] / np.sqrt(1000)
+        for n in iterator:
+            # Calculate one integral
+            line_integral, current_int_sizes = self._calc_line_integral(
+                current_size_left,
+                current_size_right,
+                current_size_bottom,
+                current_size_top,
+                self.integral_properties.mask_tolerance,
+                self.integral_properties.buckner_williams_terms
+            )
 
-            # bundle means / medians / means using outlier rejection
-            self.sifs_int = {
-                'mean': {'j': mean_j, 'sif_j': mean_sif_j,
-                         'sif_k_i': mean_sif_k_i, 'sif_k_ii': mean_sif_k_ii,
-                         'k_i_chen': mean_k_i_chen, 'k_ii_chen': mean_k_ii_chen,
-                         't_stress_chen': mean_t_stress_chen,
-                         't_stress_sdm': mean_t_stress_sdm,
-                         't_stress_int': mean_t_stress_int,
-                         'williams_int_a_n': mean_williams_int_a_n,
-                         'williams_int_b_n': mean_williams_int_b_n},
-                'median': {'j': med_j, 'sif_j': med_sif_j,
-                           'sif_k_i': med_sif_k_i, 'sif_k_ii': med_sif_k_ii,
-                           'k_i_chen': med_k_i_chen, 'k_ii_chen': med_k_ii_chen,
-                           't_stress_chen': med_t_stress_chen,
-                           't_stress_sdm': med_t_stress_sdm,
-                           't_stress_int': med_t_stress_int,
-                           'williams_int_a_n': med_williams_int_a_n,
-                           'williams_int_b_n': med_williams_int_b_n},
-                'rej_out_mean': {'j': rej_out_mean_j, 'sif_j': rej_out_mean_sif_j,
-                                 'sif_k_i': rej_out_mean_sif_k_i, 'sif_k_ii': rej_out_mean_sif_k_ii,
-                                 'k_i_chen': rej_out_mean_k_i_chen, 'k_ii_chen': rej_out_mean_k_ii_chen,
-                                 't_stress_chen': rej_out_mean_t_stress_chen,
-                                 't_stress_sdm': rej_out_mean_t_stress_sdm,
-                                 't_stress_int': rej_out_mean_t_stress_int,
-                                 'williams_int_a_n': rej_out_mean_williams_int_a_n,
-                                 'williams_int_b_n': rej_out_mean_williams_int_b_n}
-            }
+            self.results.append([line_integral.j_integral,
+                                 line_integral.sif_k_j,
+                                 line_integral.sif_k_i,
+                                 line_integral.sif_k_ii,
+                                 line_integral.t_stress_chen,
+                                 line_integral.t_stress_sdm,
+                                 line_integral.t_stress_int])
+            self.williams_int_a_n.append(line_integral.williams_a_n)
+            self.williams_int_b_n.append(line_integral.williams_b_n)
+            self.williams_int.append(line_integral.williams_coefficients)
+            self.int_sizes.append(current_int_sizes)
+            self.integration_points.append([list(line_integral.np_integration_points[:, 0]),
+                                            list(line_integral.np_integration_points[:, 1])])
+            self.num_of_path_nodes.append(line_integral.integration_path.path_properties.number_of_nodes)
+            self.tick_sizes.append(line_integral.integration_path.path_properties.tick_size)
+
+            # Update path
+            current_size_left -= self.integral_properties.paths_distance_left
+            current_size_right += self.integral_properties.paths_distance_right
+            current_size_bottom -= self.integral_properties.paths_distance_bottom
+            current_size_top += self.integral_properties.paths_distance_top
+
+            # Update progress bar
+            if progress != "off":
+                progress[task_id] = {"progress": n + 1, "total": self.integral_properties.number_of_paths}
+
+        self._aggregate_integral_results()
+
+    def _aggregate_integral_results(self) -> None:
+        """Aggregate statistics from the calculated line integrals."""
+        # catch RuntimeWarnings originating from np.nanmean having no valid values
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+
+            res_array = np.asarray(self.results)
+            self.williams_int = np.asarray(self.williams_int)
+            self.williams_int_a_n = np.asarray(self.williams_int_a_n)
+            self.williams_int_b_n = np.asarray(self.williams_int_b_n)
+
+            # Calculate means
+            mean_j, mean_sif_j, mean_sif_k_i, mean_sif_k_ii, mean_t_stress_chen, mean_t_stress_sdm, mean_t_stress_int = \
+                np.nanmean(res_array, axis=0)
+            mean_williams_int_a_n = np.nanmean(self.williams_int_a_n, axis=0)
+            mean_williams_int_b_n = np.nanmean(self.williams_int_b_n, axis=0)
+
+            # Calculate medians
+            med_j, med_sif_j, med_sif_k_i, med_sif_k_ii, med_t_stress_chen, med_t_stress_sdm, med_t_stress_int = \
+                np.nanmedian(res_array, axis=0)
+            med_williams_int_a_n = np.nanmedian(self.williams_int_a_n, axis=0)
+            med_williams_int_b_n = np.nanmedian(self.williams_int_b_n, axis=0)
+
+            # Calculate means rejecting outliers
+            rej_out_mean_j, rej_out_mean_sif_j, rej_out_mean_sif_k_i, rej_out_mean_sif_k_ii, \
+            rej_out_mean_t_stress_chen, rej_out_mean_t_stress_sdm, rej_out_mean_t_stress_int = \
+                self.mean_wo_outliers(res_array, m=2)
+
+            rej_out_mean_williams_int_a_n = self.mean_wo_outliers(self.williams_int_a_n, m=2)
+            rej_out_mean_williams_int_b_n = self.mean_wo_outliers(self.williams_int_b_n, m=2)
+
+        # calculate SIFs with Bueckner-Chen integral method
+        term_index = self.integral_properties.buckner_williams_terms.index(1)
+        mean_k_i_chen = np.sqrt(2 * np.pi) * mean_williams_int_a_n[term_index] / np.sqrt(1000)
+        med_k_i_chen = np.sqrt(2 * np.pi) * med_williams_int_a_n[term_index] / np.sqrt(1000)
+        rej_out_mean_k_i_chen = np.sqrt(2 * np.pi) * rej_out_mean_williams_int_a_n[term_index] / np.sqrt(1000)
+        mean_k_ii_chen = -np.sqrt(2 * np.pi) * mean_williams_int_b_n[term_index] / np.sqrt(1000)
+        med_k_ii_chen = -np.sqrt(2 * np.pi) * med_williams_int_b_n[term_index] / np.sqrt(1000)
+        rej_out_mean_k_ii_chen = -np.sqrt(2 * np.pi) * rej_out_mean_williams_int_b_n[term_index] / np.sqrt(1000)
+
+        # bundle means / medians / means using outlier rejection
+        self.sifs_int = {
+            'mean': {'j': mean_j, 'sif_j': mean_sif_j,
+                     'sif_k_i': mean_sif_k_i, 'sif_k_ii': mean_sif_k_ii,
+                     'k_i_chen': mean_k_i_chen, 'k_ii_chen': mean_k_ii_chen,
+                     't_stress_chen': mean_t_stress_chen,
+                     't_stress_sdm': mean_t_stress_sdm,
+                     't_stress_int': mean_t_stress_int,
+                     'williams_int_a_n': mean_williams_int_a_n,
+                     'williams_int_b_n': mean_williams_int_b_n},
+            'median': {'j': med_j, 'sif_j': med_sif_j,
+                       'sif_k_i': med_sif_k_i, 'sif_k_ii': med_sif_k_ii,
+                       'k_i_chen': med_k_i_chen, 'k_ii_chen': med_k_ii_chen,
+                       't_stress_chen': med_t_stress_chen,
+                       't_stress_sdm': med_t_stress_sdm,
+                       't_stress_int': med_t_stress_int,
+                       'williams_int_a_n': med_williams_int_a_n,
+                       'williams_int_b_n': med_williams_int_b_n},
+            'rej_out_mean': {'j': rej_out_mean_j, 'sif_j': rej_out_mean_sif_j,
+                             'sif_k_i': rej_out_mean_sif_k_i, 'sif_k_ii': rej_out_mean_sif_k_ii,
+                             'k_i_chen': rej_out_mean_k_i_chen, 'k_ii_chen': rej_out_mean_k_ii_chen,
+                             't_stress_chen': rej_out_mean_t_stress_chen,
+                             't_stress_sdm': rej_out_mean_t_stress_sdm,
+                             't_stress_int': rej_out_mean_t_stress_int,
+                             'williams_int_a_n': rej_out_mean_williams_int_a_n,
+                             'williams_int_b_n': rej_out_mean_williams_int_b_n}
+        }
 
     @staticmethod
     def mean_wo_outliers(data: np.ndarray, m=2) -> list:
