@@ -2,7 +2,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from scipy import optimize
 
-from crackpy.fracture_analysis.crack_tip import williams_displ_field, cjp_displ_field
+from crackpy.fracture_analysis.crack_tip_field import williams_displ_field, cjp_displ_field
 from crackpy.fracture_analysis.data_processing import InputData
 from crackpy.structure_elements.material import Material
 

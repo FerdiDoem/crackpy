@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 from crackpy.fracture_analysis.analysis import FractureAnalysis
-from crackpy.fracture_analysis.crack_tip import unit_of_williams_coefficients
+from crackpy.fracture_analysis.crack_tip_field import unit_of_williams_coefficients
 
 
 class OutputWriter:

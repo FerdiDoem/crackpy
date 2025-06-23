@@ -2,7 +2,7 @@ import numpy as np
 from scipy.interpolate import griddata
 from scipy.ndimage import label
 
-from crackpy.fracture_analysis.crack_tip import get_crack_nearfield, eigenfunction, get_zhao_solutions
+from crackpy.fracture_analysis.crack_tip_field import get_crack_nearfield, eigenfunction, get_zhao_solutions
 from crackpy.fracture_analysis.data_processing import InputData, apply_mask
 from crackpy.structure_elements.material import Material
 

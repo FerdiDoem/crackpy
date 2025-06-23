@@ -12,7 +12,7 @@ Output:
 
 import os
 
-from crackpy.fracture_analysis.crack_tip import cjp_stress_field, cjp_displ_field
+from crackpy.fracture_analysis.crack_tip_field import cjp_stress_field, cjp_displ_field
 from crackpy.structure_elements.material import Material
 from crackpy.fracture_analysis.optimization import Optimization
 

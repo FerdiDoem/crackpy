@@ -29,7 +29,7 @@ from crackpy.fracture_analysis.plot import PlotSettings, Plotter
 from crackpy.fracture_analysis.write import OutputWriter
 from crackpy.structure_elements.data_files import Nodemap
 from crackpy.structure_elements.material import Material
-from crackpy.fracture_analysis.crack_tip import williams_displ_field, williams_stress_field
+from crackpy.fracture_analysis.crack_tip_field import williams_displ_field, williams_stress_field
 
 ########################
 # INPUT specifications #

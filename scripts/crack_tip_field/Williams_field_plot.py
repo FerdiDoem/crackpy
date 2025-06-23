@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from crackpy.fracture_analysis.crack_tip import williams_stress_field, williams_displ_field
+from crackpy.fracture_analysis.crack_tip_field import williams_stress_field, williams_displ_field
 from crackpy.fracture_analysis.optimization import Optimization
 from crackpy.structure_elements.material import Material
 

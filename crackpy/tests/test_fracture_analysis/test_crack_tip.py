@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from crackpy.fracture_analysis.crack_tip import williams_stress_field, get_crack_nearfield
+from crackpy.fracture_analysis.crack_tip_field import williams_stress_field, get_crack_nearfield
 from crackpy.structure_elements.material import Material
 
 

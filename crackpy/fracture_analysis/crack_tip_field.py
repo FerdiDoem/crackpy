@@ -5,6 +5,38 @@ import numpy as np
 from crackpy.structure_elements.material import Material
 
 
+def williams_displ_field(a: list | np.ndarray, b: list | np.ndarray, terms: list | np.ndarray,
+                         phi: float, r: float, material: Material) -> tuple:
+    """Formula for the displacement fields around the crack tip in polar coordinates by Williams.
+    [Meinhard Kuna - Numerische Beanspruchungsanalyse formulas (3.43)-(3.44)]
+
+    Args:
+        a: Williams coefficient
+        b: Williams coefficient
+        terms: defines the used Williams coefficients
+        phi: angle from polar coordinates [rad]
+        r: radius from polar coordinates [mm]
+        material: obj of class Material used to calculate *kappa*
+
+    Returns:
+        displacements disp_x, disp_y
+
+    """
+    kappa = material.kappa
+    disp_x = 0.0
+    disp_y = 0.0
+    for index, n in enumerate(terms):
+        F_1 = (kappa + (-1.0) ** n + n / 2) * np.cos(n / 2 * phi) - n / 2 * np.cos((n / 2 - 2) * phi)
+        G_1 = (-kappa + (-1.0) ** n - n / 2) * np.sin(n / 2 * phi) + n / 2 * np.sin((n / 2 - 2) * phi)
+        F_2 = (kappa - (-1.0) ** n - n / 2) * np.sin(n / 2 * phi) + n / 2 * np.sin((n / 2 - 2) * phi)
+        G_2 = (kappa + (-1.0) ** n - n / 2) * np.cos(n / 2 * phi) + n / 2 * np.cos((n / 2 - 2) * phi)
+
+        disp_x += 1 / (2 * material.G) * r ** (n / 2) * (a[index] * F_1 + b[index] * G_1)
+        disp_y += 1 / (2 * material.G) * r ** (n / 2) * (a[index] * F_2 + b[index] * G_2)
+
+    return disp_x, disp_y
+
+
 def williams_stress_field(a: list | np.ndarray, b: list | np.ndarray, terms: list | np.ndarray,
                           phi: float, r: float) -> list:
     """Formula for the stress field around the crack tip in polar coordinates by Williams.
@@ -107,39 +139,6 @@ def cjp_stress_field(coeffs: list | np.ndarray, phi: float, r: float) -> list:
     )
 
     return [sigma_x, sigma_y, sigma_xy]
-
-
-def williams_displ_field(a: list | np.ndarray, b: list | np.ndarray, terms: list | np.ndarray,
-                         phi: float, r: float, material: Material) -> tuple:
-    """Formula for the displacement fields around the crack tip in polar coordinates by Williams.
-    [Meinhard Kuna - Numerische Beanspruchungsanalyse formulas (3.43)-(3.44)]
-
-    Args:
-        a: Williams coefficient
-        b: Williams coefficient
-        terms: defines the used Williams coefficients
-        phi: angle from polar coordinates [rad]
-        r: radius from polar coordinates [mm]
-        material: obj of class Material used to calculate *kappa*
-
-    Returns:
-        displacements disp_x, disp_y
-
-    """
-    kappa = material.kappa
-    disp_x = 0.0
-    disp_y = 0.0
-    for index, n in enumerate(terms):
-        F_1 = (kappa + (-1.0) ** n + n / 2) * np.cos(n / 2 * phi) - n / 2 * np.cos((n / 2 - 2) * phi)
-        G_1 = (-kappa + (-1.0) ** n - n / 2) * np.sin(n / 2 * phi) + n / 2 * np.sin((n / 2 - 2) * phi)
-        F_2 = (kappa - (-1.0) ** n - n / 2) * np.sin(n / 2 * phi) + n / 2 * np.sin((n / 2 - 2) * phi)
-        G_2 = (kappa + (-1.0) ** n - n / 2) * np.cos(n / 2 * phi) + n / 2 * np.cos((n / 2 - 2) * phi)
-
-        disp_x += 1 / (2 * material.G) * r ** (n / 2) * (a[index] * F_1 + b[index] * G_1)
-        disp_y += 1 / (2 * material.G) * r ** (n / 2) * (a[index] * F_2 + b[index] * G_2)
-
-    return disp_x, disp_y
-
 
 def eigenfunction(n: int, a_n: float, b_n: float, r: float, theta: float, material: Material) -> tuple:
     """The n-the eigenfunctions of the planar crack problem in real polar coordinates.
