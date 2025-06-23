@@ -6,6 +6,8 @@ from crackpy.fracture_analysis.crack_tip import williams_displ_field, cjp_displ_
 from crackpy.fracture_analysis.data_processing import InputData
 from crackpy.structure_elements.material import Material
 
+# Default set of Williams terms used during optimization
+DEFAULT_TERMS = [-1, 0, 1, 2, 3, 4, 5]
 
 class OptimizationProperties:
     """Class for setting the Optimization properties."""
@@ -54,7 +56,7 @@ class OptimizationProperties:
         if self.tick_size is None:
             self.tick_size = 0.01
         if self.terms is None:
-            self.terms = [-1, 0, 1, 2, 3, 4, 5]
+            self.terms = list(DEFAULT_TERMS)
         for i in [1, 2]:  # ensure SIFs and T can be calculated
             if i not in self.terms:
                 self.terms.append(i)
