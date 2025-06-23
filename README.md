@@ -9,8 +9,7 @@ a single material curve, i.e. a-N, which is hard to reproduce even under identic
 Consequently, the experimental outcome-to-cost ratio is relatively low. 
 
 Digital image correlation (DIC) has become a state-of-the-art tool to increase insight in experimental mechanics due to its
-wide availability and the possibility to automatically gain full-field information (displacements and strains). In particular, it is
-well-suited to analyze (fatigue) cracks [**2, 3**].
+wide availability and the possibility to automatically gain full-field information (displacements and strains). In particular, it is well-suited to analyze (fatigue) cracks [**2, 3**].
 
 This Python package provides a pipeline, which takes an arbitrary number of DIC or simulation results and calculates various 
 fracture mechanical parameters.
@@ -30,8 +29,7 @@ stress intensity factors which take effects of plasticity into account.
    
 ## Scope of the Package
 
-The following graph shows an overview of the main CrackPy modules **structure elements**, **dic**, **simulation**, **crack detection**, and
-**fracture analysis**.
+The following graph shows an overview of the main CrackPy modules **structure elements**, **dic**, **simulation**, **crack detection**, and **fracture analysis**.
 
 | ![CrackPy](./example_images/overview_package.png) |
 |:--:|
