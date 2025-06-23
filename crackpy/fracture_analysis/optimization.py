@@ -38,6 +38,29 @@ class OptimizationProperties:
         self.tick_size = tick_size
         self.terms = terms
 
+    def ensure_defaults(self, crack_tip_x: float):
+        """Ensure that optimization settings have sensible defaults.
+
+        Args:
+            crack_tip_x: x-position of the crack tip which is used to scale the
+                default radii of the fitting domain.
+        """
+        if self.angle_gap is None:
+            self.angle_gap = 20
+        if self.min_radius is None:
+            self.min_radius = abs(crack_tip_x) / 20
+        if self.max_radius is None:
+            self.max_radius = abs(crack_tip_x) / 5
+        if self.tick_size is None:
+            self.tick_size = 0.01
+        if self.terms is None:
+            self.terms = [-1, 0, 1, 2, 3, 4, 5]
+        for i in [1, 2]:  # ensure SIFs and T can be calculated
+            if i not in self.terms:
+                self.terms.append(i)
+                print(f"Williams optimization terms should include {i}. Added to terms.")
+        self.terms.sort()
+
 
 class Optimization:
     """Optimization class

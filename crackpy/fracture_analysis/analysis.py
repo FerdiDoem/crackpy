@@ -58,23 +58,7 @@ class FractureAnalysis:
 
         self.optimization_properties = optimization_properties
         if self.optimization_properties is not None:
-
-            # check if properties are provided and set defaults if necessary
-            if self.optimization_properties.angle_gap is None:
-                self.optimization_properties.angle_gap = 20
-            if self.optimization_properties.min_radius is None:
-                self.optimization_properties.min_radius = abs(self.crack_tip.crack_tip_x) / 20
-            if self.optimization_properties.max_radius is None:
-                self.optimization_properties.max_radius = abs(self.crack_tip.crack_tip_x) / 5
-            if self.optimization_properties.tick_size is None:
-                self.optimization_properties.tick_size = 0.01
-            if self.optimization_properties.terms is None:
-                self.optimization_properties.terms = [-1, 0, 1, 2, 3, 4, 5]
-            for i in [1, 2]:  # check that SIFs and T can be calculated from the terms
-                if i not in self.optimization_properties.terms:
-                    self.optimization_properties.terms.append(i)
-                    print(f"Williams optimization terms should include {i}. Added to terms.")
-            self.optimization_properties.terms.sort()
+            self.optimization_properties.ensure_defaults(self.crack_tip.crack_tip_x)
 
             self.optimization = Optimization(data=self.data,
                                              options=self.optimization_properties,
@@ -100,16 +84,19 @@ class FractureAnalysis:
                 print('Buckner-Williams terms should not include 0. Removed from terms.')
             self.integral_properties.buckner_williams_terms.sort()
 
-            # Initialization of integral output
-            self.results = []
-            self.williams_int_a_n = []
-            self.williams_int_b_n = []
-            self.williams_int = []
-            self.sifs_int = None
-            self.int_sizes = []
-            self.integration_points = []
-            self.tick_sizes = []
-            self.num_of_path_nodes = []
+            self._init_integral_results()
+
+    def _init_integral_results(self):
+        """Initialize lists used for storing integral evaluation results."""
+        self.results = []
+        self.williams_int_a_n = []
+        self.williams_int_b_n = []
+        self.williams_int = []
+        self.sifs_int = None
+        self.int_sizes = []
+        self.integration_points = []
+        self.tick_sizes = []
+        self.num_of_path_nodes = []
 
     def run(self, progress='off', task_id=None):
         """Run fracture analysis with the provided data, crack_tip_info, and integral_properties.
