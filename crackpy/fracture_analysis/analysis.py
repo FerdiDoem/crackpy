@@ -3,9 +3,8 @@ import warnings
 import numpy as np
 import rich.progress as progress_rich
 
-from crackpy.fracture_analysis import line_integration
 from crackpy.fracture_analysis.data_processing import InputData, CrackTipInfo
-from crackpy.fracture_analysis.line_integration import IntegralProperties
+from crackpy.fracture_analysis.line_integration import IntegralProperties, PathProperties, IntegrationPath, LineIntegral
 from crackpy.fracture_analysis.optimization import Optimization, OptimizationProperties
 from crackpy.structure_elements.data_files import Nodemap
 from crackpy.structure_elements.material import Material
@@ -316,18 +315,18 @@ class FractureAnalysis:
 
         """
         # Define path properties
-        path_properties = line_integration.PathProperties(size_left, size_right, size_bottom, size_top,
+        path_properties = PathProperties(size_left, size_right, size_bottom, size_top,
                                                           self.integral_properties.integral_tick_size,
                                                           self.integral_properties.number_of_nodes,
                                                           self.integral_properties.top_offset,
                                                           self.integral_properties.bottom_offset)
 
         # Define integration path
-        integration_path = line_integration.IntegrationPath(0, 0, path_properties=path_properties)
+        integration_path = IntegrationPath(0, 0, path_properties=path_properties)
         _ = integration_path.create_nodes()
 
         # Define line integration
-        line_integral = line_integration.LineIntegral(integration_path, self.data, self.material, mask_tol,
+        line_integral = LineIntegral(integration_path, self.data, self.material, mask_tol,
                                                       buckner_williams_terms)
         # Calculate SIFs
         line_integral.integrate()
