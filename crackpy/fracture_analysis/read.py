@@ -27,7 +27,7 @@ class OutputReader:
         self.possible_tags = None
         self.data = {}
 
-    def read_tag_data(self, path: str or os.PathLike, filename: str, tag: str) -> pd.DataFrame:
+    def read_tag_data(self, path: str | os.PathLike, filename: str, tag: str) -> pd.DataFrame:
         """Read data into Pandas dataframe and saves results to results dictionary
 
         Args:
@@ -88,8 +88,8 @@ class OutputReader:
                 _ = self.read_tag_data(path, filename, "Experiment_data")
             return df
 
-    def make_csv_from_results(self, files: list or str, output_path: str or os.PathLike, output_filename: str,
-                              tags: list or str = "all", filter_condition: dict or None = None):
+    def make_csv_from_results(self, files: list | str, output_path: str | os.PathLike, output_filename: str,
+                              tags: list | str = "all", filter_condition: dict | None = None):
         """
         Writes data for a list of files to a csv output.
 
@@ -210,7 +210,7 @@ class OutputReader:
             return False
 
     @staticmethod
-    def _restructure_integral_df(df: pd.DataFrame, tag: str or None) -> tuple:
+    def _restructure_integral_df(df: pd.DataFrame, tag: str | None) -> tuple:
         """
         Internal method to restructure the Dataframe for integral output data.
 
@@ -295,7 +295,7 @@ class OutputReader:
                 params[param_index] = tag + "_" + params[param_index]
         return params, results
 
-    def _search_for_tags(self, filename: str, path: str or os.PathLike) -> list:
+    def _search_for_tags(self, filename: str, path: str | os.PathLike) -> list:
         """
         Internal Method to search for any possible tag in a given filename and path.
 

@@ -26,7 +26,7 @@ class InputData:
 
     """
 
-    def __init__(self, nodemap: data_files.Nodemap or None = None, meta_keywords: dict or None = None):
+    def __init__(self, nodemap: data_files.Nodemap | None = None, meta_keywords: dict | None = None):
         """Initialize input data class by reading metadata and data and calculating eps_vm (if data_file is provided).
 
         Args:
