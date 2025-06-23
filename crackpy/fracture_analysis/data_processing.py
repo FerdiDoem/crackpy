@@ -187,8 +187,8 @@ class InputData:
             self.sig_xy = nodemap_data[:, 13]
             self.sig_vm = self._calc_sig_vm()
 
-    def set_data_manually(self, coor_x: np.array, coor_y: np.array, disp_x: np.array, disp_y: np.array,
-                          eps_x: np.array, eps_y: np.array, eps_xy: np.array, eps_vm: np.array = None):
+    def set_data_manually(self, coor_x: np.ndarray, coor_y: np.ndarray, disp_x: np.ndarray, disp_y: np.ndarray,
+                          eps_x: np.ndarray, eps_y: np.ndarray, eps_xy: np.ndarray, eps_vm: np.ndarray = None):
         """Manually set data, e.g. for in-situ calculation in Aramis software.
 
         Args:
@@ -319,7 +319,7 @@ class InputData:
         """Returns the Von Mises stress."""
         return np.sqrt(self.sig_x ** 2 + self.sig_y ** 2 - self.sig_x * self.sig_y + 3 * self.sig_xy ** 2)
 
-    def _calculate_principal_tensor_components(self, tensor_components: np.array):
+    def _calculate_principal_tensor_components(self, tensor_components: np.ndarray):
         """Calculate principal tensor components
 
         Args:
@@ -459,7 +459,7 @@ class InputData:
         return cut_none_elements
 
 
-def apply_mask(data: InputData, mask: np.array) -> InputData:
+def apply_mask(data: InputData, mask: np.ndarray) -> InputData:
     masked_data = InputData()
     # apply mask to data
     masked_data.coor_x = data.coor_x[mask]

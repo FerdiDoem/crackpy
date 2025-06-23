@@ -100,7 +100,7 @@ class IntegralProperties:
         if 0 in self.buckner_williams_terms:
             self.buckner_williams_terms.remove(0)
             print('Buckner-Williams terms should not include 0. Removed from terms.')
-        self.integral_properties.buckner_williams_terms.sort()
+        self.buckner_williams_terms.sort()
     
     def set_automatically(self, data: InputData, auto_detect_threshold: float):
         """Automatically set up the integration path properties.

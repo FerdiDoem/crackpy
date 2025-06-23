@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 
-def normalize(input_t: torch.Tensor or np.array) -> torch.Tensor:
+def normalize(input_t: torch.Tensor | np.ndarray) -> torch.Tensor:
     """Normalize every input channel to mean 0 and variance 1 for each input.
 
     Args:

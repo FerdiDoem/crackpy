@@ -6,13 +6,13 @@ from matplotlib.colors import ListedColormap
 
 
 def plot_prediction(
-        background: np.array,
-        interp_size: float or int,
+        background: np.ndarray,
+        interp_size: float | int,
         offset: tuple = (0, 0),
-        crack_tip_prediction: np.array = None,
-        crack_tip_seg: np.array = None,
-        crack_tip_label: np.array = None,
-        crack_path: np.array = None,
+        crack_tip_prediction: np.ndarray = None,
+        crack_tip_seg: np.ndarray = None,
+        crack_tip_label: np.ndarray = None,
+        crack_path: np.ndarray = None,
         f_min: float = None,
         f_max: float = None,
         save_name: str = None,

@@ -5,7 +5,7 @@ import numpy as np
 from crackpy.structure_elements.material import Material
 
 
-def williams_stress_field(a: list | np.array, b: list | np.array, terms: list | np.array,
+def williams_stress_field(a: list | np.ndarray, b: list | np.ndarray, terms: list | np.ndarray,
                           phi: float, r: float) -> list:
     """Formula for the stress field around the crack tip in polar coordinates by Williams.
     [Meinhard Kuna - Numerische Beanspruchungsanalyse formulas (3.41)-(3.42)]
@@ -40,7 +40,7 @@ def williams_stress_field(a: list | np.array, b: list | np.array, terms: list | 
     return [sigma_x, sigma_y, sigma_xy]
 
 
-def cjp_displ_field(coeffs: list | np.array, phi: float, r: float, material: Material) -> tuple:
+def cjp_displ_field(coeffs: list | np.ndarray, phi: float, r: float, material: Material) -> tuple:
     """Displacement fields around the crack tip in real polar coordinates by means of the **five-parameter CJP model**.
     [see formulas 10 and 11 in Christopher et al. Extension of the CJP model to mixed mode I and mode II (2013)]
 
@@ -72,7 +72,7 @@ def cjp_displ_field(coeffs: list | np.array, phi: float, r: float, material: Mat
     return disp_x, disp_y
 
 
-def cjp_stress_field(coeffs: list | np.array, phi: float, r: float) -> list:
+def cjp_stress_field(coeffs: list | np.ndarray, phi: float, r: float) -> list:
     """Formula for the stress field around the crack tip in real polar coordinates by means of the **five-parameter CJP model**.
     [see formulas 3 in Christopher et al. Extension of the CJP model to mixed mode I and mode II (2013)]
 
@@ -109,7 +109,7 @@ def cjp_stress_field(coeffs: list | np.array, phi: float, r: float) -> list:
     return [sigma_x, sigma_y, sigma_xy]
 
 
-def williams_displ_field(a: list | np.array, b: list | np.array, terms: list | np.array,
+def williams_displ_field(a: list | np.ndarray, b: list | np.ndarray, terms: list | np.ndarray,
                          phi: float, r: float, material: Material) -> tuple:
     """Formula for the displacement fields around the crack tip in polar coordinates by Williams.
     [Meinhard Kuna - Numerische Beanspruchungsanalyse formulas (3.43)-(3.44)]

@@ -109,7 +109,7 @@ class EnhancePath:
 
 class RandomCrop:
     """Crop randomly the image & labels in a sample."""
-    def __init__(self, size: int or tuple or list, left: list = None):
+    def __init__(self, size: int | tuple | list, left: list = None):
         """Crop randomly the image & labels in a sample.
 
         Args:
@@ -224,7 +224,7 @@ def calculate_crop_size(angle_rad: float, in_size: int) -> int:
 
 class RandomRotation:
     """Rotate the input, target and crack tip randomly with the same angle."""
-    def __init__(self, degrees: int or tuple):
+    def __init__(self, degrees: int | tuple):
         """Rotate the input, target and crack tip randomly with the same angle.
 
         Args:
@@ -265,7 +265,7 @@ class RandomRotation:
 
 class Resize:
     """Resize input and target tensors."""
-    def __init__(self, size: int or tuple):
+    def __init__(self, size: int | tuple):
         """Resize input and target tensors.
 
         Args:

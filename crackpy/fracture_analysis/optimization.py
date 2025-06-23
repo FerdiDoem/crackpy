@@ -159,7 +159,7 @@ class Optimization:
                                       x0=init_coeffs,
                                       method=method)
 
-    def residuals_cjp_displacements(self, inp: list | np.array) -> np.ndarray:
+    def residuals_cjp_displacements(self, inp: list | np.ndarray) -> np.ndarray:
         """Returns the residuals of CJP displacements.
 
         Args:
@@ -180,7 +180,7 @@ class Optimization:
         residual = residual[~np.isnan(residual)]
         return residual
 
-    def residuals_williams_displacements(self, inp: list | np.array) -> np.ndarray:
+    def residuals_williams_displacements(self, inp: list | np.ndarray) -> np.ndarray:
         """Returns the residuals of Williams displacements.
 
         Args:

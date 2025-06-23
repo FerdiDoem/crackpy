@@ -20,6 +20,12 @@ tom.egg-info
 /scripts/**/*.*
 !/scripts/**/*.py
 
+# Ignore some files for debugging on windows
+/Fracture_Analysis_DIC_results
+/Fracture_Analysis_FE_results
+fracture_analysis_dic.py
+fracture_analysis_fem.py
+
 __pycache__
 *.xml
 *.iml

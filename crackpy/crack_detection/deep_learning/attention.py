@@ -261,7 +261,7 @@ class SegGradCAM:
 
     def plot(self,
              output: torch.Tensor,
-             heatmap: np.array,
+             heatmap: np.ndarray,
              scale: str = 'QUALITATIVE',
              show: bool = False
              ) -> plt.figure:
