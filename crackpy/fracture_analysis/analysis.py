@@ -4,7 +4,10 @@ import numpy as np
 import rich.progress as progress_rich
 
 from crackpy.fracture_analysis.data_processing import InputData, CrackTipInfo
-from crackpy.fracture_analysis.line_integration import IntegralProperties, PathProperties, IntegrationPath, LineIntegral
+from crackpy.fracture_analysis.line_integration import (
+    IntegralProperties,
+    calculate_line_integral,
+)
 from crackpy.fracture_analysis.optimization import Optimization, OptimizationProperties
 from crackpy.structure_elements.data_files import Nodemap
 from crackpy.structure_elements.material import Material
@@ -175,13 +178,16 @@ class FractureAnalysis:
 
         for n in iterator:
             # Calculate one integral
-            line_integral, current_int_sizes = self._calc_line_integral(
+            line_integral, current_int_sizes = calculate_line_integral(
+                self.data,
+                self.material,
+                self.integral_properties,
                 current_size_left,
                 current_size_right,
                 current_size_bottom,
                 current_size_top,
                 self.integral_properties.mask_tolerance,
-                self.integral_properties.buckner_williams_terms
+                self.integral_properties.buckner_williams_terms,
             )
 
             self.results.append([line_integral.j_integral,
@@ -290,45 +296,3 @@ class FractureAnalysis:
             mean_wo_outliers.append(np.nanmean(data_i[s < m]))
         return mean_wo_outliers
 
-    def _calc_line_integral(self,
-                            size_left: float,
-                            size_right: float,
-                            size_bottom: float,
-                            size_top: float,
-                            mask_tol: float = None,
-                            buckner_williams_terms: list = None) -> tuple:
-        """Line integration for one single path.
-
-        Args:
-            size_left: actual size of integration path from crack tip to left boarder
-            size_right: actual size of integration path from crack tip to right boarder
-            size_bottom: actual size of integration path from crack tip to bottom
-            size_top: actual size of integration path from crack tip to top
-            mask_tol: tolerance of the quadratic interpolation mask around the integration path
-            buckner_williams_terms: list of terms which should be calculated (i.e. '[-1, 2, 4]')
-
-        Returns:
-            (tuple) line_integral, int_sizes, path_nodes
-                - line_integral (LineIntegral object) LineIntegral object for one single path
-                - int_sizes (list) containing the integration path size,
-                                   i.e. the old sizes plus the distance between single paths
-
-        """
-        # Define path properties
-        path_properties = PathProperties(size_left, size_right, size_bottom, size_top,
-                                                          self.integral_properties.integral_tick_size,
-                                                          self.integral_properties.number_of_nodes,
-                                                          self.integral_properties.top_offset,
-                                                          self.integral_properties.bottom_offset)
-
-        # Define integration path
-        integration_path = IntegrationPath(0, 0, path_properties=path_properties)
-        _ = integration_path.create_nodes()
-
-        # Define line integration
-        line_integral = LineIntegral(integration_path, self.data, self.material, mask_tol,
-                                                      buckner_williams_terms)
-        # Calculate SIFs
-        line_integral.integrate()
-
-        return line_integral, [size_left, size_right, size_bottom, size_top]

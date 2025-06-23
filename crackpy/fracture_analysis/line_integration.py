@@ -736,3 +736,64 @@ class LineIntegral:
         r = np.sqrt(x ** 2.0 + y ** 2.0)
         phi = np.arctan2(y, x)
         return r, phi
+
+
+def calculate_line_integral(
+        data: InputData,
+        material: Material,
+        int_props: IntegralProperties,
+        size_left: float,
+        size_right: float,
+        size_bottom: float,
+        size_top: float,
+        mask_tol: float | None = None,
+        buckner_terms: list | None = None) -> tuple:
+    """Run a line integral for a single integration path.
+
+    This is a convenience wrapper used by :class:`~crackpy.fracture_analysis.analysis.FractureAnalysis`
+    to evaluate one integration path. It mirrors the previous private method
+    ``_calc_line_integral`` and is placed here so that it can be used outside of
+    ``FractureAnalysis`` as well.
+
+    Args:
+        data: The input data containing displacements and strains.
+        material: Material parameters used for the calculations.
+        int_props: Integral properties describing the discretisation of the
+            integration path.
+        size_left: Path size to the left of the crack tip.
+        size_right: Path size to the right of the crack tip.
+        size_bottom: Path size to the bottom of the crack tip.
+        size_top: Path size to the top of the crack tip.
+        mask_tol: Optional tolerance for the interpolation mask.
+        buckner_terms: Optional list of Bueckner–Williams terms to evaluate.
+
+    Returns:
+        ``(line_integral, (size_left, size_right, size_bottom, size_top))``
+        where ``line_integral`` is the :class:`LineIntegral` instance holding all
+        results.
+    """
+
+    path_properties = PathProperties(
+        size_left,
+        size_right,
+        size_bottom,
+        size_top,
+        int_props.integral_tick_size,
+        int_props.number_of_nodes,
+        int_props.top_offset,
+        int_props.bottom_offset
+    )
+
+    integration_path = IntegrationPath(0, 0, path_properties=path_properties)
+    integration_path.create_nodes()
+
+    line_integral = LineIntegral(
+        integration_path,
+        data,
+        material,
+        mask_tol,
+        buckner_terms
+    )
+    line_integral.integrate()
+
+    return line_integral, (size_left, size_right, size_bottom, size_top)
