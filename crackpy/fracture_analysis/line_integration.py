@@ -6,6 +6,8 @@ from crackpy.fracture_analysis.crack_tip import get_crack_nearfield, eigenfuncti
 from crackpy.fracture_analysis.data_processing import InputData, apply_mask
 from crackpy.structure_elements.material import Material
 
+# Default set of Buckner-Williams terms used during line integration
+DEFAULT_TERMS = [1, 2, 3, 4, 5]
 
 class IntegralProperties:
     """Integral properties which are used for more than one line integration within Fracture Analysis.
@@ -87,6 +89,19 @@ class IntegralProperties:
 
         self.buckner_williams_terms = buckner_williams_terms
 
+    def ensure_defaults(self):
+        """Ensure that line integral settings have sensible defaults.
+        """
+        if self.buckner_williams_terms is None:
+            self.buckner_williams_terms = [1, 2, 3, 4, 5]
+        elif 1 not in self.buckner_williams_terms:
+            self.buckner_williams_terms.append(1)
+            print('Buckner-Williams terms should include 1. Added to terms.')
+        if 0 in self.buckner_williams_terms:
+            self.buckner_williams_terms.remove(0)
+            print('Buckner-Williams terms should not include 0. Removed from terms.')
+        self.integral_properties.buckner_williams_terms.sort()
+    
     def set_automatically(self, data: InputData, auto_detect_threshold: float):
         """Automatically set up the integration path properties.
 

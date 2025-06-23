@@ -63,29 +63,26 @@ class FractureAnalysis:
             self.optimization = Optimization(data=self.data,
                                              options=self.optimization_properties,
                                              material=self.material)
-
-            # Initialization of optimization output
-            self.cjp_coeffs = None
-            self.res_cjp = None
-            self.williams_coeffs = None
-            self.williams_fit_a_n = None
-            self.williams_fit_b_n = None
-            self.sifs_fit = None
+            
+            self._init_optimizaton_results(self)
 
         self.integral_properties = integral_properties
         if self.integral_properties is not None:
-            if self.integral_properties.buckner_williams_terms is None:
-                self.integral_properties.buckner_williams_terms = [1, 2, 3, 4, 5]
-            elif 1 not in self.integral_properties.buckner_williams_terms:
-                self.integral_properties.buckner_williams_terms.append(1)
-                print('Buckner-Williams terms should include 1. Added to terms.')
-            if 0 in self.integral_properties.buckner_williams_terms:
-                self.integral_properties.buckner_williams_terms.remove(0)
-                print('Buckner-Williams terms should not include 0. Removed from terms.')
-            self.integral_properties.buckner_williams_terms.sort()
+            self.integral_properties.ensure_defaults()
 
             self._init_integral_results()
 
+    def _init_optimizaton_results(self):
+        """Initialize variables used for storing optimization evaluation results."""
+        # Initialization of optimization output
+        self.cjp_coeffs = None
+        self.res_cjp = None
+        self.williams_coeffs = None
+        self.williams_fit_a_n = None
+        self.williams_fit_b_n = None
+        self.sifs_fit = None
+        
+    
     def _init_integral_results(self):
         """Initialize lists used for storing integral evaluation results."""
         self.results = []
