@@ -14,10 +14,10 @@ class OptimizationProperties:
 
     def __init__(
             self,
-            angle_gap: float or None = 20,
-            min_radius: float or None = None,
-            max_radius: float or None = None,
-            tick_size: float or None = 0.01,
+            angle_gap: float | None = 20,
+            min_radius: float | None = None,
+            max_radius: float | None = None,
+            tick_size: float | None = 0.01,
             terms=None
     ):
         """Initialize Optimization properties.
@@ -159,7 +159,7 @@ class Optimization:
                                       x0=init_coeffs,
                                       method=method)
 
-    def residuals_cjp_displacements(self, inp: list or np.array) -> np.ndarray:
+    def residuals_cjp_displacements(self, inp: list | np.array) -> np.ndarray:
         """Returns the residuals of CJP displacements.
 
         Args:
@@ -180,7 +180,7 @@ class Optimization:
         residual = residual[~np.isnan(residual)]
         return residual
 
-    def residuals_williams_displacements(self, inp: list or np.array) -> np.ndarray:
+    def residuals_williams_displacements(self, inp: list | np.array) -> np.ndarray:
         """Returns the residuals of Williams displacements.
 
         Args:

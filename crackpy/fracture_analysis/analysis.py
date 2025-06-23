@@ -32,11 +32,11 @@ class FractureAnalysis:
     def __init__(
             self,
             material: Material,
-            nodemap: Nodemap or str,
+            nodemap: Nodemap | str,
             data: InputData,
             crack_tip_info: CrackTipInfo,
-            integral_properties: IntegralProperties or None = IntegralProperties(),
-            optimization_properties: OptimizationProperties or None = OptimizationProperties()
+            integral_properties: IntegralProperties | None = IntegralProperties(),
+            optimization_properties: OptimizationProperties | None = OptimizationProperties()
     ):
         """Initialize FractureAnalysis class arguments.
 
