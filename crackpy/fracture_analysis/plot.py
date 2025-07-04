@@ -238,8 +238,8 @@ class Plotter:
             # J integral result
             props = dict(boxstyle='round', facecolor='gray', alpha=0.4)
             text = "J-integral\n\n" + \
-                   f"$J$ = {self.analysis.sifs_int['rej_out_mean']['j']:.2f} $N*mm^{{-1}}$\n" + \
-                   f"$K_J$ = {self.analysis.sifs_int['rej_out_mean']['sif_j']:.2f} $MPa*m^{{1/2}}$"
+                   f"$J$ = {self.analysis.sifs_int['rej_out_mean'].J:.2f} $N*mm^{{-1}}$\n" + \
+                   f"$K_J$ = {self.analysis.sifs_int['rej_out_mean'].K_J:.2f} $MPa*m^{{1/2}}$"
             self.ax_results.text(0.1, 0.97, text.replace('*', '\\cdot '),
                                  transform=self.ax_results.transAxes, fontsize=14,
                                  verticalalignment='top', bbox=props)
@@ -247,18 +247,18 @@ class Plotter:
             # Williams integration results
             props = dict(boxstyle='round', facecolor='gray', alpha=0.4)
             text = "Interaction integral\n\n" + \
-                   f"$K_I$ = {self.analysis.sifs_int['rej_out_mean']['sif_k_i']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$K_{{II}}$ = {self.analysis.sifs_int['rej_out_mean']['sif_k_ii']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$T$ = {self.analysis.sifs_int['rej_out_mean']['t_stress_int']:.2f} $MPa$"
+                   f"$K_I$ = {self.analysis.sifs_int['rej_out_mean'].K_I_interac:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$K_{{II}}$ = {self.analysis.sifs_int['rej_out_mean'].K_II_interac:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$T$ = {self.analysis.sifs_int['rej_out_mean'].T_interac:.2f} $MPa$"
             self.ax_results.text(0.1, 0.8, text.replace('*', '\\cdot '),
                                  transform=self.ax_results.transAxes, fontsize=14,
                                  verticalalignment='top', bbox=props)
 
             props = dict(boxstyle='round', facecolor='gray', alpha=0.4)
             text = "Bueckner integral\n\n" + \
-                   f"$K_I$ = {self.analysis.sifs_int['rej_out_mean']['k_i_chen']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$K_{{II}}$ = {self.analysis.sifs_int['rej_out_mean']['k_ii_chen']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$T$ = {self.analysis.sifs_int['rej_out_mean']['t_stress_chen']:.2f} $MPa$"
+                   f"$K_I$ = {self.analysis.sifs_int['rej_out_mean'].K_I_Chen:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$K_{{II}}$ = {self.analysis.sifs_int['rej_out_mean'].K_II_Chen:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$T$ = {self.analysis.sifs_int['rej_out_mean'].T_Chen:.2f} $MPa$"
             self.ax_results.text(0.1, 0.6, text.replace('*', '\\cdot '),
                                  transform=self.ax_results.transAxes, fontsize=14,
                                  verticalalignment='top', bbox=props)
@@ -270,9 +270,9 @@ class Plotter:
             # Williams fitting results
             props = dict(boxstyle='round', facecolor='gray', alpha=0.4)
             text = "Williams fitting\n\n" + \
-                   f"$K_I$ = {self.analysis.sifs_fit['K_I']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$K_{{II}}$ = {self.analysis.sifs_fit['K_II']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$T$ = {self.analysis.sifs_fit['T']:.2f} $MPa$"
+                   f"$K_I$ = {self.analysis.sifs_fit.K_I:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$K_{{II}}$ = {self.analysis.sifs_fit.K_II:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$T$ = {self.analysis.sifs_fit.T:.2f} $MPa$"
             self.ax_results.text(0.1, 0.4, text.replace('*', '\\cdot '),
                                  transform=self.ax_results.transAxes, fontsize=14,
                                  verticalalignment='top', bbox=props)
@@ -280,11 +280,11 @@ class Plotter:
             # CJP fitting results
             props = dict(boxstyle='round', facecolor='gray', alpha=0.4)
             text = "CJP fitting\n\n" + \
-                   f"$K_F$ = {self.analysis.res_cjp['K_F']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$K_R$ = {self.analysis.res_cjp['K_R']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$K_S$ = {self.analysis.res_cjp['K_S']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$K_{{II}}$ = {self.analysis.res_cjp['K_II']:.2f} $MPa*m^{{1/2}}$\n" + \
-                   f"$T$ = {self.analysis.res_cjp['T']:.2f} $MPa$"
+                   f"$K_F$ = {self.analysis.res_cjp.K_F:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$K_R$ = {self.analysis.res_cjp.K_R:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$K_S$ = {self.analysis.res_cjp.K_S:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$K_{{II}}$ = {self.analysis.res_cjp.K_II:.2f} $MPa*m^{{1/2}}$\n" + \
+                   f"$T$ = {self.analysis.res_cjp.T:.2f} $MPa$"
             self.ax_results.text(0.1, 0.2, text.replace('*', '\\cdot '),
                                  transform=self.ax_results.transAxes, fontsize=14,
                                  verticalalignment='top', bbox=props)
