@@ -69,24 +69,24 @@ class TestFractureAnalysis(unittest.TestCase):
         analysis.run()
 
         # test filtered outlier results
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['j'], 1.8699, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['sif_j'], 11.6028, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].J, 1.8699, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].K_J, 11.6028, delta=1e-4)
 
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['sif_k_i'], 11.0096, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['sif_k_ii'], -0.9243, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].K_I_interac, 11.0096, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].K_II_interac, -0.9243, delta=1e-4)
 
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['t_stress_int'], -42.1799, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['t_stress_sdm'], -62.8528, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].T_interac, -42.1799, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].T_SDM, -62.8528, delta=1e-4)
 
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_a_n'][0], 107.9594, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_a_n'][1], 129.1896, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_a_n'][2], -20.1644, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_a_n'][3], 5.7811, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_a_n']['rej_out_mean'][0], 107.9594, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_a_n']['rej_out_mean'][1], 129.1896, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_a_n']['rej_out_mean'][2], -20.1644, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_a_n']['rej_out_mean'][3], 5.7811, delta=1e-4)
 
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_b_n'][0], 19.5458, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_b_n'][1], 8.2752, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_b_n'][2], -1.2748, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_b_n'][3], 0.5349, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_b_n']['rej_out_mean'][0], 19.5458, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_b_n']['rej_out_mean'][1], 8.2752, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_b_n']['rej_out_mean'][2], -1.2748, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_b_n']['rej_out_mean'][3], 0.5349, delta=1e-4)
 
         temp_dir = tempfile.mkdtemp()
         try:
@@ -135,24 +135,24 @@ class TestFractureAnalysis(unittest.TestCase):
         analysis.run()
 
         # test filtered outlier results
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['j'], 1.8813, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['sif_j'], 11.6381, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].J, 1.8813, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].K_J, 11.6381, delta=1e-4)
 
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['sif_k_i'], 11.0188, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['sif_k_ii'], -0.9064, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].K_I_interac, 11.0188, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].K_II_interac, -0.9064, delta=1e-4)
 
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['t_stress_int'], -42.5591, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['t_stress_sdm'], -62.8528, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].T_interac, -42.5591, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean'].T_SDM, -62.8528, delta=1e-4)
 
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_a_n'][0], 109.4747, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_a_n'][1], 129.0193, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_a_n'][2], -20.1845, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_a_n'][3], 5.7942, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_a_n']['rej_out_mean'][0], 109.4747, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_a_n']['rej_out_mean'][1], 129.0193, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_a_n']['rej_out_mean'][2], -20.1845, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_a_n']['rej_out_mean'][3], 5.7942, delta=1e-4)
 
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_b_n'][0], 19.8578, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_b_n'][1], 8.3570, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_b_n'][2], -1.2922, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_int['rej_out_mean']['williams_int_b_n'][3], 0.5393, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_b_n']['rej_out_mean'][0], 19.8578, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_b_n']['rej_out_mean'][1], 8.3570, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_b_n']['rej_out_mean'][2], -1.2922, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_int['williams_int_b_n']['rej_out_mean'][3], 0.5393, delta=1e-4)
 
         temp_dir = tempfile.mkdtemp()
         try:
@@ -188,16 +188,16 @@ class TestFractureAnalysis(unittest.TestCase):
         analysis.run()
 
         # test CJP results
-        self.assertAlmostEqual(analysis.res_cjp['K_F'], 10.7934, delta=1e-4)
-        self.assertAlmostEqual(analysis.res_cjp['K_R'], 2.2790, delta=1e-4)
-        self.assertAlmostEqual(analysis.res_cjp['K_S'], -1.1568, delta=1e-4)
-        self.assertAlmostEqual(analysis.res_cjp['K_II'], -0.0275, delta=1e-4)
-        self.assertAlmostEqual(analysis.res_cjp['T'], -32.1685, delta=1e-4)
+        self.assertAlmostEqual(analysis.res_cjp.K_F, 10.7934, delta=1e-4)
+        self.assertAlmostEqual(analysis.res_cjp.K_R, 2.2790, delta=1e-4)
+        self.assertAlmostEqual(analysis.res_cjp.K_S, -1.1568, delta=1e-4)
+        self.assertAlmostEqual(analysis.res_cjp.K_II, -0.0275, delta=1e-4)
+        self.assertAlmostEqual(analysis.res_cjp.T, -32.1685, delta=1e-4)
 
         # test Williams results
-        self.assertAlmostEqual(analysis.sifs_fit['K_I'], 11.3232, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_fit['K_II'], -1.1102, delta=1e-4)
-        self.assertAlmostEqual(analysis.sifs_fit['T'], -44.3513, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_fit.K_I, 11.3232, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_fit.K_II, -1.1102, delta=1e-4)
+        self.assertAlmostEqual(analysis.sifs_fit.T, -44.3513, delta=1e-4)
 
         self.assertAlmostEqual(analysis.williams_fit_a_n[-3], -195.3576, delta=1e-4)
         self.assertAlmostEqual(analysis.williams_fit_a_n[-2], 6.6082, delta=1e-4)

@@ -11,6 +11,13 @@ from crackpy.fracture_analysis.line_integration import (
 from crackpy.fracture_analysis.optimization import Optimization, OptimizationProperties
 from crackpy.structure_elements.data_files import Nodemap
 from crackpy.structure_elements.material import Material
+from crackpy.structure_elements.results import (
+    CJPResults,
+    SIFsIntegralMeanResults,
+    SIFsIntegralMedianResults,
+    SIFsIntegralMeanwoOutlierResults,
+    _create_williams_model,
+)
 
 
 class FractureAnalysis:
@@ -133,11 +140,29 @@ class FractureAnalysis:
             K_S /= np.sqrt(1000)
             K_II /= np.sqrt(1000)
 
-            self.res_cjp = {'Error': cjp_results.cost, 'K_F': K_F, 'K_R': K_R, 'K_S': K_S, 'K_II': K_II, 'T': T}
+            self.res_cjp = CJPResults(
+                error=cjp_results.cost,
+                K_F=K_F,
+                K_R=K_R,
+                K_S=K_S,
+                K_II=K_II,
+                K_eff_Yang=np.nan,
+                K_eff_Nowell=np.nan,
+                T=T,
+            )
 
         except Exception:
             print('CJP optimization failed.')
-            self.res_cjp = {'Error': np.nan, 'K_F': np.nan, 'K_R': np.nan, 'K_S': np.nan, 'K_II': np.nan, 'T': np.nan}
+            self.res_cjp = CJPResults(
+                error=np.nan,
+                K_F=np.nan,
+                K_R=np.nan,
+                K_S=np.nan,
+                K_II=np.nan,
+                K_eff_Yang=np.nan,
+                K_eff_Nowell=np.nan,
+                T=np.nan,
+            )
 
     def _run_williams_optimization(self) -> None:
         """Perform Williams optimization and store results."""
@@ -154,13 +179,33 @@ class FractureAnalysis:
             K_II = -np.sqrt(2 * np.pi) * self.williams_fit_b_n[1] / np.sqrt(1000)
             T = 4 * self.williams_fit_a_n[2]
 
-            self.sifs_fit = {'Error': williams_results.cost, 'K_I': K_I, 'K_II': K_II, 'T': T}
+            model_cls = _create_williams_model(self.optimization.terms)
+            fields = {f'a_{n}': self.williams_fit_a_n[n] for n in self.optimization.terms}
+            fields.update({f'b_{n}': self.williams_fit_b_n[n] for n in self.optimization.terms})
+            self.sifs_fit = model_cls(
+                error=williams_results.cost,
+                K_I=K_I,
+                K_II=K_II,
+                K_V=np.nan,
+                T=T,
+                **fields,
+            )
 
         except Exception:
             print('Williams optimization failed.')
             self.williams_fit_a_n = {n: np.nan for index, n in enumerate(self.optimization.terms)}
             self.williams_fit_b_n = {n: np.nan for index, n in enumerate(self.optimization.terms)}
-            self.sifs_fit = {'Error': np.nan, 'K_I': np.nan, 'K_II': np.nan, 'T': np.nan}
+            model_cls = _create_williams_model(self.optimization.terms)
+            fields = {f'a_{n}': np.nan for n in self.optimization.terms}
+            fields.update({f'b_{n}': np.nan for n in self.optimization.terms})
+            self.sifs_fit = model_cls(
+                error=np.nan,
+                K_I=np.nan,
+                K_II=np.nan,
+                K_V=np.nan,
+                T=np.nan,
+                **fields,
+            )
 
     def _run_line_integrals(self, progress='off', task_id=None) -> None:
         """Calculate line integrals and aggregate the results."""
@@ -260,30 +305,49 @@ class FractureAnalysis:
 
         # bundle means / medians / means using outlier rejection
         self.sifs_int = {
-            'mean': {'j': mean_j, 'sif_j': mean_sif_j,
-                     'sif_k_i': mean_sif_k_i, 'sif_k_ii': mean_sif_k_ii,
-                     'k_i_chen': mean_k_i_chen, 'k_ii_chen': mean_k_ii_chen,
-                     't_stress_chen': mean_t_stress_chen,
-                     't_stress_sdm': mean_t_stress_sdm,
-                     't_stress_int': mean_t_stress_int,
-                     'williams_int_a_n': mean_williams_int_a_n,
-                     'williams_int_b_n': mean_williams_int_b_n},
-            'median': {'j': med_j, 'sif_j': med_sif_j,
-                       'sif_k_i': med_sif_k_i, 'sif_k_ii': med_sif_k_ii,
-                       'k_i_chen': med_k_i_chen, 'k_ii_chen': med_k_ii_chen,
-                       't_stress_chen': med_t_stress_chen,
-                       't_stress_sdm': med_t_stress_sdm,
-                       't_stress_int': med_t_stress_int,
-                       'williams_int_a_n': med_williams_int_a_n,
-                       'williams_int_b_n': med_williams_int_b_n},
-            'rej_out_mean': {'j': rej_out_mean_j, 'sif_j': rej_out_mean_sif_j,
-                             'sif_k_i': rej_out_mean_sif_k_i, 'sif_k_ii': rej_out_mean_sif_k_ii,
-                             'k_i_chen': rej_out_mean_k_i_chen, 'k_ii_chen': rej_out_mean_k_ii_chen,
-                             't_stress_chen': rej_out_mean_t_stress_chen,
-                             't_stress_sdm': rej_out_mean_t_stress_sdm,
-                             't_stress_int': rej_out_mean_t_stress_int,
-                             'williams_int_a_n': rej_out_mean_williams_int_a_n,
-                             'williams_int_b_n': rej_out_mean_williams_int_b_n}
+            'mean': SIFsIntegralMeanResults(
+                J=mean_j,
+                K_J=mean_sif_j,
+                K_I_interac=mean_sif_k_i,
+                K_II_interac=mean_sif_k_ii,
+                K_I_Chen=mean_k_i_chen,
+                K_II_Chen=mean_k_ii_chen,
+                T_Chen=mean_t_stress_chen,
+                T_SDM=mean_t_stress_sdm,
+                T_interac=mean_t_stress_int,
+            ),
+            'median': SIFsIntegralMedianResults(
+                J=med_j,
+                K_J=med_sif_j,
+                K_I_interac=med_sif_k_i,
+                K_II_interac=med_sif_k_ii,
+                K_I_Chen=med_k_i_chen,
+                K_II_Chen=med_k_ii_chen,
+                T_Chen=med_t_stress_chen,
+                T_SDM=med_t_stress_sdm,
+                T_interac=med_t_stress_int,
+            ),
+            'rej_out_mean': SIFsIntegralMeanwoOutlierResults(
+                J=rej_out_mean_j,
+                K_J=rej_out_mean_sif_j,
+                K_I_interac=rej_out_mean_sif_k_i,
+                K_II_interac=rej_out_mean_sif_k_ii,
+                K_I_Chen=rej_out_mean_k_i_chen,
+                K_II_Chen=rej_out_mean_k_ii_chen,
+                T_Chen=rej_out_mean_t_stress_chen,
+                T_SDM=rej_out_mean_t_stress_sdm,
+                T_interac=rej_out_mean_t_stress_int,
+            ),
+            'williams_int_a_n': {
+                'mean': mean_williams_int_a_n,
+                'median': med_williams_int_a_n,
+                'rej_out_mean': rej_out_mean_williams_int_a_n,
+            },
+            'williams_int_b_n': {
+                'mean': mean_williams_int_b_n,
+                'median': med_williams_int_b_n,
+                'rej_out_mean': rej_out_mean_williams_int_b_n,
+            },
         }
 
     @staticmethod
