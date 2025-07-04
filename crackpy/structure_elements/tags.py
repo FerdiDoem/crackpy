@@ -3,6 +3,11 @@ from typing import List, Dict
 from enum import Enum
 from dataclasses import dataclass, field
 
+
+def _ltm_coeff(power: float) -> tuple[float, float, float]:
+    """Helper returning Length-Time-Mass exponents for ``MPa m**power``."""
+    return (power - 1.0, -2.0, 1.0)
+
 # create a class for the statistics
 class CGStatistics(Enum):
     """Enum for the statistics that can be performed on the data."""
@@ -139,112 +144,278 @@ class TagExperimentData(Tag):
 class TagCJPModel(Tag):
     """Holds the nomenclature for the Tag CJP_Model."""
     tag: str = 'CJP_results'
-    error: dict = field(default_factory=lambda: {'tag': 'Error', 'unit': r'-', 'label': r'Error'})
-    K_F: dict = field(default_factory=lambda: {'tag': 'K_F', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{F,CJP}$'})
-    K_R: dict = field(default_factory=lambda: {'tag': 'K_R', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{R,CJP}$'})
-    K_S: dict = field(default_factory=lambda: {'tag': 'K_S', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{S,CJP}$'})
-    K_II: dict = field(default_factory=lambda: {'tag': 'K_II', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{II,CJP}$'})
-    K_eff_Yang: dict = field(default_factory=lambda: {'tag': 'K_eff_Yang', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{eff,Yang}$'})
-    K_eff_Nowell: dict = field(default_factory=lambda: {'tag': 'K_eff_Nowell', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{eff,Nowell}$'})
-    T: dict = field(default_factory=lambda: {'tag': 'T', 'unit': r'$MPa$', 'label': r'$T_{CJP}$'})
+    error: dict = field(default_factory=lambda: {
+        'tag': 'Error',
+        'unit': r'-',
+        'label': r'Error',
+        'ltm': (0.0, 0.0, 0.0),
+    })
+    K_F: dict = field(default_factory=lambda: {
+        'tag': 'K_F',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{F,CJP}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_R: dict = field(default_factory=lambda: {
+        'tag': 'K_R',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{R,CJP}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_S: dict = field(default_factory=lambda: {
+        'tag': 'K_S',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{S,CJP}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_II: dict = field(default_factory=lambda: {
+        'tag': 'K_II',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{II,CJP}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_eff_Yang: dict = field(default_factory=lambda: {
+        'tag': 'K_eff_Yang',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{eff,Yang}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_eff_Nowell: dict = field(default_factory=lambda: {
+        'tag': 'K_eff_Nowell',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{eff,Nowell}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    T: dict = field(default_factory=lambda: {
+        'tag': 'T',
+        'unit': r'$MPa$',
+        'label': r'$T_{CJP}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
 
 @dataclass
 class TagWillimasFitting(Tag):
     """Holds the nomenclature for the Tag Williams_Fitting."""
     tag: str = 'Williams_fit_results'
-    error: dict = field(default_factory=lambda: {'tag': 'Error', 'unit': r'-', 'label': r'Error'})
-    K_I: dict = field(default_factory=lambda: {'tag': 'K_I', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{I,Wllms}$'})
-    K_II: dict = field(default_factory=lambda: {'tag': 'K_II', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{II,Wllms}$'})
-    K_V: dict = field(default_factory=lambda: {'tag': 'K_V', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{V,Wllms}$'})
-    T: dict = field(default_factory=lambda: {'tag': 'T', 'unit': r'$MPa$', 'label': r'$T_{Wllms}$'})
-    a_neg3: dict = field(default_factory=lambda: {'tag': 'a_-3', 'unit': r'$MPa m^{5/2}$', 'label': r'$a_{-1}$'})
-    a_neg2: dict = field(default_factory=lambda: {'tag': 'a_-2', 'unit': r'$MPa m^{2}$', 'label': r'$a_{-1}$'})
-    a_neg1: dict = field(default_factory=lambda: {'tag': 'a_-1', 'unit': r'$MPa m^{3/2}$', 'label': r'$a_{-1}$'})
-    a_0: dict = field(default_factory=lambda: {'tag': 'a_0', 'unit': r'$MPa m^{1}$', 'label': r'$a_0$'})
-    a_1: dict = field(default_factory=lambda: {'tag': 'a_1', 'unit': r'$MPa m^{1/2}$', 'label': r'$a_1$'})
-    a_2: dict = field(default_factory=lambda: {'tag': 'a_2', 'unit': r'$MPa$', 'label': r'$a_2$'})
-    a_3: dict = field(default_factory=lambda: {'tag': 'a_3', 'unit': r'$MPa m^{-1/2}$', 'label': r'$a_3$'})
-    a_4: dict = field(default_factory=lambda: {'tag': 'a_4', 'unit': r'$MPa m^{-1}$', 'label': r'$a_4$'})
-    a_5: dict = field(default_factory=lambda: {'tag': 'a_5', 'unit': r'$MPa m^{-3/2}$', 'label': r'$a_5$'})
-    b_neg3: dict = field(default_factory=lambda: {'tag': 'b_-3', 'unit': r'$MPa m^{5/2}$', 'label': r'$b_{-3}$'})
-    b_neg2: dict = field(default_factory=lambda: {'tag': 'b_-2', 'unit': r'$MPa m^{2}$', 'label': r'$b_{-2}$'})
-    b_neg1: dict = field(default_factory=lambda: {'tag': 'b_-1', 'unit': r'$MPa m^{3/2}$', 'label': r'$b_{-1}$'})
-    b_0: dict = field(default_factory=lambda: {'tag': 'b_0', 'unit': r'$MPa m^{1}$', 'label': r'$b_0$'})
-    b_1: dict = field(default_factory=lambda: {'tag': 'b_1', 'unit': r'$MPa m^{1/2}$', 'label': r'$b_1$'})
-    b_2: dict = field(default_factory=lambda: {'tag': 'b_2', 'unit': r'$MPa$', 'label': r'$b_2$'})
-    b_3: dict = field(default_factory=lambda: {'tag': 'b_3', 'unit': r'$MPa m^{-1/2}$', 'label': r'$b_3$'})
-    b_4: dict = field(default_factory=lambda: {'tag': 'b_4', 'unit': r'$MPa m^{-1}$', 'label': r'$b_4$'})
-    b_5: dict = field(default_factory=lambda: {'tag': 'b_5', 'unit': r'$MPa m^{-3/2}$', 'label': r'$b_5$'})
+    orders: tuple[int, ...] = (-3, -2, -1, 0, 1, 2, 3, 4, 5)
+
+    error: dict = field(default_factory=lambda: {
+        'tag': 'Error',
+        'unit': r'-',
+        'label': r'Error',
+        'ltm': (0.0, 0.0, 0.0),
+    })
+    K_I: dict = field(default_factory=lambda: {
+        'tag': 'K_I',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{I,Wllms}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_II: dict = field(default_factory=lambda: {
+        'tag': 'K_II',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{II,Wllms}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_V: dict = field(default_factory=lambda: {
+        'tag': 'K_V',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$K_{V,Wllms}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    T: dict = field(default_factory=lambda: {
+        'tag': 'T',
+        'unit': r'$MPa$',
+        'label': r'$T_{Wllms}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
+
+    def coeff(self, prefix: str, n: int) -> dict:
+        power = 1 - 0.5 * n
+        return {
+            'tag': f'{prefix}_{n}',
+            'unit': fr'$MPa m^{power}$',
+            'label': fr'${prefix}_{n}$',
+            'ltm': _ltm_coeff(power),
+        }
 
 @dataclass
 class TagSIFIntegralEvalMean(Tag):
     """Holds the nomenclature for the Tag SIF_Integral. This is the mean over the paths."""
     tag: str = 'SIFs_integral'
-    J: dict = field(default_factory=lambda: {'tag': 'J_mean', 'unit': r'$N/mm$', 'label': r'Mean $J_{PthInt}$'})
-    K_J: dict = field(default_factory=lambda: {'tag': 'K_J_mean', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean $K_{J,PthInt}$'})
-    K_I_interac: dict = field(default_factory=lambda: {'tag': 'K_I_interac_mean', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean $K_{I,intrc,PthInt}$'})
-    K_II_interac: dict = field(default_factory=lambda: {'tag': 'K_II_interac_mean', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean $K_{II,intrc,PthInt}$'})
-    T_interac: dict = field(default_factory=lambda: {'tag': 'T_interac_mean', 'unit': r'$MPa$', 'label': r'Mean $T_{intrc,PthInt}$'})
-    K_I_Chen: dict = field(default_factory=lambda: {'tag': 'K_I_Chen_mean', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean $K_{I,Chen,PthInt}$'})
-    K_II_Chen: dict = field(default_factory=lambda: {'tag': 'K_II_Chen_mean', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean $K_{II,Chen,PthInt}$'})
-    T_Chen: dict = field(default_factory=lambda: {'tag': 'T_Chen_mean', 'unit': r'$MPa$', 'label': r'Mean $T_{Chen,PthInt}$'})
-    T_SDM: dict = field(default_factory=lambda: {'tag': 'T_SDM_mean', 'unit': r'$MPa$', 'label': r'Mean $T_{SDM,PthInt}$'})
+    J: dict = field(default_factory=lambda: {
+        'tag': 'J_mean',
+        'unit': r'$N/mm$',
+        'label': r'Mean $J_{PthInt}$',
+        'ltm': (0.0, -2.0, 1.0),
+    })
+    K_J: dict = field(default_factory=lambda: {
+        'tag': 'K_J_mean',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean $K_{J,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_I_interac: dict = field(default_factory=lambda: {
+        'tag': 'K_I_interac_mean',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean $K_{I,intrc,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_II_interac: dict = field(default_factory=lambda: {
+        'tag': 'K_II_interac_mean',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean $K_{II,intrc,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    T_interac: dict = field(default_factory=lambda: {
+        'tag': 'T_interac_mean',
+        'unit': r'$MPa$',
+        'label': r'Mean $T_{intrc,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
+    K_I_Chen: dict = field(default_factory=lambda: {
+        'tag': 'K_I_Chen_mean',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean $K_{I,Chen,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_II_Chen: dict = field(default_factory=lambda: {
+        'tag': 'K_II_Chen_mean',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean $K_{II,Chen,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    T_Chen: dict = field(default_factory=lambda: {
+        'tag': 'T_Chen_mean',
+        'unit': r'$MPa$',
+        'label': r'Mean $T_{Chen,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
+    T_SDM: dict = field(default_factory=lambda: {
+        'tag': 'T_SDM_mean',
+        'unit': r'$MPa$',
+        'label': r'Mean $T_{SDM,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
 
 @dataclass
 class TagSIFIntegralEvalMedian(Tag):
     """Holds the nomenclature for the Tag SIF_Integral. This is the median over the paths."""
     tag: str = 'SIFs_integral'
-    J: dict = field(default_factory=lambda: {'tag': 'J_median', 'unit': r'$N/mm$', 'label': r'Median $J_{PthInt}$'})
-    K_J: dict = field(default_factory=lambda: {'tag': 'K_J_median', 'unit': r'$MPa\sqrt{m}$', 'label': r'Median $K_{J,PthInt}$'})
-    K_I_interac: dict = field(default_factory=lambda: {'tag': 'K_I_interac_median', 'unit': r'$MPa\sqrt{m}$', 'label': r'Median $K_{I,intrc,PthInt}$'})
-    K_II_interac: dict = field(default_factory=lambda: {'tag': 'K_II_interac_median', 'unit': r'$MPa\sqrt{m}$', 'label': r'Median $K_{II,intrc,PthInt}$'})
-    T_interac: dict = field(default_factory=lambda: {'tag': 'T_interac_median', 'unit': r'$MPa$', 'label': r'Median $T_{intrc,PthInt}$'})
-    K_I_Chen: dict = field(default_factory=lambda: {'tag': 'K_I_Chen_median', 'unit': r'$MPa\sqrt{m}$', 'label': r'Median $K_{I,Chen,PthInt}$'})
-    K_II_Chen: dict = field(default_factory=lambda: {'tag': 'K_II_Chen_median', 'unit': r'$MPa\sqrt{m}$', 'label': r'Median $K_{II,Chen,PthInt}$'})
-    T_Chen: dict = field(default_factory=lambda: {'tag': 'T_Chen_median', 'unit': r'$MPa$', 'label': r'Median $T_{Chen,PthInt}$'})
-    T_SDM: dict = field(default_factory=lambda: {'tag': 'T_SDM_median', 'unit': r'$MPa$', 'label': r'Median $T_{SDM,PthInt}$'})
+    J: dict = field(default_factory=lambda: {
+        'tag': 'J_median',
+        'unit': r'$N/mm$',
+        'label': r'Median $J_{PthInt}$',
+        'ltm': (0.0, -2.0, 1.0),
+    })
+    K_J: dict = field(default_factory=lambda: {
+        'tag': 'K_J_median',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Median $K_{J,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_I_interac: dict = field(default_factory=lambda: {
+        'tag': 'K_I_interac_median',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Median $K_{I,intrc,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_II_interac: dict = field(default_factory=lambda: {
+        'tag': 'K_II_interac_median',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Median $K_{II,intrc,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    T_interac: dict = field(default_factory=lambda: {
+        'tag': 'T_interac_median',
+        'unit': r'$MPa$',
+        'label': r'Median $T_{intrc,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
+    K_I_Chen: dict = field(default_factory=lambda: {
+        'tag': 'K_I_Chen_median',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Median $K_{I,Chen,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_II_Chen: dict = field(default_factory=lambda: {
+        'tag': 'K_II_Chen_median',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Median $K_{II,Chen,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    T_Chen: dict = field(default_factory=lambda: {
+        'tag': 'T_Chen_median',
+        'unit': r'$MPa$',
+        'label': r'Median $T_{Chen,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
+    T_SDM: dict = field(default_factory=lambda: {
+        'tag': 'T_SDM_median',
+        'unit': r'$MPa$',
+        'label': r'Median $T_{SDM,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
 
 @dataclass
 class TagSIFIntegralEvalMeanWOoutliers(Tag):
     """Holds the nomenclature for the Tag SIF_Integral. This is the mean over the paths without outliers."""
     tag: str = 'SIFs_integral'
-    J: dict = field(default_factory=lambda: {'tag': 'J_mean_wo_outliers', 'unit': r'$N/mm$', 'label': r'Mean$_{wo\ outlrs}$ $J_{PthInt}$'})
-    K_J: dict = field(default_factory=lambda: {'tag': 'K_J_mean_wo_outliers', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean$_{wo\ outlrs}$ $K_{J,PthInt}$'})
-    K_I_interac: dict = field(default_factory=lambda: {'tag': 'K_I_interac_mean_wo_outliers', 'unit': r'$MPa\sqrt{m}$', 'label': r'$\overline{K_I}_{,cpy-Int.}$'})
-    K_II_interac: dict = field(default_factory=lambda: {'tag': 'K_II_interac_mean_wo_outliers', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean$_{wo\ outlrs}$ $K_{II,intrc,PthInt}$'})
-    T_interac: dict = field(default_factory=lambda: {'tag': 'T_interac_mean_wo_outliers', 'unit': r'$MPa$', 'label': r'Mean$_{wo\ outlrs}$ $T_{intrc,PthInt}$'})
-    K_I_Chen: dict = field(default_factory=lambda: {'tag': 'K_I_Chen_mean_wo_outliers', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean$_{wo\ outlrs}$ $K_{I,Chen,PthInt}$'})
-    K_II_Chen: dict = field(default_factory=lambda: {'tag': 'K_II_Chen_mean_wo_outliers', 'unit': r'$MPa\sqrt{m}$', 'label': r'Mean$_{wo\ outlrs}$ $K_{II,Chen,PthInt}$'})
-    T_Chen: dict = field(default_factory=lambda: {'tag': 'T_Chen_mean_wo_outliers', 'unit': r'$MPa$', 'label': r'Mean$_{wo\ outlrs}$ $T_{Chen,PthInt}$'})
-    T_SDM: dict = field(default_factory=lambda: {'tag': 'T_SDM_mean_wo_outliers', 'unit': r'$MPa$', 'label': r'Mean$_{wo\ outlrs}$ $T_{SDM,PthInt}$'})
+    J: dict = field(default_factory=lambda: {
+        'tag': 'J_mean_wo_outliers',
+        'unit': r'$N/mm$',
+        'label': r'Mean$_{wo\\ outlrs}$ $J_{PthInt}$',
+        'ltm': (0.0, -2.0, 1.0),
+    })
+    K_J: dict = field(default_factory=lambda: {
+        'tag': 'K_J_mean_wo_outliers',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean$_{wo\\ outlrs}$ $K_{J,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_I_interac: dict = field(default_factory=lambda: {
+        'tag': 'K_I_interac_mean_wo_outliers',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'$\overline{K_I}_{,cpy-Int.}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_II_interac: dict = field(default_factory=lambda: {
+        'tag': 'K_II_interac_mean_wo_outliers',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean$_{wo\\ outlrs}$ $K_{II,intrc,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    T_interac: dict = field(default_factory=lambda: {
+        'tag': 'T_interac_mean_wo_outliers',
+        'unit': r'$MPa$',
+        'label': r'Mean$_{wo\\ outlrs}$ $T_{intrc,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
+    K_I_Chen: dict = field(default_factory=lambda: {
+        'tag': 'K_I_Chen_mean_wo_outliers',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean$_{wo\\ outlrs}$ $K_{I,Chen,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    K_II_Chen: dict = field(default_factory=lambda: {
+        'tag': 'K_II_Chen_mean_wo_outliers',
+        'unit': r'$MPa\sqrt{m}$',
+        'label': r'Mean$_{wo\\ outlrs}$ $K_{II,Chen,PthInt}$',
+        'ltm': (-0.5, -2.0, 1.0),
+    })
+    T_Chen: dict = field(default_factory=lambda: {
+        'tag': 'T_Chen_mean_wo_outliers',
+        'unit': r'$MPa$',
+        'label': r'Mean$_{wo\\ outlrs}$ $T_{Chen,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
+    T_SDM: dict = field(default_factory=lambda: {
+        'tag': 'T_SDM_mean_wo_outliers',
+        'unit': r'$MPa$',
+        'label': r'Mean$_{wo\\ outlrs}$ $T_{SDM,PthInt}$',
+        'ltm': (-1.0, -2.0, 1.0),
+    })
 
-@dataclass
-class TagWillimasFitting(Tag):
-    """Holds the nomenclature for the Tag Williams_Fitting."""
-    tag: str = 'Williams_fit_results'
-    error: dict = field(default_factory=lambda: {'tag': 'Error', 'unit': r'-', 'label': r'Error'})
-    K_I: dict = field(default_factory=lambda: {'tag': 'K_I', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{I,Wllms}$'})
-    K_II: dict = field(default_factory=lambda: {'tag': 'K_II', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{II,Wllms}$'})
-    K_V: dict = field(default_factory=lambda: {'tag': 'K_V', 'unit': r'$MPa\sqrt{m}$', 'label': r'$K_{V,Wllms}$'})
-    T: dict = field(default_factory=lambda: {'tag': 'T', 'unit': r'$MPa$', 'label': r'$T_{Wllms}$'})
-    a_neg3: dict = field(default_factory=lambda: {'tag': 'a_-3', 'unit': r'$MPa m^{5/2}$', 'label': r'$a_{-1}$'})
-    a_neg2: dict = field(default_factory=lambda: {'tag': 'a_-2', 'unit': r'$MPa m^{2}$', 'label': r'$a_{-1}$'})
-    a_neg1: dict = field(default_factory=lambda: {'tag': 'a_-1', 'unit': r'$MPa m^{3/2}$', 'label': r'$a_{-1}$'})
-    a_0: dict = field(default_factory=lambda: {'tag': 'a_0', 'unit': r'$MPa m^{1}$', 'label': r'$a_0$'})
-    a_1: dict = field(default_factory=lambda: {'tag': 'a_1', 'unit': r'$MPa m^{1/2}$', 'label': r'$a_1$'})
-    a_2: dict = field(default_factory=lambda: {'tag': 'a_2', 'unit': r'$MPa$', 'label': r'$a_2$'})
-    a_3: dict = field(default_factory=lambda: {'tag': 'a_3', 'unit': r'$MPa m^{-1/2}$', 'label': r'$a_3$'})
-    a_4: dict = field(default_factory=lambda: {'tag': 'a_4', 'unit': r'$MPa m^{-1}$', 'label': r'$a_4$'})
-    a_5: dict = field(default_factory=lambda: {'tag': 'a_5', 'unit': r'$MPa m^{-3/2}$', 'label': r'$a_5$'})
-    b_neg3: dict = field(default_factory=lambda: {'tag': 'b_-3', 'unit': r'$MPa m^{5/2}$', 'label': r'$b_{-3}$'})
-    b_neg2: dict = field(default_factory=lambda: {'tag': 'b_-2', 'unit': r'$MPa m^{2}$', 'label': r'$b_{-2}$'})
-    b_neg1: dict = field(default_factory=lambda: {'tag': 'b_-1', 'unit': r'$MPa m^{3/2}$', 'label': r'$b_{-1}$'})
-    b_0: dict = field(default_factory=lambda: {'tag': 'b_0', 'unit': r'$MPa m^{1}$', 'label': r'$b_0$'})
-    b_1: dict = field(default_factory=lambda: {'tag': 'b_1', 'unit': r'$MPa m^{1/2}$', 'label': r'$b_1$'})
-    b_2: dict = field(default_factory=lambda: {'tag': 'b_2', 'unit': r'$MPa$', 'label': r'$b_2$'})
-    b_3: dict = field(default_factory=lambda: {'tag': 'b_3', 'unit': r'$MPa m^{-1/2}$', 'label': r'$b_3$'})
-    b_4: dict = field(default_factory=lambda: {'tag': 'b_4', 'unit': r'$MPa m^{-1}$', 'label': r'$b_4$'})
-    b_5: dict = field(default_factory=lambda: {'tag': 'b_5', 'unit': r'$MPa m^{-3/2}$', 'label': r'$b_5$'})
 
 
 class TagConstructor:
