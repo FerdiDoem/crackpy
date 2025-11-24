@@ -1,10 +1,21 @@
-import os.path
+from pathlib import Path
 import pandas as pd
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def is_stringfloat(element: str) -> bool:
-    """Checks if element can be converted to a float"""
+    """Check if element can be converted to a float.
+
+    Args:
+        element: string to check
+
+    Returns:
+        True if element can be converted to float, False otherwise
+
+    """
     try:
         float(element)
         return True
@@ -15,19 +26,25 @@ def is_stringfloat(element: str) -> bool:
 class OutputReader:
     """This class is designed to read tagged data from fracture analysis output file **filename** in folder **path**.
 
+    Attributes:
+        path: Path to output files
+        filename: Output filename
+        possible_tags: List of available tags in file
+        data: Dictionary storing read data
+
     Methods:
         * read_tag_data - data is read into a pandas Dataframe
         * make_csv_from_results - saves data in csv file
 
     """
 
-    def __init__(self):
-        self.path = None
-        self.filename = None
-        self.possible_tags = None
-        self.data = {}
+    def __init__(self) -> None:
+        self.path: Path | None = None
+        self.filename: str | None = None
+        self.possible_tags: list | None = None
+        self.data: dict = {}
 
-    def read_tag_data(self, path: str or os.PathLike, filename: str, tag: str) -> pd.DataFrame:
+    def read_tag_data(self, path: str | Path, filename: str, tag: str) -> pd.DataFrame:
         """Read data into Pandas dataframe and saves results to results dictionary
 
         Args:
@@ -39,13 +56,18 @@ class OutputReader:
             df: dataframe with columns and values
 
         """
+        logger.debug("Reading tag '%s' from file: %s", tag, Path(path) / filename)
+
         if tag not in self._search_for_tags(filename=filename, path=path):
             raise ValueError(f"The tag {tag} does not exist! \n"
                              f"Possible tags: {self.possible_tags}")
 
-        with open(os.path.join(path, filename), 'r') as text_file:
+        file_path = Path(path) / filename
+        with open(file_path, 'r') as text_file:
             read_header = False
             read_values = False
+            columns = []
+            data_rows = []
 
             try:
                 _ = self.data[filename]
@@ -63,10 +85,10 @@ class OutputReader:
                     # read header of tagged content
                     columns = line.strip('\n').strip(' ').split(',')
                     columns = [element.strip(' ') for element in columns]
-                    df = pd.DataFrame(columns=columns)
                     read_header = False
                     read_values = True
                     continue
+
                 if read_values:
                     # convert to float if possible
                     values = []
@@ -74,22 +96,26 @@ class OutputReader:
                         val = val.strip(' ')
                         if is_stringfloat(val):
                             val = float(val)
-                        values.append([val])
+                        values.append(val)
 
-                    # read values of tagged content
-                    columns_to_values = pd.DataFrame.from_dict(dict(zip(columns, values)))
-                    df = pd.concat([df, columns_to_values], ignore_index=True)
+                    # collect values in list
+                    data_rows.append(values)
 
-                    # save to results
-                    self.data[filename].update({tag: df})
+            # create DataFrame once after collecting all rows
+            df = pd.DataFrame(data_rows, columns=columns)
 
-                # always read meta data
+            # save to results
+            self.data[filename].update({tag: df})
+
+            logger.debug("Read %d rows for tag '%s'", len(data_rows), tag)
+
+            # always read meta data
             if "Experiment_data" not in self.data[filename].keys():
                 _ = self.read_tag_data(path, filename, "Experiment_data")
             return df
 
-    def make_csv_from_results(self, files: list or str, output_path: str or os.PathLike, output_filename: str,
-                              tags: list or str = "all", filter_condition: dict or None = None):
+    def make_csv_from_results(self, files: list | str, output_path: str | Path, output_filename: str,
+                              tags: list | str = "all", filter_condition: dict | None = None):
         """
         Writes data for a list of files to a csv output.
 
@@ -110,8 +136,8 @@ class OutputReader:
                     raise TypeError("The filter_condition key 'Data type' should be a string.")
                 if not isinstance(filter_condition[key], tuple):
                     raise TypeError("The filter_condition value should be a tuple of flaots.")
-                if not isinstance(filter_condition[key][0], int or float) \
-                        or not isinstance(filter_condition[key][1], int or float):
+                if not isinstance(filter_condition[key][0], (int, float)) \
+                        or not isinstance(filter_condition[key][1], (int, float)):
                     raise TypeError("The filter_condition values should be a tuple of two floats.")
                 if filter_condition[key][0] >= filter_condition[key][1]:
                     raise ValueError("The first entry of values for the filter condition should be the minimum value,\n"
@@ -180,9 +206,10 @@ class OutputReader:
         try:
             np_all_results = np.asarray(all_results)
             all_results_df = pd.DataFrame(np_all_results, columns=stage_params, index=filenames)
-            all_results_df.to_csv(os.path.join(output_path, output_filename), index_label="filename")
+            out_csv = Path(output_path) / output_filename
+            all_results_df.to_csv(out_csv, index_label="filename")
         except UnboundLocalError:
-            print(f"Filter condition is not satisfied by any file in files {files}.")
+            logger.warning("Filter condition not satisfied by any file. Files considered: %s.", files)
 
     @staticmethod
     def _filtered_by_condition(filter_condition: dict, experiment_data: pd.DataFrame) -> bool:
@@ -210,7 +237,7 @@ class OutputReader:
             return False
 
     @staticmethod
-    def _restructure_integral_df(df: pd.DataFrame, tag: str or None) -> tuple:
+    def _restructure_integral_df(df: pd.DataFrame, tag: str | None) -> tuple:
         """
         Internal method to restructure the Dataframe for integral output data.
 
@@ -295,7 +322,7 @@ class OutputReader:
                 params[param_index] = tag + "_" + params[param_index]
         return params, results
 
-    def _search_for_tags(self, filename: str, path: str or os.PathLike) -> list:
+    def _search_for_tags(self, filename: str, path: str | Path) -> list:
         """
         Internal Method to search for any possible tag in a given filename and path.
 
@@ -309,7 +336,7 @@ class OutputReader:
         """
         if self.possible_tags is None:
             tag_list = []
-            with open(os.path.join(path, filename)) as file:
+            with open(Path(path) / filename) as file:
                 for line in file:
                     if '<' in line and '>' in line and '/' not in line:
                         tag = line.strip('<>\n')

@@ -3,16 +3,31 @@ import numpy as np
 from scipy.ndimage import label
 from skimage.morphology import skeletonize
 from sklearn.linear_model import LinearRegression
+import logging
+from typing import Optional
 
 from crackpy.crack_detection.data import preprocess
 from crackpy.crack_detection.deep_learning.nets import ParallelNets, UNet
 from crackpy.crack_detection.data.interpolation import interpolate
 from crackpy.crack_detection.utils.utilityfunctions import calculate_segmentation, find_most_likely_tip_pos
-from crackpy.fracture_analysis.data_processing import InputData
+from crackpy.input.input_data import InputData
+
+logger = logging.getLogger(__name__)
 
 
 class CrackDetection:
     """Crack detection setup class.
+
+    This class configures the detection window and preprocessing for crack tip detection
+    using neural network models.
+
+    Attributes:
+        side: Side of specimen ('left' or 'right')
+        detection_window_size: Size of detection window in mm
+        offset: (x, y) offset tuple in mm
+        interp_size: Interpolation size (derived from window size and side)
+        angle_det_radius: Radius around crack tip for angle detection in mm
+        device: PyTorch device for computation
 
     Methods:
         * preprocess - prepare interpolated displacements for input to NN
@@ -20,8 +35,9 @@ class CrackDetection:
 
     """
 
-    def __init__(self, side: str = 'right', detection_window_size: float = 70, offset: tuple = (0, 0),
-                 angle_det_radius: float = 10, device=None):
+    def __init__(self, side: str = 'right', detection_window_size: float = 70,
+                 offset: tuple = (0, 0), angle_det_radius: float = 10,
+                 device: torch.device | str | None = None) -> None:
         """Initialize class arguments.
 
         Args:
@@ -42,6 +58,9 @@ class CrackDetection:
         else:
             self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
+        logger.debug(f"CrackDetection initialized: side={side}, window_size={detection_window_size}, "
+                    f"offset={offset}, angle_radius={angle_det_radius}, device={self.device}")
+
     @staticmethod
     def preprocess(interp_disps: np.ndarray) -> torch.Tensor:
         """Prepare interpolated displacements for input to NN.
@@ -57,25 +76,28 @@ class CrackDetection:
 
         # check if NaNs are present
         if torch.isnan(input_ch).any():
-            print('NaNs in displacement data! '
-                  'Please make sure that no NaNs are present '
-                  'E.g. make the detection_window_boundary smaller.')
+            logger.warning(
+                "NaNs detected in displacement data. Consider reducing the detection window size or preprocessing the data to remove NaNs.")
 
         input_ch = preprocess.normalize(input_ch).unsqueeze(0)
 
         return input_ch
 
-    def interpolate(self, data: InputData):
-        """Interpolate nodemap data on arrays (256 x 256 pixels)
+    def interpolate(self, data: InputData) -> tuple[np.ndarray, np.ndarray]:
+        """Interpolate nodemap data on arrays (256 x 256 pixels).
 
         Args:
             data: nodemap data
 
         Returns:
-            interpolated displacements, interpolated von Mises strains as arrays of size 256x256
+            Tuple of (interpolated_displacements, interpolated_von_mises_strains)
+            both as arrays of size 256x256
 
         """
+        logger.debug(f"Interpolating data on 256x256 grid with size={self.interp_size} mm, offset={self.offset}")
         _, interp_disps, interp_eps_vm = interpolate(data, self.interp_size, offset=self.offset, pixels=256)
+        logger.debug(f"Interpolation completed: disp_range=[{interp_disps.min():.4f}, {interp_disps.max():.4f}], "
+                    f"eps_vm_range=[{interp_eps_vm.min():.4f}, {interp_eps_vm.max():.4f}]")
         return interp_disps, interp_eps_vm
 
     def _get_interp_size(self):
@@ -85,6 +107,12 @@ class CrackDetection:
 class CrackTipDetection:
     """Crack tip detection class.
 
+    This class handles the actual crack tip detection using a trained neural network model.
+
+    Attributes:
+        detection: CrackDetection setup instance
+        tip_detector: Trained neural network model for tip detection
+
     Methods:
         * calculate_position_in_mm - converts crack tip position from pixels to mm
         * make_prediction - predict crack tips as segmented pixels
@@ -93,17 +121,20 @@ class CrackTipDetection:
 
     """
 
-    def __init__(self, detection: CrackDetection, tip_detector: ParallelNets):
+    def __init__(self, detection: CrackDetection, tip_detector: ParallelNets) -> None:
         """Initialize class arguments.
 
         Args:
             detection: crack detection setup
-            tip_detector: crack tip detection model
+            tip_detector: crack tip detection model (ParallelNets)
+
         """
         self.detection = detection
         self.tip_detector = tip_detector
 
-    def calculate_position_in_mm(self, crack_tip_px: list):
+        logger.debug(f"CrackTipDetection initialized with detector model")
+
+    def calculate_position_in_mm(self, crack_tip_px: list) -> tuple[float, float]:
         """Converts the crack tip position from pixels to mm.
 
         Args:
@@ -111,15 +142,38 @@ class CrackTipDetection:
 
         """
         # Transform to global coordinate system
-        crack_tip_x = crack_tip_px[1] * self.detection.detection_window_size / 255
-        crack_tip_y = crack_tip_px[0] * self.detection.detection_window_size / 255 \
-                      - self.detection.detection_window_size / 2
+        scale_factor = self.detection.detection_window_size / 255
+        crack_tip_x = crack_tip_px[1] * scale_factor
+        crack_tip_y = crack_tip_px[0] * scale_factor - self.detection.detection_window_size / 2
         if self.detection.side == 'left':  # mirror x-value of crack tip position to left-hand side
             crack_tip_x *= -1
         crack_tip_x += self.detection.offset[0]
         crack_tip_y += self.detection.offset[1]
-
+        logger.debug(f"Converted crack tip from pixels {crack_tip_px} to mm: ({crack_tip_x:.3f}, {crack_tip_y:.3f})")
         return crack_tip_x, crack_tip_y
+
+    def calculate_segmentation_in_mm(self, crack_tip_pix: torch.Tensor) -> np.ndarray:
+        """Converts the crack tip segmentation from pixels to mm.
+
+        Args:
+            crack_tip_pix: x- and y-coordinates of crack path [px]
+
+        Returns:
+            crack tip segmentation in mm
+
+        """
+
+        scale_factor = self.detection.detection_window_size / 255
+        crack_tip_segmentation_mm = []
+        for _, crack_tip in enumerate(crack_tip_pix):
+            crack_x = float(crack_tip[1]) * scale_factor
+            crack_y = float(crack_tip[0]) * scale_factor - self.detection.detection_window_size / 2
+            if self.detection.side == 'left':  # mirror x-value of crack tip position to left-hand side
+                crack_x *= -1
+            crack_x += self.detection.offset[0]
+            crack_y += self.detection.offset[1]
+            crack_tip_segmentation_mm.append([crack_x, crack_y])
+        return np.array(crack_tip_segmentation_mm)
 
     def make_prediction(self, input_ch: torch.Tensor) -> torch.Tensor:
         """Predict crack tips as segmented pixels.
@@ -131,11 +185,13 @@ class CrackTipDetection:
             crack tip segmentation output
 
         """
+        logger.debug(f"Making crack tip prediction with input shape: {input_ch.shape}")
         device = self.detection.device
         self.tip_detector.to(device=device)
         self.tip_detector.eval()
         out = self.tip_detector(input_ch.to(device))
         pred = out[0].detach().to('cpu')
+        logger.debug(f"Crack tip prediction completed, output shape: {pred.shape}")
 
         return pred
 
@@ -219,6 +275,30 @@ class CrackPathDetection:
         skeleton = torch.nonzero(torch.from_numpy(skeleton), as_tuple=False)
 
         return is_crack_path, skeleton
+
+    def calculate_path_in_mm(self, crack_path_px: list) -> np.ndarray:
+        """Converts the crack path coordinates from pixels to mm.
+
+        Args:
+            crack_path_px: x- and y-coordinates of crack path [px]
+
+        Returns:
+            crack path in mm
+
+        """
+
+        scale_factor = self.detection.detection_window_size / 255
+
+        crack_path_mm = []
+        for _, crack_path in enumerate(crack_path_px):
+            crack_x = float(crack_path[1]) * scale_factor
+            crack_y = float(crack_path[0]) * scale_factor - self.detection.detection_window_size / 2
+            if self.detection.side == 'left':  # mirror x-value of crack tip position to left-hand side
+                crack_x *= -1
+            crack_x += self.detection.offset[0]
+            crack_y += self.detection.offset[1]
+            crack_path_mm.append([crack_x, crack_y])
+        return np.array(crack_path_mm)
 
 
 class CrackAngleEstimation:
