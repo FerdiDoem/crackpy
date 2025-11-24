@@ -17,26 +17,34 @@
 
 """
 
-import os
+import logging
+from pathlib import Path
 
 import numpy as np
 from matplotlib import pyplot as plt
+
 from crackpy.fracture_analysis.analysis import FractureAnalysis
-from crackpy.fracture_analysis.data_processing import InputData, CrackTipInfo
+from crackpy.fracture_analysis.crack_tip import williams_displ_field_xy, williams_stress_field
 from crackpy.fracture_analysis.line_integration import IntegralProperties
 from crackpy.fracture_analysis.optimization import OptimizationProperties
-from crackpy.fracture_analysis.plot import PlotSettings, Plotter
-from crackpy.fracture_analysis.write import OutputWriter
-from crackpy.structure_elements.data_files import Nodemap
+from crackpy.input.crack_tip_info import CrackTipInfo
+from crackpy.input.input_data import InputData
+from crackpy.results.plot import PlotSettings, Plotter
+from crackpy.results.write import OutputWriter
 from crackpy.structure_elements.material import Material
-from crackpy.fracture_analysis.crack_tip import williams_displ_field, williams_stress_field
+
+# Logging
+logger = logging.getLogger(__name__)
+
+# Determine project root
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+OUT_FOLDER = PROJECT_ROOT / 'Fracture_Analysis_Williams_results_2D'
+OUT_FOLDER.mkdir(parents=True, exist_ok=True)
 
 ########################
 # INPUT specifications #
 ########################
-
-
-OUT_FOLDER = 'Fracture_Analysis_Williams_results'
 
 material = Material(E=72000, nu_xy=0.33, sig_yield=350)
 
@@ -101,11 +109,8 @@ ct = CrackTipInfo(0, 0, 0, 'right')
 r_grid = np.sqrt(x_mesh ** 2 + y_mesh ** 2)
 phi_grid = np.arctan2(y_mesh, x_mesh)
 
-disp_u_mesh, disp_v_mesh = williams_displ_field(coefficients_a,
-                                                coefficients_b,
-                                                coefficients_n,
-                                                phi_grid, r_grid, material)
-
+disp_u_mesh, disp_v_mesh = williams_displ_field_xy(coefficients_a, coefficients_b, coefficients_n, phi_grid, r_grid,
+                                                   material)
 
 # Compute strains with Hook's law or with the gradients of the displacements
 method = 'Hook'  # 'Hook' or 'Gradient'
@@ -173,7 +178,7 @@ input_data.eps_y = eps_yy
 input_data.eps_xy = eps_xy
 input_data.calc_stresses(material)
 input_data.transform_data(ct.crack_tip_x, ct.crack_tip_y, ct.crack_tip_angle)
-mesh = input_data.to_vtk(os.path.join(OUT_FOLDER, 'vtk'), metadata=False, alpha=0.5)
+mesh = input_data.to_vtk(str(OUT_FOLDER / 'vtk'), metadata=False, alpha=0.5)
 
 # Plot mesh data and save to file using pyvista
 mesh.plot(scalars='eps_vm [%]',
@@ -184,7 +189,7 @@ mesh.plot(scalars='eps_vm [%]',
           lighting=True,
           show_scalar_bar=True,
           scalar_bar_args={'vertical': True},
-          screenshot=os.path.join(OUT_FOLDER, 'vtk', f"pyvista_plot_{method}.png"),
+          screenshot=str(OUT_FOLDER / 'vtk' / f"pyvista_plot_{method}.png"),
           off_screen=True
           )
 
@@ -204,10 +209,10 @@ plt.rcParams['figure.dpi'] = 100
 
 # Plotting
 plot_sets = PlotSettings(background='sig_vm', min_value=0, max_value=material.sig_yield, extend='max')
-plotter = Plotter(path=os.path.join(OUT_FOLDER, 'plots'), fracture_analysis=analysis, plot_sets=plot_sets)
+plotter = Plotter(path=str(OUT_FOLDER / 'plots'), fracture_analysis=analysis, plot_sets=plot_sets)
 plotter.plot()
 
-writer = OutputWriter(path=os.path.join(OUT_FOLDER, 'results'), fracture_analysis=analysis)
+writer = OutputWriter(path=str(OUT_FOLDER / 'results'), fracture_analysis=analysis)
 writer.write_header()
 writer.write_results()
-writer.write_json(path=os.path.join(OUT_FOLDER, 'json'))
+writer.write_json(path=str(OUT_FOLDER / 'json'))
