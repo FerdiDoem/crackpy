@@ -406,10 +406,10 @@ Result adapter that serializes a live `FractureAnalysis` object to tagged text a
 Result adapter that parses tagged text output into pandas DataFrames and can flatten result tags into CSV columns.
 
 #### Result tag
-Text/JSON section name used as a result schema key. Examples include `Experiment_data`, `CJP_results`, `CJP_modeI_results`, `Williams_fit_results`, `SIFs_integral`, `Bueckner_Chen_integral`, `Path_SIFs`, `Path_Williams_a_n`, `Path_Williams_b_n`, and `Path_Properties`.
+Text/JSON section name used by current result adapters. Examples include `Experiment_data`, `CJP_results`, `CJP_modeI_results`, `Williams_fit_results`, `SIFs_integral`, `Bueckner_Chen_integral`, `Path_SIFs`, `Path_Williams_a_n`, `Path_Williams_b_n`, and `Path_Properties`. Future planning treats these names as legacy adapter aliases, not as the canonical public result schema.
 
 #### Main result JSON
-Future canonical machine-readable CrackPy result artifact for scalar result values and traceability metadata. It should carry `result_schema_version`, result identity, method/configuration references, units, hashes where practical, and links to optional artifacts. It is not intended to store every intermediate transformation or large field array.
+Future canonical machine-readable CrackPy result artifact for scalar result values and traceability metadata. Current planning treats it as a graph-shaped [[glossary#Canonical result graph bundle]] carrying `result_schema_version`, result identity, method/configuration references, units, hashes where practical, and links to optional artifacts. It is not intended to store every intermediate transformation or large field array.
 
 #### `*_Output.txt`
 Fracture-analysis text result file pattern, usually `<nodemap_stem>_<side>_Output.txt`.
@@ -481,10 +481,19 @@ Replacement method ID used when an old method ID was split or replaced. Successo
 Lifecycle status for a registered method ID. `active` means new results may use the canonical ID. `deprecated` means old results remain readable but new results should not write the ID. `removed` means the historical ID remains known for provenance, but no current implementation is available for direct recomputation.
 
 #### Result schema version
-Explicit version for a serialized result contract, including public JSON keys, text tags where supported, units, field meanings, and nested result structure. Future main result JSON should always declare this value; legacy unversioned text output can be treated as an implicit legacy schema.
+Explicit version for a serialized result contract, including public JSON node types, edge roles, quantity fields, units, and field meanings. Future main result JSON should always declare this value. Legacy text tags, current JSON sections, and flattened CSV columns should be handled by adapter alias mappings or an implicit legacy schema.
+
+#### Canonical result graph bundle
+Future graph-shaped JSON artifact for CrackPy result and provenance facts. It should contain typed nodes such as `Software`, `SoftwareConfiguration`, `InputRecord`, `AnalysisRun`, `ResultRecord`, `ResultQuantity`, and `ProvenanceRecord`, plus typed edges such as `used`, `wasAssociatedWith`, `wasGeneratedBy`, and `hasQuantity`. The structure should be PROV-compatible and exportable to both the compact [[glossary#Grouped metadata statement bundle]] and an optional [[glossary#Detailed provenance artifact]].
+
+#### ResultQuantity
+Future result node for one scalar scientific output or small derived quantity. A `ResultQuantity` should carry a stable `quantity_id`, the owning `result_id`, `quantity_kind`, `symbol` where useful, `mode` where applicable, `value`, `unit`, producing or estimator `method_id`, optional statistic/path metadata, and legacy aliases such as `Williams_fit_results.K_I` or `SIFs_integral.K_I_Chen.mean_wo_outliers`.
+
+#### Result graph edge
+Future explicit relationship between result/provenance nodes. Examples include a run `used` an input record with role `primary_displacement_field`, a run `used` a crack-tip estimate with role `used_crack_tip_estimate`, a result `wasGeneratedBy` an analysis run, and a result `hasQuantity` a result quantity. Edges should carry semantic roles instead of hiding relationships inside string keys.
 
 #### Result artifact adapter
-Future adapter that projects the canonical result model or main result JSON into another artifact form, such as legacy text, flattened CSV, Parquet-style tables, plots, detailed provenance files, or research-object bundles.
+Future adapter that projects the canonical result model or main result JSON into another artifact form, such as legacy text, flattened CSV, compact KG statement bundles, Parquet-style tables, plots, detailed provenance files, or research-object bundles.
 
 #### Method reference
 Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific registered method. Future method metadata should point to method-reference IDs instead of embedding full bibliography records.
@@ -501,10 +510,10 @@ Stable key for one entry in the [[glossary#Method reference registry]], such as 
 Software-level citation metadata for CrackPy as a package, currently represented by `CITATION.cff`. This is separate from method-level references because one package release may contain many methods with different scientific foundations.
 
 #### Compact knowledge-graph export
-Reduced, result-centric metadata export intended for the main RDF/JSON knowledge graph. It links a result to input records, CrackPy as software, CrackPy configuration, method identity, method revision, result schema, minimal hashes, and a provenance artifact reference without modeling every internal process-chain step.
+Reduced, result-centric metadata export intended for the main RDF/JSON knowledge graph. It should be generated by a translator from the canonical result/provenance graph bundle. It links a result to input records, CrackPy as software, CrackPy configuration, method identity, method revision, result schema, minimal hashes, selected result quantities, and a provenance artifact reference without modeling every internal process-chain step.
 
 #### Grouped metadata statement bundle
-Compact export shape where metadata statements are grouped by subject-like categories such as `Software`, `SoftwareConfiguration`, `InputRecord`, or `CrackPyAnalysisResult`. The existing datapoint example uses top-level groups and a repeated `related_to` field; if the knowledge-graph importer calls this `grouped_by`, the exporter should conform to that convention. Grouping alone is not a durable URI policy.
+Compact export shape where metadata statements are grouped by subject-like categories such as `Software`, `SoftwareConfiguration`, `InputRecord`, `CrackPyAnalysisResult`, or `ResultQuantity`. The existing datapoint example uses top-level groups and a repeated `related_to` field; if the knowledge-graph importer calls this `grouped_by`, the exporter should conform to that convention. Grouping alone is not a durable URI policy, and this bundle is an export target rather than the canonical CrackPy result schema.
 
 #### Metadata statement
 One key-value metadata record in a [[glossary#Grouped metadata statement bundle]]. Expected fields include `key`, `value`, `data_type`, `unit`, `metadata_type`, `source`, and `related_to`.

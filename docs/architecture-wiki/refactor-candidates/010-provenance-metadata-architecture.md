@@ -590,6 +590,7 @@ Conceptual crosswalk:
 | `InputRecord` | `InputRecord`, `Nodemap`, `InputDataset`, `Mesh`, or source-specific input subject | `prov:Entity` |
 | `AnalysisRun` | `run_id` and lightweight method/run facts attached to the result, or an optional `CrackPyAnalysis` summary subject if the KG profile requires it | `prov:Activity` |
 | `ResultRecord` | `CrackPyAnalysisResult` as the compact anchor | generated `prov:Entity` |
+| `ResultQuantity` | `ResultQuantity`, `FractureAnalysisQuantity`, or method-specific quantity subject linked to a result | generated `prov:Entity` or domain quantity entity |
 | `ProvenanceRecord` | linked metadata bundle or export artifact subject | `prov:Bundle` or named graph |
 | CrackPy software | `Software` | `prov:SoftwareAgent` |
 | Configuration snapshot | `SoftwareConfiguration` or analysis-specific configuration subject | `prov:Entity` or `prov:Plan` |
@@ -613,6 +614,88 @@ The compact KG should not contain:
 - logs and intermediate arrays;
 - large result tables, fields, or plotting payloads;
 - PROV-O activity/entity/agent chains for every CrackPy step.
+
+Accepted OQ-006 planning boundary: the canonical CrackPy result JSON should be a PROV-compatible graph-shaped bundle. It should not mirror the current result tags, and it should not be identical to the compact KG statement-bundle format. Current result names such as `Williams_fit_results`, `SIFs_integral`, `Path_SIFs`, `Bueckner_Chen_integral`, and `Path_Properties` are compatibility aliases for adapters.
+
+The canonical graph bundle should carry typed nodes and explicit edges. A compact conceptual shape is:
+
+```json
+{
+  "nodes": [
+    {
+      "id": "software:crackpy",
+      "type": "Software",
+      "prov_type": "prov:SoftwareAgent",
+      "name": "CrackPy",
+      "version": "0.x.y"
+    },
+    {
+      "id": "config:crackpy:sha256:...",
+      "type": "SoftwareConfiguration",
+      "prov_type": "prov:Plan",
+      "configuration_hash": "sha256:...",
+      "configuration_schema_version": "crackpy.configuration.v1"
+    },
+    {
+      "id": "run:williams-fit:example-001",
+      "type": "AnalysisRun",
+      "prov_type": "prov:Activity",
+      "method_id": "crackpy.fracture.williams_fit",
+      "method_revision": "1"
+    },
+    {
+      "id": "result:fracture:example-001",
+      "type": "FractureAnalysisResult",
+      "prov_type": "prov:Entity",
+      "result_schema_version": "crackpy.result_bundle.v1"
+    },
+    {
+      "id": "quantity:sha256:...",
+      "type": "ResultQuantity",
+      "prov_type": "prov:Entity",
+      "quantity_kind": "stress_intensity_factor",
+      "symbol": "K",
+      "mode": "I",
+      "value": 1.99,
+      "unit": "MPa*sqrt(m)",
+      "estimator_method_id": "crackpy.fracture.williams_fit",
+      "legacy_aliases": ["Williams_fit_results.K_I"]
+    }
+  ],
+  "edges": [
+    {
+      "type": "wasAssociatedWith",
+      "activity": "run:williams-fit:example-001",
+      "agent": "software:crackpy",
+      "plan": "config:crackpy:sha256:..."
+    },
+    {
+      "type": "used",
+      "activity": "run:williams-fit:example-001",
+      "entity": "input:nodemap:example-001",
+      "role": "primary_displacement_field"
+    },
+    {
+      "type": "used",
+      "activity": "run:williams-fit:example-001",
+      "entity": "result:crack-tip-estimate:example-001",
+      "role": "used_crack_tip_estimate"
+    },
+    {
+      "type": "wasGeneratedBy",
+      "entity": "result:fracture:example-001",
+      "activity": "run:williams-fit:example-001"
+    },
+    {
+      "type": "hasQuantity",
+      "subject": "result:fracture:example-001",
+      "object": "quantity:sha256:..."
+    }
+  ]
+}
+```
+
+This shape preserves enough structure for a later PROV-O/JSON-LD exporter while still allowing a compact KG translator to flatten selected facts into the existing grouped statement-bundle style.
 
 A physical `CrackTip` in the KG should be treated as a domain object, not as one object per computational method. Different crack-tip detection or correction methods may generate different computational estimates or results about the same physical crack tip. Those estimates belong in result data or detailed provenance unless the KG explicitly introduces an observation model.
 
@@ -689,6 +772,19 @@ CrackPyAnalysisResult:
   crackpy_output_schema
   crackpy_output_hash
   crackpy_output_artifact_path
+
+ResultQuantity:
+  crackpy_quantity_id
+  crackpy_result_id
+  crackpy_quantity_kind
+  crackpy_quantity_symbol
+  crackpy_fracture_mode_optional
+  crackpy_quantity_value
+  crackpy_quantity_unit
+  crackpy_estimator_method_id
+  crackpy_statistic_optional
+  crackpy_path_index_optional
+  crackpy_legacy_aliases_optional
 ```
 
 For a fracture-analysis result, the same compact result shape should include dependency roles when applicable:
@@ -728,6 +824,8 @@ The compact exporter should also define an explicit grouping and URI policy:
 - URI minting policy: whether URIs are generated by the KG importer from subject type plus local ID, or by a CrackPy exporter profile configured with the KG namespace.
 
 The computational core should not hard-code URI namespaces. It should provide stable IDs, subject types, and semantic roles so the exporter can produce conformal KG metadata.
+
+For `SoftwareConfiguration`, URI minting can be content-addressed by a hash of the canonical normalized configuration payload. The hashed payload should include resolved defaults and `configuration_schema_version`; it should exclude volatile fields such as timestamps, output paths, run IDs, and temporary object IDs. The resulting hash can be stored as metadata and used by the KG exporter or importer to mint a URI such as `SoftwareConfiguration/<hash>` according to the configured namespace policy.
 
 ## Optional Detailed PROV-O-like Provenance Layer
 
@@ -783,9 +881,10 @@ Standards and tools worth evaluating:
 Candidate adoption stance:
 
 - adopt compact internal metadata and result IDs early;
-- use versioned JSON as the main future result output for scalar result records and traceability metadata;
+- use versioned graph-shaped JSON as the main future result output for scalar result records and traceability metadata;
 - treat legacy text, flattened CSV, plots, Parquet-style tables, HDF5/netCDF/Zarr stores, and RO-Crate bundles as adapters or optional export profiles;
-- adapt PROV-O concepts only for the optional detailed layer;
+- make the canonical JSON PROV-compatible without requiring it to be literal PROV-O, JSON-LD, or RDF;
+- keep literal PROV-O/JSON-LD/RDF export in the optional detailed layer;
 - adapt CodeMeta/CFF for package-level citation, not method-level provenance metadata;
 - avoid making RDFLib, Pydantic, or RO-Crate hard runtime dependencies in the numerical core until an exporter package or optional extra is designed.
 
@@ -797,11 +896,11 @@ Candidate adoption stance:
 - OQ-017: resolved method revision, implementation fingerprint, dependency-scope validation, aliases, successors, and method registry status;
 - OQ-018: resolved method-level references use a hybrid model with package-level `CITATION.cff`, a YAML/JSON method-reference registry, Python reference IDs, and optional BibTeX import/export;
 - OQ-019: resolved compact KG export is result-centric; detailed provenance is process-centric and uses a declared granularity policy.
+- OQ-006: resolved canonical result JSON is a PROV-compatible graph-shaped bundle; current result tags and internal names are legacy adapter aliases.
 
 Related existing questions:
 
 - OQ-002: resolved stage/source metadata, sequence index, input identity, and mapping-policy vocabulary;
-- OQ-006: public result names versus legacy implementation names;
 - OQ-007: crack-tip correction coordinate semantics;
 - OQ-010: public defaults versus incidental implementation defaults.
 
@@ -813,7 +912,7 @@ Possible phased implementation, after planning approval:
 2. Add a `MethodMetadata` registry and method-reference registry, then register a small number of pilot methods, starting with `WilliamsFit`, crack-tip detection, and SIF/integral evaluation.
 3. Add `AnalysisExecutionMetadata` creation around analysis execution without changing numerical behavior.
 4. Add build validation that generates a method manifest, computes implementation fingerprints, checks aliases/status values, and fails release builds on unclassified dependency-scope changes.
-5. Make JSON the main scalar result output and extend it with package version, result schema version, execution commit, method metadata, parameter hash, input hash, and reference IDs.
+5. Make graph-shaped JSON the main scalar result/provenance output and extend it with package version, result schema version, execution commit, method metadata, parameter hash, input hash, explicit result quantities, semantic edges, and reference IDs.
 6. Add a compact exporter from internal metadata records into the observed datapoint JSON shape.
 7. Add an optional detailed PROV-O-like exporter behind an optional dependency group.
 8. Teach the future orchestrator to compare result metadata with current metadata and mark stale results for targeted re-analysis.

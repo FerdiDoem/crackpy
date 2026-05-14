@@ -147,7 +147,7 @@ This note separates observed terminology from proposed canonicalization. The sta
 - Resolved OQ-012: future refactor vocabulary should use `bueckner_chen_*` identifiers and preserve `buckner_*` only as compatibility or deprecation vocabulary.
 - `SIFs_integral`, `Path_SIFs`, and `sifs_int` are narrower names than the data they contain.
 - Text output uses names such as `K_J-I`; JSON uses names such as `K_I_J`.
-- Future planning accepts versioned JSON as the main scalar result output, but the current public-vs-legacy result-name boundary remains unresolved.
+- Resolved OQ-006: future public result vocabulary should be a graph-shaped result/provenance bundle with typed nodes such as `ResultRecord` and `ResultQuantity`; current tags and internal names remain legacy adapter aliases.
 - `mean_wo_outliers` and `rej_out_mean` refer to the same aggregate result bucket.
 - Some fixtures and current writer output differ on tags such as `CJP_modeI_results` and Williams error fields.
 
@@ -181,10 +181,10 @@ Related question IDs:
 - OQ-002: resolved `stage` as source-specific metadata and `sequence_index` as generic ordering vocabulary.
 - OQ-004: resolved line-intercept `window_size` as [[glossary#Min consecutive strain exceedance count]] in future planning vocabulary.
 - OQ-005: resolved result schema versioning and main JSON output.
-- OQ-006: public result names versus legacy implementation names.
+- OQ-006: resolved public result names versus legacy implementation names; use [[glossary#Canonical result graph bundle]] and [[glossary#ResultQuantity]] for future planning vocabulary.
 - OQ-007: resolved crack-tip correction return semantics; use `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate` in future planning vocabulary.
 - OQ-009: resolved `UNetPath` as compatibility vocabulary for the current crack-path detector selector and weights; future metadata should use explicit model identity fields.
-- OQ-011: Roman mode labels versus numeric suffixes.
+- OQ-011: fracture-mode value vocabulary for canonical quantity records and legacy adapter suffix mapping.
 - OQ-012: resolved `buckner` as legacy implementation spelling and `bueckner_chen_*` as future refactor vocabulary.
 - OQ-013: 256-sample / 255-interval detection-grid convention.
 - OQ-014: resolved fixture-name vocabulary as non-domain preset/test data keys.
