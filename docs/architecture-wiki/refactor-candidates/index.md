@@ -13,7 +13,7 @@ Role: List candidate notes that describe possible future architecture changes. T
 - [[refactor-candidates/006-model-provider-seam]]
 - [[refactor-candidates/007-defaults-and-options-cleanup]]
 - [[refactor-candidates/008-result-tag-schema]]
-- [[refactor-candidates/009-acquisition-index-vocabulary]]
+- [[refactor-candidates/009-sequence-index-vocabulary]]
 - [[refactor-candidates/010-provenance-metadata-architecture]]
 
 ## Candidate Template

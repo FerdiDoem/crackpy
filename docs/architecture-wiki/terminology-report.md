@@ -100,11 +100,12 @@ This note separates observed terminology from proposed canonicalization. The sta
 - Canonical glossary wording now prefers [[glossary#Side]] with values `left` and `right`, while marking `left_or_right` as implementation-specific.
 - Future planning now uses [[glossary#CrackTipFrame]] as the canonical internal orientation concept and [[glossary#Geometry profile]] to separate current surface-planar support from future parameterized-surface, 3D-surface, or volumetric capabilities.
 
-### Stage And Acquisition Index
+### Stage And Sequence Index
 
-- `stage` is used as a filename-derived acquisition-order index and as a stage selector for detection.
+- `stage` is used as a filename-derived source label, acquisition-order index, and stage selector for detection.
 - Load/force and cycle are metadata of the stage, not the stage itself.
-- Future naming proposals such as `acquisition_index` or `measurement_index` belong in [[refactor-notes]], not in observed glossary definitions.
+- OQ-002 resolved the future planning vocabulary: `stage` remains source-specific metadata, while [[glossary#Sequence index]] is the generic ordering key and [[glossary#Input ID]] is the stable identity.
+- Matching should be modeled as an explicit [[glossary#Mapping policy]] over input metadata, with outputs such as `input_id -> representative_input_id`.
 
 ### Nodemap And Data Carrier
 
@@ -155,7 +156,7 @@ This note separates observed terminology from proposed canonicalization. The sta
 ## Ambiguous Or Overloaded Terms
 
 - `side`: specimen side, crack-growth direction, model orientation, mirroring switch, and filename component.
-- `stage`: acquisition-order index, selected detection stage, max-force stage, and assigned surrogate stage.
+- `stage`: source label, acquisition-order index, selected detection stage, max-force stage, and assigned surrogate stage.
 - `path`: crack path, integration path, file path, model path, output path, and path detector.
 - `window`: detection field, threshold count, crop size, and plot window.
 - `size`: specimen size, detection-window size, interpolation size, crop size, and tensor resize target.
@@ -172,7 +173,7 @@ Unresolved questions are now centralized in [[open-questions]].
 Related question IDs:
 
 - OQ-001: `side` vocabulary and concept split.
-- OQ-002: `stage` vocabulary and acquisition metadata.
+- OQ-002: resolved `stage` as source-specific metadata and `sequence_index` as generic ordering vocabulary.
 - OQ-004: line-intercept `window_size`.
 - OQ-005: result schema or format versioning.
 - OQ-006: public result names versus legacy implementation names.

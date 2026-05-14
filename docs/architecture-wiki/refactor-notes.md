@@ -10,14 +10,14 @@ These notes intentionally separate proposed future architecture from current sys
 | ID | Candidate | Status | Primary observed evidence | Blocking questions | Decision state |
 | --- | --- | --- | --- | --- | --- |
 | C-001 | [[refactor-candidates/001-explicit-analysis-result]] | proposed | [[fracture-analysis]], [[results-io-workflows]], [[coupling-map]] | OQ-005, OQ-006 | Not decided |
-| C-002 | [[refactor-candidates/002-input-loading-seam]] | proposed | [[data-model-input]], [[system-map]], [[coupling-map]] | OQ-001, OQ-002 | Not decided |
+| C-002 | [[refactor-candidates/002-input-loading-seam]] | proposed | [[data-model-input]], [[system-map]], [[coupling-map]] | OQ-015 | Stage/input-record planning vocabulary accepted |
 | C-003 | [[refactor-candidates/003-self-contained-williams-fit-interface]] | proposed | [[fracture-analysis]], [[crack-detection]], [[coupling-map]] | OQ-007 | Not decided |
 | C-004 | [[refactor-candidates/004-separate-orchestration-from-adapters]] | proposed | [[system-map]], [[fracture-analysis]], [[crack-detection]], [[results-io-workflows]] | OQ-008 | Not decided |
 | C-005 | [[refactor-candidates/005-side-orientation-module]] | proposed | [[glossary]], [[crack-detection]], [[terminology-report]], [[coupling-map]] | OQ-001, OQ-003 | Not decided |
 | C-006 | [[refactor-candidates/006-model-provider-seam]] | proposed | [[crack-detection]], [[results-io-workflows]], [[coupling-map]] | OQ-009 | Not decided |
 | C-007 | [[refactor-candidates/007-defaults-and-options-cleanup]] | proposed | [[fracture-analysis]], [[data-model-input]], [[coupling-map]] | OQ-010 | Not decided |
 | C-008 | [[refactor-candidates/008-result-tag-schema]] | proposed | [[results-io-workflows]], [[terminology-report]], [[coupling-map]] | OQ-005, OQ-006 | Not decided |
-| C-009 | [[refactor-candidates/009-acquisition-index-vocabulary]] | proposed | [[glossary]], [[terminology-report]], [[crack-detection]], [[data-model-input]] | OQ-002 | Not decided |
+| C-009 | [[refactor-candidates/009-sequence-index-vocabulary]] | proposed | [[glossary]], [[terminology-report]], [[crack-detection]], [[data-model-input]] | None | Planning vocabulary accepted |
 | C-010 | [[refactor-candidates/010-provenance-metadata-architecture]] | proposed | [[data-model-input]], [[results-io-workflows]], [[coupling-map]], provided MDIC datapoint JSON | OQ-015, OQ-016, OQ-017, OQ-018, OQ-019 | Not decided |
 
 ## How To Use This Index

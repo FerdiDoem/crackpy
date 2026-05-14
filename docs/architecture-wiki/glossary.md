@@ -124,7 +124,27 @@ Full three-dimensional domain data such as digital volume correlation (DVC) or f
 #### Stage
 Status: overloaded current term
 
-CrackPy's current DIC acquisition-order index, usually parsed from a nodemap filename suffix. A stage identifies one acquired image/nodemap; load/force and cycle count are metadata of that stage, not the stage itself.
+CrackPy's current digital image correlation (DIC) source label and filename-derived ordering key, usually parsed from a nodemap filename suffix. A stage identifies one acquired image/nodemap in current ZEISS/GOM-style workflows; load/force and cycle count are metadata attached to that input, not the stage itself. Future internal architecture planning treats `stage` as source-specific metadata, not as the generic ordering abstraction.
+
+#### Sequence index
+Status: proposed architecture vocabulary
+
+Generic ordering key for a record within an ordered input sequence. Unlike `stage`, `sequence_index` is not tied to DIC acquisition vocabulary and can also describe finite element method (FEM) load steps, synthetic fields, imported benchmarks, video frames, or partial input sequences. It is an ordering key, not stable identity.
+
+#### Input ID
+Status: proposed architecture vocabulary
+
+Stable identity for a concrete input record. Future matching and provenance links should use `input_id` for durable references; `sequence_index` is only an ordering aid and can change when inputs are filtered, merged, or reindexed.
+
+#### Representative input ID
+Status: proposed architecture vocabulary
+
+Stable identity of the record selected by an explicit mapping policy to represent another record for a workflow step. For example, a max-load record may provide a representative crack-tip position or integral-path geometry for lower-load records in the same or nearest cycle.
+
+#### InputRecord
+Status: proposed architecture vocabulary
+
+Future planning concept pairing measurement or simulation data with attached metadata and minimal input/source provenance. `InputRecord` should not store full processing history; execution provenance belongs to analysis or result records that consume one or more input records.
 
 #### Side
 Status: overloaded current term
@@ -132,7 +152,12 @@ Status: overloaded current term
 `left` or `right` label identifying which specimen notch/crack is being analyzed, expressed in CrackPy's current x-direction convention. For Middle Tension specimens, the two sides correspond to opposing notch sides. For CT specimens, a crack starting at the left and growing to the right is the `right` side; the opposite direction is the `left` side. Crack-tip detection models were trained on the right-side crack convention, so left-side data is mirrored into that convention before detection. This term is current compatibility vocabulary for file, legacy API, detector setup, and result-naming boundaries, not a sustainable internal orientation model. Future internal interfaces should prefer an explicit [[glossary#CrackTipFrame]].
 
 #### Acquisition metadata
-Metadata describing an acquired image or nodemap in an experiment, such as acquisition index, stage label, force, cycle count, load, timestamp, image name, source file, and acquisition software context.
+Metadata describing an acquired image or nodemap in an experiment, such as source stage label, force, cycle count, load, timestamp, image name, source file, and acquisition software context. This is narrower than [[glossary#Input metadata]] and should not be the only metadata model for FEM, synthetic, or externally generated inputs.
+
+#### Input metadata
+Status: proposed architecture vocabulary
+
+Attached metadata that travels with input data independently of CrackPy pipeline state. It may include source metadata, acquisition metadata, experiment metadata, specimen metadata, coordinate-system metadata, DIC/correlation metadata, preprocessing metadata, and minimal input/source provenance. CrackPy may define a recommended structure later, but RDF/knowledge-graph export should remain an adapter over this metadata, not the shape of the core data object.
 
 #### Source identifier
 Stable or reproducible identifier for an input, output, software artifact, model artifact, or acquisition object. Examples include file path plus hash, image name, nodemap name, result ID, model weights hash, or external graph identifier.
@@ -396,6 +421,21 @@ Reduced metadata export intended for the main RDF/JSON knowledge graph. It store
 #### Detailed provenance artifact
 Optional richer provenance document, potentially PROV-O-like or JSON-LD/RDF-based, that records execution activities, used entities, generated entities, and software/user/orchestrator agents outside the compact main graph.
 
+#### AnalysisRun
+Status: proposed architecture vocabulary
+
+Future processing-provenance record for one analysis execution. It should reference consumed `input_id` values, analysis-function identity, configuration, software version, commit information, timestamps, and generated outputs.
+
+#### ResultRecord
+Status: proposed architecture vocabulary
+
+Future result/provenance record describing a generated result artifact, its schema version, output identity, hashes where available, producing analysis run, and compact export metadata.
+
+#### ProvenanceRecord
+Status: proposed architecture vocabulary
+
+Future umbrella record for traceability facts that do not belong inside the input data itself, especially processing history, analysis-function metadata, configuration snapshots, result identity, and export metadata.
+
 ### Legacy And Fixture Vocabulary
 
 #### Nodemaps / GroundTruth / Connections / interim
@@ -437,6 +477,11 @@ Where an interface lives and where behavior can vary without editing callers.
 
 #### Adapter
 Concrete implementation at a seam, such as a file loader, model provider, progress reporter, or result writer.
+
+#### Mapping policy
+Status: proposed architecture vocabulary
+
+Explicit workflow helper that maps one set of input records to another using metadata. Current examples are max-load or nearest-cycle stage assignment in crack detection and fracture analysis. Future mapping outputs should reference stable identities, for example `input_id -> representative_input_id`, instead of relying on mutable ordering labels such as `stage`.
 
 #### Depth
 Leverage at the interface. A deep module hides significant behavior behind a small interface; a shallow module exposes nearly as much complexity as it contains.

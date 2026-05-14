@@ -82,3 +82,34 @@ Consequences:
 - `surface_parameterized` is a plausible future extension for derived 2D surface coordinates after a defined parameterization, projection, or unwrapping step.
 - `surface_3d` and `volumetric_field` are future capability profiles, not current guarantees.
 - 3D coordinates in nodemaps do not imply general 3D fracture-mechanics support.
+
+## 2026-05-14: Stage Is Source Metadata, Sequence Index Is Internal Ordering
+
+Status: accepted for planning
+
+Decision:
+
+`stage` remains current source-specific and compatibility vocabulary for DIC/nodemap workflows, especially ZEISS/GOM-style filename and metadata conventions. It should not be the canonical future internal ordering abstraction. Future planning should use `sequence_index` as the generic ordering key, `input_id` as stable identity, and `InputRecord` as the concept pairing data with attached metadata and minimal input/source provenance.
+
+Rationale:
+
+The current package derives `stage` from nodemap filename suffixes and uses it as a workflow key in crack detection, training utilities, and fracture-analysis helpers. This reflects the maintainers' DIC workflows, but it does not generalize cleanly to FEM load steps, synthetic fields, imported benchmarks, videos, image sequences, or externally indexed inputs.
+
+The richer metadata that arrives with input files should stay attached to the data but remain decoupled from CrackPy pipeline state. RDF/knowledge-graph export should be an adapter over CrackPy metadata, not the shape of the core data object.
+
+Consequences:
+
+- Current `stage`, `stage_nums`, and stage-based dictionaries remain observed compatibility behavior.
+- `stage` should be treated as source metadata when the source system uses that label.
+- `sequence_index` is the preferred generic ordering vocabulary for future interfaces.
+- `input_id` is the durable reference for matching, provenance, and result links.
+- Matching across loads, cycles, or representative records should be expressed as an explicit mapping policy over metadata.
+- Future mapping outputs should use stable identities, such as `input_id -> representative_input_id`, while legacy adapters may continue to expose `stage -> stage` mappings.
+- `InputRecord` may carry minimal input/source provenance; processing provenance belongs to `AnalysisRun`, `ResultRecord`, or `ProvenanceRecord`.
+
+Useful split:
+
+- Data and attached metadata travel together as an input object.
+- Pipeline state and matching decisions are separate workflow concerns.
+- Minimal source/input provenance can live with `InputRecord`.
+- Processing provenance belongs to the objects that consume inputs and generate results.

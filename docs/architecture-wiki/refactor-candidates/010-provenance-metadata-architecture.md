@@ -3,7 +3,7 @@
 Status: proposed
 Role: Future architecture candidate for internal provenance metadata, compact knowledge-graph export, and optional detailed process provenance. This is a planning note only; no implementation is approved.
 
-Related: [[refactor-candidates/001-explicit-analysis-result]], [[refactor-candidates/002-input-loading-seam]], [[refactor-candidates/008-result-tag-schema]], [[refactor-candidates/009-acquisition-index-vocabulary]], [[open-questions#Question Index]]
+Related: [[refactor-candidates/001-explicit-analysis-result]], [[refactor-candidates/002-input-loading-seam]], [[refactor-candidates/008-result-tag-schema]], [[refactor-candidates/009-sequence-index-vocabulary]], [[open-questions#Question Index]]
 
 ## Motivation
 
@@ -52,7 +52,7 @@ For CrackPy, the likely compact target groups are:
 - `FractureAnalysisConfiguration`: material, optimization, integral, path, and coordinate-system settings;
 - `CrackDetectionResult`: crack-tip x/y, angle, side, detection/correction method, confidence or error values where available;
 - `FractureAnalysisResult`: Williams fit, CJP, SIF, J-integral, T-stress, path and aggregate result metadata;
-- `Nodemap` or `InputDataset`: source file identity, hash, stage/acquisition metadata, force/cycle/load metadata.
+- `InputRecord` or current `Nodemap`/`InputDataset`: source file identity, hash, input ID, optional sequence index, source-specific stage metadata, force/cycle/load metadata, and minimal input/source provenance.
 
 The main graph can keep this compact by storing one statement per relevant property, while a linked artifact can hold detailed process provenance if needed.
 
@@ -60,7 +60,7 @@ The main graph can keep this compact by storing one statement per relevant prope
 
 - Reproduce how a result was produced from nodemap data, crack-tip information, configuration, and analysis methods.
 - Let an external orchestrator identify which existing results may be stale after a code or configuration change.
-- Query results by CrackPy version, function version, method, literature reference, material, input hash, side/orientation convention, result schema version, or acquisition metadata.
+- Query results by CrackPy version, function version, method, literature reference, material, input hash, side/orientation convention, result schema version, or input metadata.
 - Export CrackPy result metadata into the existing JSON/RDF shape without forcing CrackPy internals to mirror the external ontology directly.
 - Preserve enough method metadata for software citation, method citation, and scientific review.
 - Support future command-line, Model Context Protocol (MCP), and workflow-manager execution without relying on implicit `InputData` state.
@@ -80,7 +80,7 @@ Required compact metadata:
 - selected method and numerical options;
 - literature/method reference identifiers;
 - coordinate-system and side/orientation convention;
-- acquisition metadata such as stage, force, cycle, and load where available;
+- input metadata such as source-specific stage labels, sequence index, force, cycle, and load where available;
 - model provenance for neural detection, including model name, weights source, and hash when available.
 
 Non-goals for the compact main model:
@@ -132,6 +132,60 @@ The internal model should distinguish:
 - configuration metadata: parameter values, defaults, validation state, hash;
 - result metadata: result ID, schema version, units, output artifacts;
 - export metadata: mapping target, exporter version, generated artifact ID.
+
+Input metadata should remain separate from processing provenance. A future `InputRecord` can pair data with attached source/user metadata, stable `input_id`, optional `sequence_index`, hashes, and minimal input/source provenance. Processing history, analysis-function identity, configuration snapshots, and result identity belong to execution or result records that consume input records.
+
+Useful split for planning:
+
+- `InputRecord`: data plus attached metadata, stable identity, ordering hints, hashes, and minimal input/source provenance.
+- `AnalysisRun`: one execution of a registered analysis function over one or more input records and a configuration snapshot.
+- `ResultRecord`: identity, schema, units, hashes, and artifact references for generated outputs.
+- `ProvenanceRecord`: compact or detailed traceability envelope linking input records, analysis runs, result records, software, configuration, and export metadata.
+
+Example future object sketch, not an implementation contract:
+
+```python
+@dataclass(frozen=True)
+class InputRecord:
+    input_id: str
+    data_ref: str
+    metadata: Mapping[str, object]
+    sequence_index: int | None = None
+    source_label: str | None = None
+    source_hash: str | None = None
+
+
+@dataclass(frozen=True)
+class AnalysisRun:
+    run_id: str
+    function_name: str
+    input_ids: tuple[str, ...]
+    configuration_id: str
+    parameter_hash: str
+    started_at: str
+    completed_at: str | None
+    crackpy_version: str
+    execution_commit: str | None
+
+
+@dataclass(frozen=True)
+class ResultRecord:
+    result_id: str
+    run_id: str
+    schema_version: str
+    output_ids: tuple[str, ...]
+    output_hashes: Mapping[str, str]
+    units: Mapping[str, str]
+
+
+@dataclass(frozen=True)
+class ProvenanceRecord:
+    provenance_id: str
+    input_records: tuple[InputRecord, ...]
+    analysis_runs: tuple[AnalysisRun, ...]
+    result_records: tuple[ResultRecord, ...]
+    export_target: str | None = None
+```
 
 ## Analysis Function Interface
 
@@ -371,7 +425,7 @@ Candidate adoption stance:
 
 Related existing questions:
 
-- OQ-002: stage and acquisition metadata vocabulary;
+- OQ-002: resolved stage/source metadata, sequence index, input identity, and mapping-policy vocabulary;
 - OQ-005: result schema or format version;
 - OQ-006: public result names versus legacy implementation names;
 - OQ-007: crack-tip correction coordinate semantics;

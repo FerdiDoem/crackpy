@@ -17,6 +17,8 @@ Role: Future architecture candidate for separating file loading from the central
 
 Create a loading seam around nodemap file loading, manual/in-memory loading, metadata extraction, and FEM-vs-DIC interpretation.
 
+Planning vocabulary from [[decision-log#2026-05-14-stage-is-source-metadata-sequence-index-is-internal-ordering]] points toward an [[glossary#InputRecord]] concept: data plus attached [[glossary#Input metadata]], minimal input/source provenance, a stable [[glossary#Input ID]], and an optional [[glossary#Sequence index]] for ordered inputs.
+
 Candidate adapters:
 
 - nodemap file adapter;
@@ -26,7 +28,7 @@ Candidate adapters:
 ## Seams / Interfaces / Adapters
 
 - Seam: input loading and metadata extraction.
-- Interface: loaded measurement data plus metadata and source identifiers.
+- Interface: loaded measurement data plus metadata, source identifiers, stable input identity, and optional sequence ordering.
 - Adapters: nodemap file, in-memory data, future external workflow input.
 
 ## Consequences
@@ -37,8 +39,8 @@ Candidate adapters:
 
 ## Open Questions
 
-- OQ-001: Should `side` remain a public term or split into smaller concepts?
-- OQ-002: Should `stage` remain public vocabulary or become adapter-specific acquisition metadata?
+- OQ-001: Resolved in [[decision-log#2026-05-14-side-is-not-a-sustainable-internal-crack-orientation-model]].
+- OQ-002: Resolved in [[decision-log#2026-05-14-stage-is-source-metadata-sequence-index-is-internal-ordering]].
 - OQ-015: Which provenance metadata must be preserved across input loading, detection, fracture analysis, text/JSON output, CSV flattening, and plots?
 
 ## Decision State
