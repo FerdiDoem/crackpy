@@ -40,6 +40,7 @@ This directory is an Obsidian-style working memory for CrackPy architecture plan
 
 - [[glossary]]: stable domain, implementation, and architecture vocabulary.
 - [[terminology-report]]: extracted implementation terms, naming inconsistencies, ambiguous terms, and unresolved terminology questions.
+- [[terminology-literature-inconsistencies]]: recurring source-backed terminology findings from fracture mechanics, FEM, DIC, and related literature.
 - [[open-questions]]: question IDs for unresolved terminology and planning decisions.
 
 ## Architecture Friction And Future Decisions
