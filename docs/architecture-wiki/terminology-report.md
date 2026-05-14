@@ -98,6 +98,7 @@ This note separates observed terminology from proposed canonicalization. The sta
 - Documentation has mentioned short values `l`/`r`, while code and pipelines primarily use full strings `left`/`right`.
 - The same value currently carries specimen side, nominal crack-growth direction, output filename suffix, and neural-network mirroring behavior.
 - Canonical glossary wording now prefers [[glossary#Side]] with values `left` and `right`, while marking `left_or_right` as implementation-specific.
+- Future planning now uses [[glossary#CrackTipFrame]] as the canonical internal orientation concept and [[glossary#Geometry profile]] to separate current surface-planar support from future parameterized-surface, 3D-surface, or volumetric capabilities.
 
 ### Stage And Acquisition Index
 

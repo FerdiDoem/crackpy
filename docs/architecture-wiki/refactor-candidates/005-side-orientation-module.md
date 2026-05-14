@@ -1,7 +1,7 @@
 # Candidate 005: Side Orientation Module
 
 Status: proposed
-Role: Future architecture candidate for replacing left/right orientation coupling with an explicit crack-tip coordinate-system model and compatibility adapters.
+Role: Future architecture candidate for replacing left/right orientation coupling with an explicit `CrackTipFrame` model and compatibility adapters.
 
 ## Observed Evidence
 
@@ -18,14 +18,14 @@ The current `side` concept also bundles several ideas that should be separated b
 
 ## Future Direction
 
-Create a broader crack-tip geometry/orientation module that owns a crack-tip coordinate system or crack-tip frame. The internal model should describe crack-tip position, crack-extension direction, crack-opening direction, and, when needed, crack-front or surface-normal direction. Current `left`/`right` side handling should become a compatibility adapter around that model.
+Create a broader crack-tip geometry/orientation module that owns a `CrackTipFrame`. The internal model should describe crack-tip identity, position, local axes, geometry profile, and, when needed, compatibility labels such as the current `left`/`right` side value. Current `left`/`right` side handling should become a compatibility adapter around that model.
 
-For the current 2D package, this can start as a local 2D pose: origin at the crack tip and rotation by crack angle. For future work, it should be able to extend toward 3D crack-tip frames.
+The planning target is a general frame concept with declared geometry profiles. Current CrackPy methods remain `surface_planar` unless explicitly extended. `surface_parameterized` is a plausible future DIC-surface extension; `surface_3d` and `volumetric_field` are future capability profiles, not current guarantees.
 
 ## Seams / Interfaces / Adapters
 
-- Seam: crack-tip coordinate system or crack-tip frame.
-- Interface: orientation data needed by detection, training, plotting, fracture analysis, provenance, and output naming.
+- Seam: `CrackTipFrame`.
+- Interface: orientation and geometry-profile data needed by detection, training, plotting, fracture analysis, provenance, and output naming.
 - Adapters: current `left`/`right` side convention, current right-side detector convention, future specimen-specific geometry conventions.
 
 ## Consequences
@@ -33,14 +33,14 @@ For the current 2D package, this can start as a local 2D pose: origin at the cra
 - Higher leverage and locality for one domain concept used by detection, training, plotting, fracture analysis, provenance, and output.
 - Requires careful treatment of the trained right-side crack convention.
 - Requires a compatibility story for current result files and scripts using `Side`.
-- Needs a minimal crack-tip coordinate-system decision before implementation.
+- Requires method-level applicability declarations so 3D coordinates in nodemaps are not mistaken for general 3D fracture-mechanics support.
 
 ## Open Questions
 
 - OQ-001: resolved; `side` remains boundary compatibility vocabulary, while future internal interfaces should use explicit crack-tip frame concepts.
-- OQ-003: Which meanings currently bundled into `side` must become separate vocabulary?
-- OQ-020: What is the minimal internal crack-tip coordinate-system model needed to support arbitrary 2D cracks, multiple crack tips, tilted cracks, top-to-bottom cracks, and future 3D crack fronts?
+- OQ-003: resolved; specimen geometry, crack-tip identity, crack-growth direction, detector convention, mirroring policy, pipeline grouping, and output labels should become separate vocabulary.
+- OQ-020: resolved; `CrackTipFrame` is the canonical planning target, with geometry profiles separating current surface-planar support from future parameterized-surface, 3D-surface, or volumetric capabilities.
 
 ## Decision State
 
-Not decided. No implementation approved.
+Planning direction accepted for OQ-001 and OQ-020. Candidate remains proposed; no implementation approved.

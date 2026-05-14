@@ -16,7 +16,12 @@ Physical crack-front endpoint in the analyzed 2D field. CrackPy often transforms
 Fracture-analysis coordinate frame where the crack tip is shifted to `(0, 0)` and the local crack direction is aligned by the crack angle. In the current implementation this frame is produced by `InputData.transform_data(x_shift, y_shift, angle)`.
 
 #### Crack-tip coordinate system
-Proposed internal coordinate-system concept for future architecture planning. Local x is the crack-extension direction, local y is the crack-opening direction for mode I, and local z is aligned with the crack front or, for the current straight-surface approximation, the surface normal. This is broader than the current `side` convention and should support arbitrary 2D crack orientation, multiple crack tips, and later 3D crack-front or 3D-surface descriptions.
+Local coordinate-system concept used around a crack tip or crack front. In CrackPy planning, this general mechanics concept is represented by the proposed internal [[glossary#CrackTipFrame]] model instead of by the current `side` label.
+
+#### CrackTipFrame
+Status: proposed internal architecture term
+
+Canonical proposed internal model for crack-tip orientation and position. A `CrackTipFrame` carries a `tip_id`, an origin, local axes, a [[glossary#Geometry profile]], and optional compatibility labels such as current `side`. Local x is the crack-extension direction, local y is the crack-opening direction or method-specific crack-plane normal direction, and local z is profile-specific: for current planar DIC workflows it is usually the assumed surface normal or out-of-plane direction; for true 3D crack-front workflows it would need an explicit crack-front or surface-frame definition. This term does not imply that current CrackPy algorithms support general 3D fracture mechanics.
 
 #### Crack-tip correction
 Post-detection refinement of the crack-tip position. In CrackPy, correction methods generally re-evaluate Williams fitting after shifting the candidate crack tip.
@@ -99,6 +104,23 @@ Connectivity data used by `InputData.set_connection_file()` and `InputData.to_vt
 #### Coordinate system
 Expected specimen coordinate convention for current CrackPy workflows. The x-axis is the nominal crack-growth axis. `right` corresponds to positive x-direction crack growth, and `left` corresponds to negative x-direction crack growth.
 
+#### Geometry profile
+Status: proposed architecture vocabulary
+
+Declared spatial-domain profile for an input field or analysis method. Geometry profiles describe whether an algorithm operates on a planar surface, parameterized surface, 3D surface, or volumetric field, and prevent 3D coordinates in input data from being mistaken for general 3D fracture-mechanics support.
+
+#### surface_planar
+Surface data treated as a flat two-dimensional analysis domain. This is the current primary CrackPy assumption for DIC-based crack detection and fracture analysis.
+
+#### surface_parameterized
+Surface data represented in derived two-dimensional surface coordinates `(u, v)` through a defined parameterization, projection, or unwrapping step. The source geometry may be curved in 3D, but downstream algorithms operate on the parameterized 2D surface representation.
+
+#### surface_3d
+Surface data represented directly by points in 3D space. Algorithms operating on this profile use the surface geometry itself or explicit local surface projections. This remains surface data, not volume data.
+
+#### volumetric_field
+Full three-dimensional domain data such as digital volume correlation (DVC) or finite element method (FEM) volume fields. This is outside current CrackPy scope unless explicitly introduced by a future method or backend.
+
 #### Stage
 Status: overloaded current term
 
@@ -107,7 +129,7 @@ CrackPy's current DIC acquisition-order index, usually parsed from a nodemap fil
 #### Side
 Status: overloaded current term
 
-`left` or `right` label identifying which specimen notch/crack is being analyzed, expressed in CrackPy's current x-direction convention. For Middle Tension specimens, the two sides correspond to opposing notch sides. For CT specimens, a crack starting at the left and growing to the right is the `right` side; the opposite direction is the `left` side. Crack-tip detection models were trained on the right-side crack convention, so left-side data is mirrored into that convention before detection. This term is current compatibility vocabulary for file, legacy API, detector setup, and result-naming boundaries, not a sustainable internal orientation model. Future internal interfaces should prefer an explicit [[glossary#Crack-tip coordinate system]].
+`left` or `right` label identifying which specimen notch/crack is being analyzed, expressed in CrackPy's current x-direction convention. For Middle Tension specimens, the two sides correspond to opposing notch sides. For CT specimens, a crack starting at the left and growing to the right is the `right` side; the opposite direction is the `left` side. Crack-tip detection models were trained on the right-side crack convention, so left-side data is mirrored into that convention before detection. This term is current compatibility vocabulary for file, legacy API, detector setup, and result-naming boundaries, not a sustainable internal orientation model. Future internal interfaces should prefer an explicit [[glossary#CrackTipFrame]].
 
 #### Acquisition metadata
 Metadata describing an acquired image or nodemap in an experiment, such as acquisition index, stage label, force, cycle count, load, timestamp, image name, source file, and acquisition software context.

@@ -26,7 +26,7 @@ Role: Track unresolved terminology and architecture questions with stable IDs. T
 | OQ-017 | Should function-relevant commits be computed automatically from Git history, declared manually, or generated at build time? | open | [[glossary#Function-relevant commit]], [[refactor-candidates/010-provenance-metadata-architecture]] | C-010 |
 | OQ-018 | Should method references live in Python metadata, YAML/JSON, BibTeX, or a hybrid registry? | open | [[glossary#Method reference]], [[scientific-context]], [[refactor-candidates/010-provenance-metadata-architecture]] | C-010 |
 | OQ-019 | Which metadata belongs in the compact knowledge-graph export and which belongs only in an optional detailed provenance artifact? | open | [[glossary#Compact knowledge-graph export]], [[glossary#Detailed provenance artifact]], [[refactor-candidates/010-provenance-metadata-architecture]] | C-010 |
-| OQ-020 | What is the minimal internal crack-tip coordinate-system model needed to support arbitrary 2D cracks, multiple crack tips, tilted cracks, top-to-bottom cracks, and future 3D crack fronts? | open | [[glossary#Crack-tip coordinate system]], [[refactor-candidates/005-side-orientation-module]] | C-005 |
+| OQ-020 | What is the minimal internal `CrackTipFrame` model needed to support arbitrary 2D cracks, multiple crack tips, tilted cracks, top-to-bottom cracks, and future 3D crack fronts? | resolved | [[glossary#CrackTipFrame]], [[glossary#Geometry profile]], [[refactor-candidates/005-side-orientation-module]], [[decision-log#2026-05-14-cracktipframe-is-the-planning-target-for-internal-crack-tip-orientation]] | C-005 |
 
 ## Rules
 
