@@ -356,3 +356,29 @@ Consequences:
 - Future line-intercept configuration models should prefer `min_consecutive_strain_exceedance_count`.
 - Any future code migration should preserve legacy `window_size` through a compatibility adapter or deprecation path, not as an immediate production refactor.
 - Validation or type checks in a later implementation should enforce an integer count for this setting.
+
+## 2026-05-14: JSON Is The Main Future Result Output
+
+Status: accepted for planning
+
+Decision:
+
+Future CrackPy result output should use a versioned JSON result artifact as the main machine-readable output. The first target is scalar fracture-analysis and crack-detection result data plus traceability metadata, not storage of every intermediate transformation, large field array, or detailed process step.
+
+The JSON result artifact should carry an explicit `result_schema_version`. That version describes the serialized result contract: public result keys, nesting, units, field meanings, and required provenance links. It is separate from `method_revision`, `configuration_id`, `crackpy_version`, and implementation fingerprints.
+
+Rationale:
+
+The near-term CrackPy use case is dominated by scalar scientific results, method/configuration metadata, crack-tip estimates, provenance IDs, hashes, and links into the compact knowledge graph. JSON is readable, easy to validate, easy to export into the existing RDF/Jena metadata statement-bundle shape, and sufficient for this scalar-result envelope.
+
+Formats such as Parquet, HDF5, netCDF, Zarr, and RO-Crate solve different problems. Parquet is useful for tabular/batch summaries, HDF5/netCDF/Zarr are useful for larger array-oriented scientific data, and RO-Crate is useful as an outer research-object bundle. None of these should become the core result contract before CrackPy has a stable internal result model and JSON envelope.
+
+Consequences:
+
+- Future result writers should treat JSON as the canonical main output for scalar result records and traceability metadata.
+- Legacy tagged text output should become a compatibility adapter, with unversioned legacy files treated as an implicit legacy schema.
+- Flattened CSV and Parquet-style exports should be helper projections for tabular analysis, not the source of truth.
+- Plots remain visualization artifacts that link to `result_id` or `run_id` instead of duplicating full provenance.
+- HDF5, netCDF, or Zarr may be considered later for large arrays or intermediate fields, but they are optional storage profiles.
+- RO-Crate may be considered later for packaging JSON, plots, tables, provenance artifacts, and input references into a research-object bundle.
+- OQ-006 remains open because schema versioning does not yet decide which current result names are public schema versus legacy implementation vocabulary.

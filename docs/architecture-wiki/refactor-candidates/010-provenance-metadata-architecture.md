@@ -278,8 +278,9 @@ class ResultRecord:
       result independently of filenames.
     - run_id: producing execution; links results back to inputs, parameters,
       software, and methods.
-    - schema_version: result contract version; tells readers whether tags,
-      columns, units, and JSON keys are interpretable with the expected schema.
+    - result_schema_version: result contract version; tells readers whether
+      public JSON keys, adapter projections, units, and nested structures are
+      interpretable with the expected schema.
     - output_ids: generated artifact references; covers text, JSON, CSV rows,
       plots, RDF exports, and future artifacts.
     - output_roles: role for each output; distinguishes machine-readable data,
@@ -292,7 +293,7 @@ class ResultRecord:
 
     result_id: str
     run_id: str
-    schema_version: str
+    result_schema_version: str
     output_ids: tuple[str, ...]
     output_roles: Mapping[str, str]
     output_hashes: Mapping[str, str]
@@ -772,6 +773,7 @@ Standards and tools worth evaluating:
 - [CodeMeta](https://codemeta.github.io/jsonld/): useful for package-level software metadata and software citation crosswalks.
 - [Citation File Format](https://citation-file-format.github.io/): already present as `CITATION.cff`; should remain package-level citation metadata.
 - [RO-Crate](https://www.researchobject.org/ro-crate/technical_overview): useful if CrackPy later packages inputs, outputs, metadata, and provenance artifacts together.
+- Parquet, HDF5, netCDF, and Zarr: useful possible export or storage profiles for tabular summaries, large arrays, or chunked scientific fields, but not the planned first canonical scalar-result artifact.
 - [RDFLib](https://rdflib.readthedocs.io/en/7.1.1/index.html): mature Python RDF library for exporter prototypes; should be optional to avoid forcing RDF dependencies into the computational core.
 - [Pydantic JSON Schema](https://pydantic.dev/docs/validation/2.5/concepts/json_schema): useful for typed internal metadata and configuration schemas if dependency cost is acceptable.
 - [FAIR Digital Object Framework](https://fairdigitalobjectframework.org/): useful conceptual reference for persistent identifiers and metadata records, but currently more infrastructure-oriented than CrackPy needs.
@@ -781,6 +783,8 @@ Standards and tools worth evaluating:
 Candidate adoption stance:
 
 - adopt compact internal metadata and result IDs early;
+- use versioned JSON as the main future result output for scalar result records and traceability metadata;
+- treat legacy text, flattened CSV, plots, Parquet-style tables, HDF5/netCDF/Zarr stores, and RO-Crate bundles as adapters or optional export profiles;
 - adapt PROV-O concepts only for the optional detailed layer;
 - adapt CodeMeta/CFF for package-level citation, not method-level provenance metadata;
 - avoid making RDFLib, Pydantic, or RO-Crate hard runtime dependencies in the numerical core until an exporter package or optional extra is designed.
@@ -788,6 +792,7 @@ Candidate adoption stance:
 ## Open Design Questions
 
 - OQ-015: resolved minimal traceability chain across input loading, detection, fracture analysis, text/JSON output, CSV flattening, and plots;
+- OQ-005: resolved future result files should use a required `result_schema_version`, with JSON as the main scalar-result output and legacy text/CSV/plots as adapters or helper projections;
 - OQ-016: resolved stable registry-owned method identity;
 - OQ-017: resolved method revision, implementation fingerprint, dependency-scope validation, aliases, successors, and method registry status;
 - OQ-018: resolved method-level references use a hybrid model with package-level `CITATION.cff`, a YAML/JSON method-reference registry, Python reference IDs, and optional BibTeX import/export;
@@ -796,7 +801,6 @@ Candidate adoption stance:
 Related existing questions:
 
 - OQ-002: resolved stage/source metadata, sequence index, input identity, and mapping-policy vocabulary;
-- OQ-005: result schema or format version;
 - OQ-006: public result names versus legacy implementation names;
 - OQ-007: crack-tip correction coordinate semantics;
 - OQ-010: public defaults versus incidental implementation defaults.
@@ -809,7 +813,7 @@ Possible phased implementation, after planning approval:
 2. Add a `MethodMetadata` registry and method-reference registry, then register a small number of pilot methods, starting with `WilliamsFit`, crack-tip detection, and SIF/integral evaluation.
 3. Add `AnalysisExecutionMetadata` creation around analysis execution without changing numerical behavior.
 4. Add build validation that generates a method manifest, computes implementation fingerprints, checks aliases/status values, and fails release builds on unclassified dependency-scope changes.
-5. Extend JSON result output with package version, result schema version, execution commit, method metadata, parameter hash, input hash, and reference IDs.
+5. Make JSON the main scalar result output and extend it with package version, result schema version, execution commit, method metadata, parameter hash, input hash, and reference IDs.
 6. Add a compact exporter from internal metadata records into the observed datapoint JSON shape.
 7. Add an optional detailed PROV-O-like exporter behind an optional dependency group.
 8. Teach the future orchestrator to compare result metadata with current metadata and mark stale results for targeted re-analysis.
@@ -930,6 +934,7 @@ class AnalysisExecutionMetadata:
 - RDF/JSON exporter requirements may distort the internal model if introduced too early.
 - Hashing inputs and outputs improves traceability but may be expensive for large nodemaps or result artifacts.
 - Backward compatibility with existing text/JSON tags must be handled carefully.
+- Choosing JSON as the main scalar result output keeps the first design simple, but large field arrays or dense intermediate data may need optional HDF5, netCDF, Zarr, or similar storage profiles later.
 
 ## Next Steps
 

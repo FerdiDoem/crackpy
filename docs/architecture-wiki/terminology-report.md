@@ -145,6 +145,7 @@ This note separates observed terminology from proposed canonicalization. The sta
 - `Bueckner-Chen` is the canonical spelling in glossary text, while code contains `buckner_*` identifiers.
 - `SIFs_integral`, `Path_SIFs`, and `sifs_int` are narrower names than the data they contain.
 - Text output uses names such as `K_J-I`; JSON uses names such as `K_I_J`.
+- Future planning accepts versioned JSON as the main scalar result output, but the current public-vs-legacy result-name boundary remains unresolved.
 - `mean_wo_outliers` and `rej_out_mean` refer to the same aggregate result bucket.
 - Some fixtures and current writer output differ on tags such as `CJP_modeI_results` and Williams error fields.
 
@@ -176,7 +177,7 @@ Related question IDs:
 - OQ-001: `side` vocabulary and concept split.
 - OQ-002: resolved `stage` as source-specific metadata and `sequence_index` as generic ordering vocabulary.
 - OQ-004: resolved line-intercept `window_size` as [[glossary#Min consecutive strain exceedance count]] in future planning vocabulary.
-- OQ-005: result schema or format versioning.
+- OQ-005: resolved result schema versioning and main JSON output.
 - OQ-006: public result names versus legacy implementation names.
 - OQ-007: resolved crack-tip correction return semantics; use `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate` in future planning vocabulary.
 - OQ-009: `UNetPath` model role versus implementation class.
