@@ -17,6 +17,14 @@ Model loading combines model construction, local cache policy, network download,
 
 Introduce a `ModelProvider` interface with adapters for local weights, Zenodo download/cache, test doubles, and future service/workflow providers.
 
+Future model metadata should not rely on the current `model_name` string alone. It should split:
+
+- stable `model_id`, preferably linked to the method, paper, or registered model family;
+- `model_role`, such as `crack_path_detector`;
+- `architecture`, such as `UNet`;
+- `weights_id`, such as the current `UNetPath.pth`;
+- aliases for compatibility selectors such as `UNetPath`.
+
 ## Seams / Interfaces / Adapters
 
 - Seam: model provision.
@@ -28,11 +36,12 @@ Introduce a `ModelProvider` interface with adapters for local weights, Zenodo do
 - Detection algorithms become less coupled to filesystem and network policy.
 - Tests can avoid network and cache side effects.
 - Current public model names must remain stable or be migrated deliberately.
+- `UNetPath` can remain readable as a compatibility alias while future provenance and orchestration use a more explicit model ID.
 
 ## Open Questions
 
-- OQ-009: Should `UNetPath` remain a model role/name while the implementation class is `UNet`?
+- OQ-009 is resolved: `UNetPath` is current compatibility vocabulary for the crack-path detector selector, weights file, and local cache identity. Future architecture should introduce explicit model metadata fields instead of renaming the selector directly.
 
 ## Decision State
 
-Not decided. No implementation approved.
+OQ-009 accepted for planning in [[decision-log#2026-05-14-model-names-bueckner-spelling-and-fixture-keys-use-explicit-naming-boundaries]]. No implementation approved.

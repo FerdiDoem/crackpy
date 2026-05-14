@@ -382,3 +382,38 @@ Consequences:
 - HDF5, netCDF, or Zarr may be considered later for large arrays or intermediate fields, but they are optional storage profiles.
 - RO-Crate may be considered later for packaging JSON, plots, tables, provenance artifacts, and input references into a research-object bundle.
 - OQ-006 remains open because schema versioning does not yet decide which current result names are public schema versus legacy implementation vocabulary.
+
+## 2026-05-14: Model Names, Bueckner Spelling, And Fixture Keys Use Explicit Naming Boundaries
+
+Status: accepted for planning
+
+Decision:
+
+OQ-009, OQ-012, and OQ-014 are resolved as naming-boundary questions.
+
+`UNetPath` should remain readable as the current public selector, weight-file stem, local cache identity, and legacy alias for the pretrained crack-path detector. Future architecture should not use `UNetPath` as the only semantic identity. A future model registry or `ModelProvider` should split the meanings explicitly:
+
+- `model_id`: stable, method- or paper-linked identity, for example `crackpy.detection.strohmann_2021_crack_path_unet`;
+- `model_role`: functional role, for example `crack_path_detector`;
+- `architecture`: implementation architecture, here `UNet`;
+- `weights_id`: concrete weights artifact, currently `UNetPath.pth`;
+- `aliases`: compatibility names, including `UNetPath`.
+
+`buckner` is legacy implementation spelling. Future refactor vocabulary should use the scientific/domain term `Bueckner-Chen` and ASCII Python identifiers in the `bueckner_chen_*` family, for example `integrate_bueckner_chen()` and `bueckner_williams_terms`. Current `buckner_*` identifiers should be preserved through aliases, wrappers, or a deliberate deprecation path until a compatibility migration is approved.
+
+`Dummy2`, `EBr10`, `Aramis_in_line`, and similar names are not domain vocabulary. They are experiment preset or fixture keys that encode local workflow defaults such as nodemap ranges, window sizes, offsets, and target availability. They can remain observed fixture/test data names, but future architecture and glossary work should ignore them as scientific or domain concepts.
+
+Rationale:
+
+`UNetPath` is currently overloaded. It is accepted by `get_model()`, maps directly to `UNetPath.pth`, is embedded in scripts and tests, and instantiates the `UNet` class. Renaming it directly would break public examples, local caches, and the Zenodo artifact relationship. A registry split gives better provenance and paper-linked naming without breaking compatibility.
+
+The Bueckner-Chen spelling decision separates scientific vocabulary from current implementation debt. The package currently exposes `buckner_*` identifiers in code while documentation, result tags, and literature context point to Bueckner-Chen. The future refactor should fix the implementation spelling, not normalize the legacy spelling into the domain language.
+
+The fixture-key decision keeps the glossary focused. Names such as `Dummy2` and `EBr10` are useful for tests and local workflows, but they do not describe fracture-mechanics concepts, data-model concepts, or reusable CrackPy interfaces.
+
+Consequences:
+
+- OQ-009 is resolved: future model metadata should introduce a stable model ID and keep `UNetPath` as a compatibility alias or weights ID.
+- OQ-012 is resolved: `buckner` remains legacy spelling; future implementation vocabulary should use `bueckner_chen_*`.
+- OQ-014 is resolved: fixture keys are not domain vocabulary and do not need further terminology planning unless a future preset/configuration system is designed.
+- No production code rename is approved by this decision. This remains documentation and future-refactor planning.

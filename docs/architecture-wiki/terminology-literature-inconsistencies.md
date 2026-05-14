@@ -58,22 +58,22 @@ Use one subsection per finding.
 
 ### FINDING-20260514-001: Bueckner-Chen Versus `buckner_*`
 
-- Status: open
+- Status: accepted for planning; implementation legacy remains
 - Date checked: 2026-05-14
 - Source type: peer-reviewed fracture-mechanics literature and source-backed review
 - Source reference: David Melching and Eric Breitbarth, "Advanced crack tip field characterization using conjugate work integrals", 2023, DOI `10.1016/j.ijfatigue.2023.107501`; X.-K. Chen, "New path independent integrals in linear elastic fracture mechanics", 1985, DOI `10.1016/0013-7944(85)90131-6`; H. F. Bueckner, "A novel principle for the computation of stress intensity factors", 1970, ZAMM 50(9), 529-546, stable record `https://jglobal.jst.go.jp/en/detail?JGLOBAL_ID=201602019999784704`.
 - Terminology area: Bueckner-Chen integral, Williams coefficients, path-independent integrals
 - Observed term: `buckner_*`, `integrate_buckner_chen()`
 - Current CrackPy/wiki term: Bueckner-Chen integral
-- Variant or conflict: Source-backed spelling is `Bueckner`; `Buckner` appears to be implementation legacy rather than a literature variant.
+- Variant or conflict: Source-backed spelling is `Bueckner`; `buckner` is implementation legacy rather than a literature variant.
 - Context summary: Melching and Breitbarth describe the Bueckner-Chen integral method as Chen's path-independent use of Bueckner's conjugate work integral to determine Williams coefficients, including SIFs and T-stress. Chen's 1985 paper provides the path-independent integral basis for eigenfunction-expansion coefficients. The implementation spelling `buckner` drops the `e` from Bueckner.
 - Units or coordinate convention: Not a unit issue. Applies to crack-tip local fields and Williams coefficient recovery.
 - Risk level: medium
 - Affected wiki pages: [[glossary#Bueckner-Chen integral]], [[terminology-report#Fracture Result Names]], [[open-questions#Question Index]]
 - Affected code or outputs: `LineIntegral.integrate_buckner_chen()`, related `buckner_*` identifiers, `Bueckner_Chen_integral` result tag
-- Linked open question: OQ-012
-- Linked decision: none
-- Recommended action: Keep `Bueckner-Chen` as canonical documentation and output-schema spelling. Treat `buckner_*` as legacy implementation vocabulary until a separately approved compatibility plan exists.
+- Linked question: OQ-012, resolved
+- Linked decision: [[decision-log#2026-05-14-model-names-bueckner-spelling-and-fixture-keys-use-explicit-naming-boundaries]]
+- Recommended action: Keep `Bueckner-Chen` as canonical documentation and output-schema spelling. Treat `buckner_*` as legacy implementation vocabulary. Future refactor naming should use ASCII `bueckner_chen_*` identifiers, with compatibility aliases or deprecations for existing `buckner_*` names.
 - Notes: This is a source-backed terminology conflict, not merely an ASCII transliteration issue. Do not rename production code during the current planning-only phase.
 
 ## Reviewed Or Closed Findings

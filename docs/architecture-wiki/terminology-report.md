@@ -130,6 +130,7 @@ This note separates observed terminology from proposed canonicalization. The sta
 
 - `ParallelNets` is both a public model-name string and a class name.
 - `UNetPath` is a public model-name string but instantiates `UNet`.
+- Resolved OQ-009: future model metadata should split stable `model_id`, `model_role`, `architecture`, `weights_id`, and aliases. `UNetPath` remains compatibility vocabulary for the current crack-path detector weights and selector.
 - `model_name` can mean logical model name or weight-file stem.
 - `target`, `label`, `ground_truth`, `mask`, and `segmentation` are related but not equivalent tensor terms.
 
@@ -142,7 +143,8 @@ This note separates observed terminology from proposed canonicalization. The sta
 
 ### Fracture Result Names
 
-- `Bueckner-Chen` is the canonical spelling in glossary text, while code contains `buckner_*` identifiers.
+- `Bueckner-Chen` is the canonical scientific/domain spelling in glossary text, while code contains legacy `buckner_*` identifiers.
+- Resolved OQ-012: future refactor vocabulary should use `bueckner_chen_*` identifiers and preserve `buckner_*` only as compatibility or deprecation vocabulary.
 - `SIFs_integral`, `Path_SIFs`, and `sifs_int` are narrower names than the data they contain.
 - Text output uses names such as `K_J-I`; JSON uses names such as `K_I_J`.
 - Future planning accepts versioned JSON as the main scalar result output, but the current public-vs-legacy result-name boundary remains unresolved.
@@ -154,6 +156,7 @@ This note separates observed terminology from proposed canonicalization. The sta
 - The fracture-analysis pipeline writes to `txt-files`, `plots`, and `json`.
 - Some scripts use `results` as an output folder.
 - `Plotter` filenames and `OutputWriter` text filenames do not follow exactly the same suffix convention.
+- Resolved OQ-014: `Dummy2`, `EBr10`, `Aramis_in_line`, and similar hard-coded preset names are fixture/workflow keys, not domain vocabulary.
 
 ## Ambiguous Or Overloaded Terms
 
@@ -180,11 +183,11 @@ Related question IDs:
 - OQ-005: resolved result schema versioning and main JSON output.
 - OQ-006: public result names versus legacy implementation names.
 - OQ-007: resolved crack-tip correction return semantics; use `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate` in future planning vocabulary.
-- OQ-009: `UNetPath` model role versus implementation class.
+- OQ-009: resolved `UNetPath` as compatibility vocabulary for the current crack-path detector selector and weights; future metadata should use explicit model identity fields.
 - OQ-011: Roman mode labels versus numeric suffixes.
-- OQ-012: Bueckner-Chen spelling.
+- OQ-012: resolved `buckner` as legacy implementation spelling and `bueckner_chen_*` as future refactor vocabulary.
 - OQ-013: 256-sample / 255-interval detection-grid convention.
-- OQ-014: fixture-name vocabulary.
+- OQ-014: resolved fixture-name vocabulary as non-domain preset/test data keys.
 
 ## Documentation Files Updated
 

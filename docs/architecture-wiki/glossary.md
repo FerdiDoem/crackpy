@@ -92,7 +92,7 @@ Separation of the J-integral into mode I, mode II, and mode III contributions. I
 Integral method used to derive mode I and mode II SIFs and T-stress using auxiliary crack-tip fields.
 
 #### Bueckner-Chen integral
-Path-independent integral used here to recover Williams coefficients and T-stress. Implemented in `LineIntegral.integrate_buckner_chen()`.
+Path-independent integral used here to recover Williams coefficients and T-stress. `Bueckner-Chen` is the scientific/domain spelling. Current code still uses legacy `buckner_*` identifiers such as `LineIntegral.integrate_buckner_chen()`. Future refactor vocabulary should use ASCII `bueckner_chen_*` identifiers and keep `buckner_*` only as compatibility vocabulary.
 
 #### Williams coefficients
 Crack-tip expansion coefficients `a_n`, `b_n`, and `c_n`. `a_1` and `b_1` map to mode I/II SIFs, `a_2` maps to T-stress, and `c_1` maps to mode III SIF.
@@ -307,13 +307,13 @@ Internal mask limiting crack-path pixels to the angle-detection radius around th
 Crack-path post-processing step that keeps the largest connected pixel region before fitting the crack angle.
 
 #### Model name
-String passed to `get_model()`. The currently supported public names are `ParallelNets` and `UNetPath`.
+String passed to `get_model()`. The currently supported public names are `ParallelNets` and `UNetPath`. This name is currently overloaded because it also acts as a weight-file stem and local cache key. Future model metadata should split `model_id`, `model_role`, `architecture`, `weights_id`, and aliases.
 
 #### ParallelNets
 Crack-tip model architecture and model-name string. It combines segmentation with a parallel coordinate-regression branch, although runtime crack-tip detection primarily uses segmentation output.
 
 #### UNetPath
-Public model-name string for the crack-path detector. The instantiated implementation class is `UNet`, so this term currently names the model role rather than a distinct class.
+Current public model-name string, weight-file stem, and legacy alias for the pretrained crack-path detector. It instantiates the `UNet` implementation class, so it names a model role and artifact rather than a distinct architecture. Future planning should prefer a stable paper- or method-linked `model_id`, with `UNetPath` retained as an alias or `weights_id`.
 
 #### UNet
 Segmentation architecture used for crack-path prediction and related deep-learning utilities.
@@ -536,7 +536,7 @@ Future umbrella record for traceability facts that do not belong inside the inpu
 Directory-name conventions used by tests and data-preparation workflows for nodemap files, crack-detection labels, mesh connectivity files, and serialized intermediate tensors.
 
 #### Dummy2 / EBr10 / Aramis_in_line
-Hard-coded experiment or fixture identifiers used in deep-learning setup utilities and tests. They should be treated as workflow-specific or legacy vocabulary unless the project decides they are supported public concepts.
+Non-domain fixture or experiment-preset keys used in deep-learning setup utilities, scripts, and tests. They encode local workflow defaults such as nodemap ranges, detection-window sizes, offsets, and target availability. They should be ignored as fracture-mechanics or reusable architecture vocabulary unless a future preset/configuration system deliberately adopts them as example IDs.
 
 #### Coors / Disps / EpsVonMises / InterpOnArray
 Legacy or documentation-facing names for coordinate arrays, displacement arrays, equivalent-strain arrays, and interpolation helpers. Current implementation vocabulary more often uses `interp_coors`, `interp_disps`, `interp_eps_vm`, and `interpolate_on_array`.

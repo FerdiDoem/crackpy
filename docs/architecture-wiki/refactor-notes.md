@@ -14,7 +14,7 @@ These notes intentionally separate proposed future architecture from current sys
 | C-003 | [[refactor-candidates/003-self-contained-williams-fit-interface]] | proposed | [[fracture-analysis]], [[crack-detection]], [[coupling-map]] | None | Correction result vocabulary accepted |
 | C-004 | [[refactor-candidates/004-separate-orchestration-from-adapters]] | proposed | [[system-map]], [[fracture-analysis]], [[crack-detection]], [[results-io-workflows]] | OQ-008 | Not decided |
 | C-005 | [[refactor-candidates/005-side-orientation-module]] | proposed | [[glossary]], [[crack-detection]], [[terminology-report]], [[coupling-map]] | OQ-001, OQ-003 | Not decided |
-| C-006 | [[refactor-candidates/006-model-provider-seam]] | proposed | [[crack-detection]], [[results-io-workflows]], [[coupling-map]] | OQ-009 | Not decided |
+| C-006 | [[refactor-candidates/006-model-provider-seam]] | proposed | [[crack-detection]], [[results-io-workflows]], [[coupling-map]] | None | Model naming boundary accepted; implementation not approved |
 | C-007 | [[refactor-candidates/007-defaults-and-options-cleanup]] | proposed | [[fracture-analysis]], [[data-model-input]], [[coupling-map]] | OQ-010 | Not decided |
 | C-008 | [[refactor-candidates/008-result-tag-schema]] | proposed | [[results-io-workflows]], [[terminology-report]], [[coupling-map]] | OQ-006 | Main JSON output accepted; result names unresolved |
 | C-009 | [[refactor-candidates/009-sequence-index-vocabulary]] | proposed | [[glossary]], [[terminology-report]], [[crack-detection]], [[data-model-input]] | None | Planning vocabulary accepted |
