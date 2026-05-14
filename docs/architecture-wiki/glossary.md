@@ -339,11 +339,28 @@ Training transforms that thicken crack-tip or crack-path labels so they survive 
 #### Line-intercept detection
 Independent crack-detection method fitting vertical displacement slices with a tanh-shaped function, deriving the crack path from the fitted transition coordinate, and locating the crack tip by equivalent-strain thresholding.
 
+#### Line-intercept evaluation region
+Rectangular coordinate region used by `CrackDetectionLineIntercept` for interpolation, path fitting, crack-tip selection, and default plotting. The current constructor expresses this through `x_min`, `x_max`, `y_min`, and `y_max` in millimeters.
+
+#### Line-intercept grid spacing
+Requested sampling spacing for the regular interpolation grid used by line-intercept detection. The current constructor expresses this through `tick_size_x` and `tick_size_y` in millimeters. These values are nominal spacing controls because the implementation converts the region extent to an integer number of grid points and then uses endpoint-inclusive coordinates.
+
 #### Grid component
-Displacement component used by line-intercept detection, currently `ux` or `uy`.
+Displacement component used by line-intercept detection for tanh fitting along vertical slices. Current accepted values are `ux` and `uy`.
+
+#### Line-intercept equivalent-strain threshold
+Equivalent-strain threshold applied along the fitted crack path when selecting the crack-tip point. The current constructor name is `eps_vm_threshold`.
+
+#### Min consecutive strain exceedance count
+Future canonical concept name for the line-intercept setting currently exposed as `window_size`. It is the minimum count of consecutive fitted crack-path samples whose `eps_vm` must exceed `eps_vm_threshold` before a crack-tip point is accepted. This is an algorithmic sample count, not a physical window size or length.
 
 #### Threshold window
-Line-intercept setting for the number of consecutive path points whose `eps_vm` must exceed the threshold before the crack tip is accepted. Despite the name, this is a count, not a physical window.
+Status: legacy/overloaded term
+
+Legacy description for [[glossary#Min consecutive strain exceedance count]]. Avoid this as future canonical vocabulary because `window` is already used for physical detection regions, crop windows, and plot windows.
+
+#### Line-intercept angle-estimation radius
+Declared physical radius in millimeters for local crack-angle fitting. The current implementation converts this value with `tick_size_x` into an approximate number of fitted crack-path samples near the detected crack tip. The current constructor name is `angle_estimation_mm_radius`.
 
 #### Crack-tip correction objective
 Optimization target used by correction methods. Current objectives include Williams fitting error and an `a_-1**2 + b_-1**2` objective.

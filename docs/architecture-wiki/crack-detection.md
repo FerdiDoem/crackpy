@@ -102,8 +102,17 @@ Observed method:
 - maps displacement and strain data to a regular grid;
 - fits `A*tanh((y-B)*C)+D+E*y` per vertical slice, usually against `uy`;
 - interprets fitted `B` as crack-path y-coordinate;
-- scans along the inferred path and uses an `eps_vm` threshold window to identify crack tip;
+- scans along the inferred path and accepts a crack-tip point only after a minimum count of consecutive `eps_vm` threshold exceedances;
 - estimates angle from a local polynomial fit near the tip.
+
+Constructor vocabulary:
+
+- `x_min`, `x_max`, `y_min`, `y_max`: line-intercept evaluation-region bounds in millimeters, not the neural-network detection window.
+- `tick_size_x`, `tick_size_y`: requested interpolation-grid spacing in millimeters; actual endpoint-inclusive sample spacing can differ slightly.
+- `grid_component`: displacement component used for tanh fitting, currently `ux` or `uy`.
+- `eps_vm_threshold`: equivalent-strain threshold applied along the fitted crack path.
+- `window_size`: current legacy name for [[glossary#Min consecutive strain exceedance count]]; this behaves as an integer sample count, not a physical window size.
+- `angle_estimation_mm_radius`: declared physical radius converted with `tick_size_x` into an approximate number of nearby crack-path samples for angle fitting.
 
 This path depends on `InputData` and often on `calc_stresses(material)` for plotting and correction workflows.
 

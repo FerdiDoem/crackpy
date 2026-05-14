@@ -123,7 +123,8 @@ This note separates observed terminology from proposed canonicalization. The sta
 
 - `window_size`, `detection_window_size`, `interp_size`, `size`, crop size, and line-intercept `window_size` are overloaded.
 - The glossary now reserves `Detection window size` for physical millimeter size and `Interpolation size` for the signed mirroring value.
-- Line-intercept `window_size` is really a consecutive-point threshold count and should remain flagged as ambiguous.
+- Line-intercept `window_size` is really a consecutive fitted crack-path sample count. Future planning vocabulary should use [[glossary#Min consecutive strain exceedance count]] and keep `window_size` as a legacy implementation name.
+- Related line-intercept constructor names also need more precise descriptions: `x_min`/`x_max`/`y_min`/`y_max` bound the line-intercept evaluation region, `tick_size_x`/`tick_size_y` are nominal interpolation-grid spacing controls, `grid_component` selects the fitted displacement component, `eps_vm_threshold` is applied along the fitted crack path, and `angle_estimation_mm_radius` selects samples for local angle fitting.
 
 ### Models And Deep Learning
 
@@ -174,7 +175,7 @@ Related question IDs:
 
 - OQ-001: `side` vocabulary and concept split.
 - OQ-002: resolved `stage` as source-specific metadata and `sequence_index` as generic ordering vocabulary.
-- OQ-004: line-intercept `window_size`.
+- OQ-004: resolved line-intercept `window_size` as [[glossary#Min consecutive strain exceedance count]] in future planning vocabulary.
 - OQ-005: result schema or format versioning.
 - OQ-006: public result names versus legacy implementation names.
 - OQ-007: resolved crack-tip correction return semantics; use `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate` in future planning vocabulary.

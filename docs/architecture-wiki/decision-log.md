@@ -327,3 +327,32 @@ Consequences:
 - Deltas should carry units and coordinate-frame context because they are not meaningful on their own.
 - Legacy delta-returning APIs can be supported by compatibility adapters during migration.
 - Fracture-analysis provenance should link to the corrected estimate it actually consumed, not only to the original detected estimate or to a correction configuration.
+
+## 2026-05-14: Line-Intercept Window Size Is A Consecutive Strain-Exceedance Count
+
+Status: accepted for planning
+
+Decision:
+
+Future line-intercept vocabulary should treat the current `CrackDetectionLineIntercept.window_size` argument as `min_consecutive_strain_exceedance_count`. The value is an integer count of consecutive fitted crack-path samples whose `eps_vm` must exceed `eps_vm_threshold` before a crack-tip point is accepted. It is not a physical window size, crop size, or length in millimeters.
+
+The current implementation name `window_size` remains legacy code/API vocabulary until a refactor or compatibility migration is explicitly approved. Documentation should describe it through the canonical concept and keep the legacy name visible when referring to current code.
+
+Related constructor vocabulary should also be made explicit:
+
+- `x_min`, `x_max`, `y_min`, and `y_max` describe the line-intercept evaluation-region bounds in millimeters.
+- `tick_size_x` and `tick_size_y` describe requested interpolation-grid spacing in millimeters; because the implementation computes an integer point count and uses endpoint-inclusive coordinates, they are nominal spacing controls.
+- `grid_component` selects the displacement component used for tanh fitting along vertical slices.
+- `eps_vm_threshold` is the equivalent-strain threshold applied along the fitted crack path.
+- `angle_estimation_mm_radius` is the declared physical radius converted with `tick_size_x` into an approximate number of nearby crack-path samples for angle fitting.
+
+Rationale:
+
+`window_size` is overloaded across CrackPy. In neural crack detection it describes a physical detection-window size in millimeters, while in line-intercept detection it is used as a slice length and loop bound for threshold persistence along the inferred crack path. Naming this value as a count makes the expected type and algorithmic meaning visible.
+
+Consequences:
+
+- OQ-004 is resolved as a documentation and planning vocabulary decision.
+- Future line-intercept configuration models should prefer `min_consecutive_strain_exceedance_count`.
+- Any future code migration should preserve legacy `window_size` through a compatibility adapter or deprecation path, not as an immediate production refactor.
+- Validation or type checks in a later implementation should enforce an integer count for this setting.
