@@ -14,7 +14,7 @@ Role: Future architecture candidate for replacing left/right orientation couplin
 
 Left/right orientation is encoded repeatedly through strings, sign flips, mirrored arrays, signed window sizes, and coordinate conversion logic.
 
-The current `side` concept also bundles several ideas that should be separated before redesign: physical specimen geometry, crack-tip identity, notch or crack origin, crack propagation direction, algorithmic mirroring, pipeline grouping, and output naming. Middle Tension specimens, CT specimens, bending samples, multiple-crack-tip cases, and future 3D crack-front or 3D-surface cases do not share one universal left/right model.
+The current `side` concept also bundles several ideas that should be separated before redesign: physical specimen geometry, crack-tip identity, notch or crack origin, crack propagation direction, algorithmic mirroring, pipeline grouping, and output naming. Middle Tension specimens, CT specimens, bending samples, multiple-crack-tip cases, and future 3D crack-front or 3D-surface cases do not share one universal left/right model. OQ-001 resolved that `side` may remain compatibility vocabulary at file, legacy API, detector setup, and result-naming boundaries, but should not remain the internal mechanics model.
 
 ## Future Direction
 
@@ -37,7 +37,7 @@ For the current 2D package, this can start as a local 2D pose: origin at the cra
 
 ## Open Questions
 
-- OQ-001: Should `side` remain a public term or split into smaller concepts?
+- OQ-001: resolved; `side` remains boundary compatibility vocabulary, while future internal interfaces should use explicit crack-tip frame concepts.
 - OQ-003: Which meanings currently bundled into `side` must become separate vocabulary?
 - OQ-020: What is the minimal internal crack-tip coordinate-system model needed to support arbitrary 2D cracks, multiple crack tips, tilted cracks, top-to-bottom cracks, and future 3D crack fronts?
 

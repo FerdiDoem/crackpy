@@ -107,7 +107,7 @@ CrackPy's current DIC acquisition-order index, usually parsed from a nodemap fil
 #### Side
 Status: overloaded current term
 
-`left` or `right` label identifying which specimen notch/crack is being analyzed, expressed in CrackPy's current x-direction convention. For Middle Tension specimens, the two sides correspond to opposing notch sides. For CT specimens, a crack starting at the left and growing to the right is the `right` side; the opposite direction is the `left` side. Crack-tip detection models were trained on the right-side crack convention, so left-side data is mirrored into that convention before detection. This term is current compatibility vocabulary, not a sustainable internal orientation model.
+`left` or `right` label identifying which specimen notch/crack is being analyzed, expressed in CrackPy's current x-direction convention. For Middle Tension specimens, the two sides correspond to opposing notch sides. For CT specimens, a crack starting at the left and growing to the right is the `right` side; the opposite direction is the `left` side. Crack-tip detection models were trained on the right-side crack convention, so left-side data is mirrored into that convention before detection. This term is current compatibility vocabulary for file, legacy API, detector setup, and result-naming boundaries, not a sustainable internal orientation model. Future internal interfaces should prefer an explicit [[glossary#Crack-tip coordinate system]].
 
 #### Acquisition metadata
 Metadata describing an acquired image or nodemap in an experiment, such as acquisition index, stage label, force, cycle count, load, timestamp, image name, source file, and acquisition software context.

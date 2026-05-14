@@ -57,6 +57,7 @@ The internal package model should move toward a crack-tip-centered coordinate sy
 Consequences:
 
 - Current `side`, `sides`, and `left_or_right` stay documented as observed compatibility vocabulary.
+- `side` remains acceptable at file, legacy API, detector setup, and result-naming boundaries, but new internal interfaces should treat it as adapter input that maps to an explicit crack-tip frame.
 - Future planning should separate specimen geometry, crack-tip identity, crack-growth direction, detector model convention, mirroring policy, and output labels.
 - The current 2D shift-and-rotation behavior in `InputData.transform_data(x_shift, y_shift, angle)` is an existing partial crack-tip-centered transform, not a complete orientation model.
 - A new open question tracks the minimal internal crack-tip coordinate-system model before implementation.

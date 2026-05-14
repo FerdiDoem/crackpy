@@ -7,7 +7,7 @@ Role: Track unresolved terminology and architecture questions with stable IDs. T
 
 | ID | Question | Status | Related notes | Blocks |
 | --- | --- | --- | --- | --- |
-| OQ-001 | Should `side` remain the public term, or should future architecture split specimen side, nominal crack-growth direction, and algorithmic mirroring? | open | [[glossary#Side]], [[terminology-report#Side And Orientation]], [[refactor-candidates/005-side-orientation-module]] | C-002, C-005 |
+| OQ-001 | Should `side` remain the public term, or should future architecture split specimen side, nominal crack-growth direction, and algorithmic mirroring? | resolved | [[glossary#Side]], [[terminology-report#Side And Orientation]], [[refactor-candidates/005-side-orientation-module]], [[decision-log#2026-05-14-side-is-not-a-sustainable-internal-crack-orientation-model]] | C-002, C-005 |
 | OQ-002 | Should `stage` remain public vocabulary, or become adapter-specific acquisition metadata behind a more general acquisition index? | open | [[glossary#Stage]], [[terminology-report#Stage And Acquisition Index]], [[refactor-candidates/009-acquisition-index-vocabulary]] | C-002, C-009 |
 | OQ-003 | Which meanings currently bundled into `side` must become separate vocabulary? | resolved | [[terminology-report#Ambiguous Or Overloaded Terms]], [[refactor-candidates/005-side-orientation-module]], [[decision-log#2026-05-14-side-is-not-a-sustainable-internal-crack-orientation-model]] | C-005 |
 | OQ-004 | Should line-intercept `window_size` be renamed conceptually to `threshold_run_length`? | open | [[glossary#Threshold window]], [[terminology-report#Window, Size, And Offset]] | Terminology cleanup |
