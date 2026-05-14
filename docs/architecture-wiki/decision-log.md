@@ -142,3 +142,30 @@ Consequences:
 - Links between records should carry semantic roles, such as primary displacement field, representative crack-tip source, configuration snapshot, material definition, model weights, correction result, or post-processing input.
 - Text/JSON and CSV outputs should preserve enough IDs, schema versions, hashes, and function/configuration references to determine whether a result is stale.
 - Plots should carry or link to the producing `result_id` or `run_id`, but should not duplicate the full provenance payload.
+
+## 2026-05-14: Analysis Function Identity Is A Stable Contract ID
+
+Status: accepted for planning
+
+Decision:
+
+Future provenance and orchestration should identify analysis functions by a stable registry-owned contract ID, not by the current Python module, class, or function path. The stable ID should describe the scientific or computational contract that produced a result, for example `crackpy.fracture.williams_fit`, `crackpy.detection.unet_crack_tip_detection`, or `crackpy.fracture.bueckner_chen_integral`.
+
+Rationale:
+
+CrackPy is expected to undergo refactors that move code, split `InputData` responsibilities, and expose self-contained analysis functions. If provenance uses implementation paths as durable identities, old results may appear unrelated to new code after a harmless move. A stable contract ID lets results survive code movement while still recording the concrete implementation reference that ran.
+
+The planning model separates:
+
+- `analysis_function_id`: durable scientific or computational contract identity;
+- `display_name`: human-facing label for reports and documentation;
+- `implementation_ref`: current Python location or source reference;
+- `metadata_version`: maintainer-controlled version of the function contract;
+- `crackpy_version`, `execution_commit`, and later function-relevant commits: package and source-code traceability.
+
+Consequences:
+
+- Result metadata should store `analysis_function_id` rather than relying on display names or Python paths.
+- Python paths remain useful as `implementation_ref`, but they are allowed to change during refactors.
+- `metadata_version` should change when function semantics, inputs, outputs, defaults, references, model dependencies, schemas, or result meanings change.
+- OQ-017 can now focus on how to compute or declare function-relevant commits for a stable dependency scope.

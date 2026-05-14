@@ -93,7 +93,7 @@ Required compact metadata:
 
 - software name and package version;
 - repository URL and execution commit, when available;
-- analysis function identifier, category, function metadata version, and last function-relevant commit;
+- stable analysis-function ID, display name, category, function metadata version, implementation reference, and last function-relevant commit;
 - result schema version;
 - execution timestamp and timezone policy;
 - input identifiers and optional hashes;
@@ -118,7 +118,8 @@ CrackPy should own an internal metadata model first, then map it outward. A poss
 
 ```python
 AnalysisMetadata(
-    name="WilliamsFit",
+    analysis_function_id="crackpy.fracture.williams_fit",
+    display_name="WilliamsFit",
     category="stress_intensity_factor_evaluation",
     implementation_ref="crackpy.fracture_analysis.optimization:Optimization.optimize_williams_displacements_xy",
     metadata_version="1",
@@ -133,7 +134,7 @@ Execution metadata should be separate from static function metadata:
 ```python
 AnalysisExecutionMetadata(
     run_id="...",
-    function_name="WilliamsFit",
+    analysis_function_id="crackpy.fracture.williams_fit",
     function_metadata_version="1",
     crackpy_version="1.3.0",
     execution_commit="...",
@@ -149,13 +150,15 @@ AnalysisExecutionMetadata(
 
 The internal model should distinguish:
 
-- static function metadata: identity, category, references, schemas, owner module;
+- static function metadata: stable contract identity, display name, category, references, schemas, and implementation reference;
 - execution metadata: run ID, timestamp, software version, commit, inputs, outputs;
 - configuration metadata: parameter values, defaults, validation state, hash;
 - result metadata: result ID, schema version, units, output artifacts;
 - export metadata: mapping target, exporter version, generated artifact ID.
 
 Input metadata should remain separate from processing provenance. A future `InputRecord` can pair data with attached source/user metadata, stable `input_id`, optional `sequence_index`, hashes, and minimal input/source provenance. Processing history, analysis-function identity, configuration snapshots, and result identity belong to execution or result records that consume input records.
+
+Planning decision for OQ-016: the stable provenance value is `analysis_function_id`, a registry-owned contract ID independent of current Python location. A separate `display_name` can stay human-readable, and `implementation_ref` records the module, class, function, or source reference that ran. `metadata_version` is the maintainer-controlled version of that analysis contract and should change when semantics, inputs, outputs, defaults, references, model dependencies, schemas, or result meanings change.
 
 Useful split for planning:
 
@@ -204,8 +207,8 @@ class AnalysisRun:
     Fields:
     - run_id: durable execution identity; anchors logs, results, plots, and
       provenance exports.
-    - function_name: stable analysis-function identity; tells an orchestrator
-      which method produced a result.
+    - analysis_function_id: stable registry-owned analysis contract ID; tells
+      an orchestrator which method produced a result even after code moves.
     - function_metadata_version: version of the function contract; changes when
       inputs, outputs, defaults, references, or semantics change.
     - input_ids: consumed input records; makes data dependencies explicit.
@@ -227,7 +230,7 @@ class AnalysisRun:
     """
 
     run_id: str
-    function_name: str
+    analysis_function_id: str
     function_metadata_version: str
     input_ids: tuple[str, ...]
     input_roles: Mapping[str, str]
@@ -311,7 +314,8 @@ Decorator style:
 
 ```python
 @analysis_step(
-    name="WilliamsFit",
+    analysis_function_id="crackpy.fracture.williams_fit",
+    display_name="WilliamsFit",
     category="stress_intensity_factor_evaluation",
     references=["williams_1961", "sanford_2003"],
 )
@@ -324,7 +328,8 @@ Class style:
 ```python
 class WilliamsFit(AnalysisFunction[WilliamsFitInput, WilliamsFitConfig, WilliamsFitOutput]):
     metadata = AnalysisMetadata(
-        name="WilliamsFit",
+        analysis_function_id="crackpy.fracture.williams_fit",
+        display_name="WilliamsFit",
         category="stress_intensity_factor_evaluation",
         references=["williams_1961"],
     )
@@ -384,7 +389,7 @@ dependency_scope=[
 ]
 ```
 
-For incremental re-analysis, the conservative rule is: a result may be stale if its producing function name, function metadata version, dependency-scope commit, configuration schema version, parameter hash, input hash, model hash, or result schema version no longer matches the current expected value.
+For incremental re-analysis, the conservative rule is: a result may be stale if its producing analysis-function ID, function metadata version, dependency-scope commit, configuration schema version, parameter hash, input hash, model hash, or result schema version no longer matches the current expected value.
 
 ## Result Update Logic / Orchestrator Use Case
 
@@ -392,7 +397,7 @@ An external orchestrator should be able to ask:
 
 ```text
 Find results where:
-  function_name == "WilliamsFit"
+  analysis_function_id == "crackpy.fracture.williams_fit"
   and (
     function_last_modified_commit != current_function_last_modified_commit
     or function_metadata_version != current_function_metadata_version
@@ -405,7 +410,7 @@ Find results where:
 The result metadata should therefore include:
 
 - stable result ID;
-- producing analysis function;
+- producing stable analysis-function ID;
 - static metadata version;
 - execution commit;
 - last function-relevant commit;
@@ -470,7 +475,8 @@ SoftwareConfiguration:
 
 CrackPyAnalysis:
   crackpy_analysis_run_id
-  crackpy_analysis_function
+  crackpy_analysis_function_id
+  crackpy_analysis_display_name
   crackpy_analysis_category
   crackpy_analysis_started_at
   crackpy_analysis_completed_at
@@ -492,13 +498,13 @@ Each exported metadata statement can use the target record shape:
 ```json
 {
   "data_type": "string",
-  "description": "Name of the CrackPy analysis function that generated this result",
-  "key": "crackpy_analysis_function",
+  "description": "Stable ID of the CrackPy analysis function contract that generated this result",
+  "key": "crackpy_analysis_function_id",
   "metadata_type": "IdentityMetadata",
   "related_to": "CrackPyAnalysis",
   "source": "Code",
   "unit": "None",
-  "value": "WilliamsFit"
+  "value": "crackpy.fracture.williams_fit"
 }
 ```
 
@@ -547,7 +553,7 @@ Candidate adoption stance:
 ## Open Design Questions
 
 - OQ-015: resolved minimal traceability chain across input loading, detection, fracture analysis, text/JSON output, CSV flattening, and plots;
-- OQ-016: How should CrackPy define an analysis-function identity and function-level version?
+- OQ-016: resolved stable registry-owned analysis-function ID and maintainer-controlled metadata version;
 - OQ-017: Should function-relevant commits be computed automatically from Git history, declared manually, or generated at build time?
 - OQ-018: Should method references live in Python metadata, YAML/JSON, BibTeX, or a hybrid registry?
 - OQ-019: Which parts of provenance belong in the compact knowledge graph, and which belong only in an optional detailed artifact?
@@ -601,8 +607,10 @@ class AnalysisMetadata:
     """Static metadata carried by a registered analysis function.
 
     Fields:
-    - name: stable analysis-function identity; lets results survive Python
-      refactors that move or rename implementation details.
+    - analysis_function_id: stable registry-owned contract ID; lets results
+      survive Python refactors that move or rename implementation details.
+    - display_name: human-facing name; supports reports and documentation
+      without becoming the durable provenance identity.
     - category: method family; supports grouping such as crack detection,
       Williams fitting, SIF evaluation, or preprocessing.
     - implementation_ref: current Python implementation location; lets
@@ -616,7 +624,8 @@ class AnalysisMetadata:
       bounds function-level change tracking beyond a single function body.
     """
 
-    name: str
+    analysis_function_id: str
+    display_name: str
     category: str
     implementation_ref: str
     metadata_version: str
@@ -632,8 +641,8 @@ class AnalysisExecutionMetadata:
 
     Fields:
     - run_id: durable execution identity; anchors produced results.
-    - function_name: registered analysis function; enables function-specific
-      stale-result checks.
+    - analysis_function_id: registered analysis contract ID; enables
+      function-specific stale-result checks across Python refactors.
     - crackpy_version and execution_commit: package and source state; support
       reproducibility when the run came from an installed wheel or checkout.
     - function_last_modified_commit: last relevant code change; lets an
@@ -647,7 +656,7 @@ class AnalysisExecutionMetadata:
     """
 
     run_id: str
-    function_name: str
+    analysis_function_id: str
     crackpy_version: str
     execution_commit: str | None
     function_last_modified_commit: str | None
@@ -672,7 +681,7 @@ class AnalysisExecutionMetadata:
 ## Next Steps
 
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
-- Resolve OQ-016 through OQ-019 enough to define the remaining metadata scope.
+- Resolve OQ-017 through OQ-019 enough to define the remaining metadata scope.
 - Prototype a metadata record for `WilliamsFit` on paper before touching production code.
 - Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint.
 - Decide whether method references should start as YAML/JSON registry entries.

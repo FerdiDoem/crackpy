@@ -404,7 +404,16 @@ Currently empty module under `crackpy.results`. It is a placeholder name, not an
 Structured metadata that records how a CrackPy result was produced, including software version, execution commit, analysis-function identity, configuration, inputs, outputs, method references, timestamps, and optional hashes.
 
 #### Analysis function identity
-Stable name for a computational analysis step such as Williams fitting, crack-tip detection, SIF evaluation, optimization, interpolation, or preprocessing. This should be distinct from incidental Python method names when used for provenance or orchestration.
+Stable registry-owned contract ID for a computational analysis step, such as `crackpy.fracture.williams_fit`, `crackpy.detection.unet_crack_tip_detection`, or `crackpy.fracture.bueckner_chen_integral`. This identity describes the scientific or computational contract that produced a result, not the current Python module, class, or function path.
+
+#### Display name
+Human-facing label for an analysis function, such as `WilliamsFit`. Display names are useful in reports and plots but should not be the stable provenance identity because they can be renamed for readability.
+
+#### Implementation reference
+Current Python module, class, function, or source-range reference for an analysis function. This connects metadata to code for maintainers and tooling, but it may change during refactors and should not be used as the durable result identity.
+
+#### Function metadata version
+Maintainer-controlled version of an analysis function's metadata contract. It should change when inputs, outputs, defaults, method assumptions, references, model dependencies, schemas, or result meanings change, even if the Python path and package version stay the same.
 
 #### Function-relevant commit
 Commit identifier representing the latest relevant change to an analysis function or its declared dependency scope. This may differ from the execution commit when results are compared against newer CrackPy code.
