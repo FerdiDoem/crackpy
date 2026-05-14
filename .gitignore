@@ -2,7 +2,9 @@
 .venv
 .ipynb_chekpoints
 tom.egg-info
-/docs/
+/docs/*
+!/docs/exploration/
+!/docs/exploration/**
 /data/
 /venv/
 /plots/

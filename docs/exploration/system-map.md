@@ -1,0 +1,119 @@
+# System Map
+
+Status: observed system reality
+
+## Top-Level Package Shape
+
+```text
+crackpy/
+  crack_detection/
+    data/
+    deep_learning/
+    pipeline/
+    utils/
+    correction.py
+    detection.py
+    line_intercept.py
+    model.py
+  fracture_analysis/
+    analysis.py
+    crack_tip.py
+    line_integration.py
+    optimization.py
+    pipeline.py
+    utils.py
+  input/
+    crack_tip_info.py
+    input_data.py
+  results/
+    plot.py
+    read.py
+    result_data.py
+    write.py
+  structure_elements/
+    data_files.py
+    material.py
+```
+
+The installed package excludes `scripts`, `test_scripts`, `crackpy.tests`, `example_images`, and `test_data` via `pyproject.toml`, so the scripts are examples/integration drivers rather than installed command-line interfaces.
+
+## Primary Runtime Flow
+
+```mermaid
+flowchart TD
+    NM["Nodemap descriptor"] --> ID["InputData"]
+    ID --> ST["calc_stresses(Material)"]
+    ST --> TR["transform_data(crack tip, angle)"]
+    CI["CrackTipInfo"] --> FA["FractureAnalysis"]
+    TR --> FA
+    MAT["Material"] --> FA
+    IP["IntegralProperties"] --> FA
+    OP["OptimizationProperties"] --> FA
+    FA --> OPT["Optimization"]
+    FA --> LI["LineIntegral"]
+    OPT --> FAR["Mutable FractureAnalysis result attributes"]
+    LI --> FAR
+    FAR --> OW["OutputWriter"]
+    FAR --> PL["Plotter"]
+    OW --> OR["OutputReader / CSV"]
+```
+
+## Main Package Responsibilities
+
+### `crackpy.input`
+
+Owns nodemap import, metadata parsing, mutable numerical arrays, coordinate transformation, stress/strain helpers, masks, and VTK export. See [[data-model-input]].
+
+### `crackpy.structure_elements`
+
+Contains lightweight data descriptors:
+
+- `NodemapStructure`: column mapping and DIC/FEM format options.
+- `Nodemap`: name/folder/structure descriptor.
+- `Material`: elastic parameters and stiffness matrices.
+
+### `crackpy.crack_detection`
+
+Contains two detection families:
+
+- neural-network crack-tip/path detection over `256 x 256` interpolated displacement fields;
+- line-intercept detection based on displacement slice fitting and equivalent-strain thresholding.
+
+It also contains crack-tip correction routines using Williams fitting from fracture analysis. See [[crack-detection]].
+
+### `crackpy.fracture_analysis`
+
+Contains the scientific numerical core:
+
+- analytical crack-tip fields;
+- displacement fitting for Williams and CJP models;
+- J-integral, interaction integral, T-stress, Bueckner-Chen integral, and J-mode decomposition;
+- single-nodemap and batch-pipeline orchestration.
+
+See [[fracture-analysis]].
+
+### `crackpy.results`
+
+Consumes `FractureAnalysis` instances and emits text files, JSON, plots, and flattened CSVs. This creates a direct dependency from result I/O back to analysis internals. See [[results-io-workflows]] and [[coupling-map]].
+
+## External Dependencies
+
+Declared runtime dependencies:
+
+- numerical/scientific: `numpy`, `scipy`, `pandas`, `scikit_image`, `scikit_learn`;
+- plotting/visualization: `matplotlib`, `pyvista`, `opencv_python`;
+- deep learning: `torch`, `torchvision`;
+- UX/config: `rich`, `pyyaml`.
+
+Operational dependencies observed:
+
+- pretrained model download from Zenodo via `torch.hub.download_url_to_file`;
+- local LaTeX may be required by some plotting scripts that set `text.usetex=True`;
+- `snakeviz` is invoked by one profiling script but is not declared as a runtime dependency.
+
+## Package Initialization
+
+Importing `crackpy` pulls broad subpackages and calls `setup_logging()` at import time. Several package `__init__.py` files eagerly import submodules and act mostly as import aggregators.
+
+This is observed behavior, not a refactor proposal. Refactor observations are in [[refactor-notes]].
+
