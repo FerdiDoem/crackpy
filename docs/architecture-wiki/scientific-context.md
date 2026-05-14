@@ -1,6 +1,7 @@
 # Scientific And Methodological Context
 
 Status: observed scientific context
+Role: Preserve scientific assumptions, literature references, numerical methods, validation strategies, and domain scope separately from implementation inventory and architecture planning.
 
 ## Package Scope
 

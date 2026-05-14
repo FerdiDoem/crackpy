@@ -1,7 +1,8 @@
 # Terminology Extraction Report
 
-Status: exploration snapshot  
-Scope: implementation terminology discovered during the glossary-focused exploration pass.
+Status: architecture wiki snapshot  
+Scope: implementation terminology discovered during the glossary-focused architecture wiki pass.
+Role: Audit extracted terms, naming inconsistencies, ambiguous terms, and unresolved terminology questions. Stable definitions belong in [[glossary]], and resolved decisions belong in [[decision-log]].
 
 This note separates observed terminology from proposed canonicalization. The stable definitions belong in [[glossary]]. The naming observations here are refactor-planning input, not a request to rename code during the current mapping phase.
 
@@ -165,16 +166,21 @@ This note separates observed terminology from proposed canonicalization. The sta
 
 ## Unresolved Terminology Questions
 
-- Should `side` remain the public term, or should future architecture split specimen side, nominal crack-growth direction, and algorithmic mirroring?
-- Should `stage` remain public vocabulary, or become an adapter-specific term behind a more general acquisition index?
-- Should line-intercept `window_size` be renamed conceptually to `threshold_run_length`?
-- Should the 256-sample / 255-interval pixel-to-millimeter convention be named explicitly in the public glossary?
-- Should `UNetPath` become a real class/alias, or should docs state that the model role `UNetPath` loads a `UNet` architecture?
-- Should result files receive an explicit schema or format version before any API cleanup?
-- Are fixture names such as `Dummy2`, `EBr10`, and `Aramis_in_line` supported workflow vocabulary or legacy test data names?
-- Should correction methods consistently return relative crack-tip shifts or absolute corrected crack-tip coordinates?
-- Should public result naming standardize on Roman mode labels (`I`, `II`, `III`) or numeric suffixes (`1`, `2`, `3`) where both currently appear?
-- Should `Bueckner-Chen` be kept as the canonical spelling everywhere, with `buckner_*` treated as implementation legacy?
+Unresolved questions are now centralized in [[open-questions]].
+
+Related question IDs:
+
+- OQ-001: `side` vocabulary and concept split.
+- OQ-002: `stage` vocabulary and acquisition metadata.
+- OQ-004: line-intercept `window_size`.
+- OQ-005: result schema or format versioning.
+- OQ-006: public result names versus legacy implementation names.
+- OQ-007: crack-tip correction return semantics.
+- OQ-009: `UNetPath` model role versus implementation class.
+- OQ-011: Roman mode labels versus numeric suffixes.
+- OQ-012: Bueckner-Chen spelling.
+- OQ-013: 256-sample / 255-interval detection-grid convention.
+- OQ-014: fixture-name vocabulary.
 
 ## Documentation Files Updated
 

@@ -1,6 +1,7 @@
 # Fracture Analysis
 
 Status: observed system reality
+Role: Document current fracture-analysis implementation behavior, numerical assumptions, pipelines, and validation signals. Result and Williams-fit planning lives in [[refactor-candidates/001-explicit-analysis-result]] and [[refactor-candidates/003-self-contained-williams-fit-interface]].
 
 Terminology references: see [[glossary]] for stable definitions and [[terminology-report]] for naming inconsistencies in fitting, integral, and result terms.
 

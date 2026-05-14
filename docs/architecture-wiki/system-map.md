@@ -1,6 +1,7 @@
 # System Map
 
 Status: observed system reality
+Role: Provide the high-level package map and runtime flow. Keep detailed subsystem behavior in the domain notes and keep architecture planning notes in [[refactor-notes]].
 
 ## Top-Level Package Shape
 
@@ -116,4 +117,3 @@ Operational dependencies observed:
 Importing `crackpy` pulls broad subpackages and calls `setup_logging()` at import time. Several package `__init__.py` files eagerly import submodules and act mostly as import aggregators.
 
 This is observed behavior, not a refactor proposal. Refactor observations are in [[refactor-notes]].
-

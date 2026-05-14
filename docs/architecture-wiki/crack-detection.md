@@ -1,6 +1,7 @@
 # Crack Detection
 
 Status: observed system reality
+Role: Document current crack-detection implementation, training utilities, correction methods, side effects, and detection/fracture handoff. Orientation and model-provider planning lives in [[refactor-candidates/005-side-orientation-module]] and [[refactor-candidates/006-model-provider-seam]].
 
 Terminology references: see [[glossary]] for stable definitions and [[terminology-report]] for ambiguous or overloaded detection terms.
 

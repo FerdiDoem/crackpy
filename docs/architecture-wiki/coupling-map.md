@@ -1,6 +1,7 @@
 # Coupling Map
 
 Status: observed coupling and side effects
+Role: Record observed architecture friction, implicit interfaces, shared state, and side effects. Architecture planning notes live in [[refactor-notes]].
 
 This note records observed system reality. Proposed changes live in [[refactor-notes]].
 
@@ -122,4 +123,3 @@ Key implicit contracts:
 - `results/result_data.py` is empty;
 - `FileStructure` and `DataFile` are shallow wrappers;
 - several utility modules are function bags rather than clear seams.
-

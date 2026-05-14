@@ -1,10 +1,11 @@
 .idea
 .venv
+.agents
 .ipynb_chekpoints
 tom.egg-info
 /docs/*
-!/docs/exploration/
-!/docs/exploration/**
+!/docs/architecture-wiki/
+!/docs/architecture-wiki/**
 /data/
 /venv/
 /plots/

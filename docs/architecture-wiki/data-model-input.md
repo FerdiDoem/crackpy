@@ -1,6 +1,7 @@
 # Data Model And Input
 
 Status: observed system reality
+Role: Document current `InputData`, nodemap, metadata, material, and input lifecycle behavior. Loading-seam planning lives in [[refactor-candidates/002-input-loading-seam]].
 
 ## Core Modules
 
@@ -38,7 +39,7 @@ Important methods:
 - `to_vtk()`: builds a PyVista mesh and optionally writes a `.vtk` file.
 - `require_fields()`: validates that named fields exist and tracked arrays have consistent lengths.
 
-## InputData Lifecycle
+## Implicit InputData Workflow
 
 Typical lifecycle:
 
@@ -91,18 +92,7 @@ Observed assumptions:
 
 `OutputWriter`, `Plotter`, and `OutputReader` are documented in [[results-io-workflows]], but they are included here because they directly consume the data and result shape established by `InputData` and `FractureAnalysis`.
 
-Observed result tags:
-
-- `Experiment_data`
-- `CJP_results`
-- `CJP_modeI_results`
-- `Williams_fit_results`
-- `SIFs_integral`
-- `Bueckner_Chen_integral`
-- `Path_SIFs`
-- `Path_Williams_a_n`
-- `Path_Williams_b_n`
-- `Path_Properties`
+The canonical observed result-tag list is maintained in [[results-io-workflows#OutputWriter]].
 
 ## Side Effects
 
@@ -119,4 +109,3 @@ Observed result tags:
 `InputData` is the main structural interface shared by crack detection, fracture analysis, VTK conversion, plotting, and scripts. The interface is attribute-based rather than schema-based: callers know names such as `coor_x`, `disp_x`, `eps_vm`, `sig_vm`, and they also know required call order.
 
 See [[coupling-map]] for architectural implications.
-

@@ -1,6 +1,7 @@
 # Results, I/O, Scripts, And Workflows
 
 Status: observed system reality
+Role: Document current result I/O, scripts, tests, fixtures, plotting, workflow folders, and observed result schema. Schema-cleanup planning lives in [[refactor-candidates/008-result-tag-schema]].
 
 Terminology references: see [[glossary]] for stable definitions and [[terminology-report]] for result-tag, folder, and output-schema inconsistencies.
 

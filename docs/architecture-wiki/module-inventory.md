@@ -1,6 +1,7 @@
 # Module Inventory
 
 Status: observed package inventory from local AST pass
+Role: Preserve the raw module, class, and function inventory. Use subsystem notes for narrative behavior and [[refactor-notes]] for architecture planning.
 
 This note maps package modules, classes, functions, and key dependencies. It excludes tests and scripts; workflows outside the installed package are mapped in [[results-io-workflows]].
 
@@ -570,4 +571,3 @@ Important methods:
 ### `crackpy/results/result_data.py`
 
 Empty placeholder.
-
