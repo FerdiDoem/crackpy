@@ -127,8 +127,28 @@ No findings closed yet.
   - Pydantic documentation, "JSON Schema", accessed 2026-05-14, `https://pydantic.dev/docs/validation/latest/concepts/json_schema/`; basis: Pydantic support for generating and customizing JSON Schema from models.
 - Result: no new source-backed terminology inconsistencies were found. The checked sources support the wiki's current separation between compact CrackPy-specific metadata records and optional standards-oriented PROV-O/JSON-LD export. `InputRecord`, `AnalysisRun`, `ResultRecord`, `ProvenanceRecord`, method revision, implementation fingerprint, and metadata statement bundle remain local planning vocabulary rather than literature-standard names. Existing FINDING-20260514-001 remains the only open source-backed conflict in the ledger.
 
+### 2026-05-14T22:21:55+02:00
+
+- Checked range: `8d24a550515754e90734360bea39bc526dd46eb5..e418d1a961784e04f7c1f0219d33855d0e7fe8eb`; no uncommitted wiki hunks were present.
+- Changed terminology focus: crack-tip estimate/result dependencies, physical crack tip versus method-specific estimate, corrected crack-tip estimate, correction delta, source crack-tip estimate, line-intercept evaluation-region/grid/threshold vocabulary, `UNetPath` as compatibility alias, `model_id`, `model_role`, `architecture`, `weights_id`, method identity and traceability vocabulary, method-reference registry, package citation, versioned main result JSON, optional result/export formats, compact KG grouping and URI policy, detailed provenance artifact, and standing high-risk `Bueckner-Chen` / `buckner_*` spelling.
+- Sources consulted:
+  - Timothy Lebo, Satya Sahoo, and Deborah McGuinness, "PROV-O: The PROV Ontology", 2013 W3C Recommendation, accessed 2026-05-14, `https://www.w3.org/TR/prov-o/`; basis: standards vocabulary for entities, activities, agents, bundles, plans, and RDF provenance relations.
+  - W3C JSON-LD Working Group, "JSON-LD 1.1", 2020 W3C Recommendation, accessed 2026-05-14, `https://www.w3.org/TR/json-ld/`; basis: JSON-based linked-data serialization and RDF compatibility.
+  - RO-Crate contributors, "RO-Crate 1.1 Specification", accessed 2026-05-14, `https://www.researchobject.org/ro-crate/specification/1.1/introduction.html`; basis: JSON-LD research-object packaging for data resources and contextual entities such as software and equipment.
+  - CodeMeta Project, "The CodeMeta JSON-LD Representation" and "Crosswalks", accessed 2026-05-14, `https://codemeta.github.io/jsonld/` and `https://codemeta.github.io/crosswalk/`; basis: JSON-LD software metadata and crosswalk vocabulary across software metadata standards.
+  - Citation File Format project, "Citation File Format (CFF)", accessed 2026-05-14, `https://citation-file-format.github.io/`; basis: `CITATION.cff` as human- and machine-readable citation metadata for software and datasets.
+  - JSON Schema project, "Specification", accessed 2026-05-14, `https://json-schema.org/specification`; basis: JSON Schema core and validation specifications for validating JSON result envelopes.
+  - Apache Parquet project, "Apache Parquet", accessed 2026-05-14, `https://parquet.apache.org/`; basis: Parquet as column-oriented data-file format.
+  - The HDF Group, "HDF5 Data Model and File Structure", accessed 2026-05-14, `https://docs.hdfgroup.org/documentation/hdf5/latest/_h5_d_m__u_g.html`; basis: HDF5 abstract data model, storage model, and file structure.
+  - NSF Unidata, "NetCDF", accessed 2026-05-14, `https://www.unidata.ucar.edu/software/netcdf/`; basis: netCDF as software libraries and machine-independent formats for array-oriented scientific data.
+  - Zarr project, "Zarr", accessed 2026-05-14, `https://zarr.dev/`; basis: Zarr as a versioned format for chunked, compressed, N-dimensional arrays.
+  - David Melching, Florian Paysan, Tobias Strohmann, and Eric Breitbarth, "An iterative crack tip correction algorithm discovered by physical deep symbolic regression", 2024, DOI `10.1016/j.ijfatigue.2024.108432`; basis: DIC-based crack-tip detection/correction formulas using Williams coefficients.
+  - Tobias Strohmann, Denis Starostin-Penner, Eric Breitbarth, and Guillermo Requena, "Automatic detection of fatigue crack paths using digital image correlation and convolutional neural networks", 2021, DOI `10.1111/ffe.13433`; basis: CrackPy-adjacent DIC displacement-field crack-path and crack-tip detection using convolutional neural networks.
+  - Dassault Systemes, Abaqus documentation, "Contour integral evaluation", accessed 2026-05-14, `https://docs.software.vt.edu/abaqusv2024/English/SIMACAEANLRefMap/simaanl-c-contintegral.htm`; basis: FEM contour-integral vocabulary for J-integral, SIFs, T-stress, crack tips, and crack fronts.
+- Result: no new source-backed terminology inconsistencies were found. The checked standards support treating `method_id`, `method_revision`, `implementation_fingerprint`, `dependency_scope`, `result_schema_version`, compact KG grouping, URI policy, and detailed provenance artifacts as local CrackPy planning vocabulary that can map outward to PROV-O, JSON-LD, RO-Crate, CodeMeta, CFF, and JSON Schema concepts without needing to adopt their names internally. Scientific and CrackPy-adjacent sources support keeping crack-tip correction and model-name terms as local result/provenance vocabulary unless they become formal method-reference registry entries. Existing FINDING-20260514-001 remains the only open source-backed conflict.
+
 ## Automation State
 
-- Last checked commit: `8d24a550515754e90734360bea39bc526dd46eb5`
-- Last checked range: `022c3beeeff58952294b29dad33c66c9e90f933c..8d24a550515754e90734360bea39bc526dd46eb5`; no uncommitted wiki hunks were present
-- Last run: `2026-05-14T18:32:55+02:00`
+- Last checked commit: `e418d1a961784e04f7c1f0219d33855d0e7fe8eb`
+- Last checked range: `8d24a550515754e90734360bea39bc526dd46eb5..e418d1a961784e04f7c1f0219d33855d0e7fe8eb`; no uncommitted wiki hunks were present
+- Last run: `2026-05-14T22:21:55+02:00`
