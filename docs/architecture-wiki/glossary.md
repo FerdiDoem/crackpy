@@ -487,7 +487,13 @@ Explicit version for a serialized result contract, including public JSON node ty
 Future graph-shaped JSON artifact for CrackPy result and provenance facts. It should contain typed nodes such as `Software`, `SoftwareConfiguration`, `InputRecord`, `AnalysisRun`, `ResultRecord`, `ResultQuantity`, and `ProvenanceRecord`, plus typed edges such as `used`, `wasAssociatedWith`, `wasGeneratedBy`, and `hasQuantity`. The structure should be PROV-compatible and exportable to both the compact [[glossary#Grouped metadata statement bundle]] and an optional [[glossary#Detailed provenance artifact]].
 
 #### ResultQuantity
-Future result node for one scalar scientific output or small derived quantity. A `ResultQuantity` should carry a stable `quantity_id`, the owning `result_id`, `quantity_kind`, `symbol` where useful, `mode` where applicable, `value`, `unit`, producing or estimator `method_id`, optional statistic/path metadata, and legacy aliases such as `Williams_fit_results.K_I` or `SIFs_integral.K_I_Chen.mean_wo_outliers`.
+Future result node for one scalar scientific output or small derived quantity. A `ResultQuantity` should carry a stable `quantity_id`, the owning `result_id`, a domain-facing `symbol`, an expressive `description`, `value`, `unit`, producing or estimator `method_id`, optional derivation links, and legacy aliases such as `Williams_fit_results.K_I` or `SIFs_integral.K_I_Chen.mean_wo_outliers`. Structured descriptors such as fracture mode, CJP component, Williams series, or term index are deferred until the result ontology boundary is clearer.
+
+#### Quantity symbol
+Domain-facing notation for a scalar result quantity, such as `K_I`, `K_II`, `K_F`, `K_R`, `T`, `a_1`, `b_2`, or `J_I`. The symbol is kept readable and close to fracture-mechanics notation instead of being replaced by early ontology fields.
+
+#### Quantity description
+Human-readable explanation of a `ResultQuantity` symbol and derivation context. It should state what the scalar means, for example `Mode I stress intensity factor derived from Williams coefficient a_1.` or `CJP forward stress-intensity-like parameter K_F from mixed-mode CJP fitting.` This is accepted planning vocabulary until structured quantity descriptors are designed.
 
 #### Result graph edge
 Future explicit relationship between result/provenance nodes. Examples include a run `used` an input record with role `primary_displacement_field`, a run `used` a crack-tip estimate with role `used_crack_tip_estimate`, a result `wasGeneratedBy` an analysis run, and a result `hasQuantity` a result quantity. Edges should carry semantic roles instead of hiding relationships inside string keys.

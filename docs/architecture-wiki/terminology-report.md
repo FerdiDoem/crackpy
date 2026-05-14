@@ -184,7 +184,7 @@ Related question IDs:
 - OQ-006: resolved public result names versus legacy implementation names; use [[glossary#Canonical result graph bundle]] and [[glossary#ResultQuantity]] for future planning vocabulary.
 - OQ-007: resolved crack-tip correction return semantics; use `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate` in future planning vocabulary.
 - OQ-009: resolved `UNetPath` as compatibility vocabulary for the current crack-path detector selector and weights; future metadata should use explicit model identity fields.
-- OQ-011: fracture-mode value vocabulary for canonical quantity records and legacy adapter suffix mapping.
+- OQ-011: resolved; canonical scalar quantity planning keeps the domain-facing `symbol` plus an expressive `description` string for now. Structured fracture-mode, component, series, and term-index descriptors are deferred.
 - OQ-012: resolved `buckner` as legacy implementation spelling and `bueckner_chen_*` as future refactor vocabulary.
 - OQ-013: 256-sample / 255-interval detection-grid convention.
 - OQ-014: resolved fixture-name vocabulary as non-domain preset/test data keys.

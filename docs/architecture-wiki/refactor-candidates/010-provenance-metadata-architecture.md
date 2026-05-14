@@ -653,12 +653,12 @@ The canonical graph bundle should carry typed nodes and explicit edges. A compac
       "id": "quantity:sha256:...",
       "type": "ResultQuantity",
       "prov_type": "prov:Entity",
-      "quantity_kind": "stress_intensity_factor",
-      "symbol": "K",
-      "mode": "I",
+      "symbol": "K_I",
+      "description": "Mode I stress intensity factor derived from Williams coefficient a_1.",
       "value": 1.99,
       "unit": "MPa*sqrt(m)",
-      "estimator_method_id": "crackpy.fracture.williams_fit",
+      "method_id": "crackpy.fracture.williams_fit",
+      "derived_from_quantity_ids": ["quantity:williams-a1"],
       "legacy_aliases": ["Williams_fit_results.K_I"]
     }
   ],
@@ -776,12 +776,12 @@ CrackPyAnalysisResult:
 ResultQuantity:
   crackpy_quantity_id
   crackpy_result_id
-  crackpy_quantity_kind
   crackpy_quantity_symbol
-  crackpy_fracture_mode_optional
+  crackpy_quantity_description
   crackpy_quantity_value
   crackpy_quantity_unit
-  crackpy_estimator_method_id
+  crackpy_method_id
+  crackpy_derived_from_quantity_ids_optional
   crackpy_statistic_optional
   crackpy_path_index_optional
   crackpy_legacy_aliases_optional

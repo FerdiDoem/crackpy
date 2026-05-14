@@ -16,7 +16,7 @@ These notes intentionally separate proposed future architecture from current sys
 | C-005 | [[refactor-candidates/005-side-orientation-module]] | proposed | [[glossary]], [[crack-detection]], [[terminology-report]], [[coupling-map]] | OQ-001, OQ-003 | Not decided |
 | C-006 | [[refactor-candidates/006-model-provider-seam]] | proposed | [[crack-detection]], [[results-io-workflows]], [[coupling-map]] | None | Model naming boundary accepted; implementation not approved |
 | C-007 | [[refactor-candidates/007-defaults-and-options-cleanup]] | proposed | [[fracture-analysis]], [[data-model-input]], [[coupling-map]] | OQ-010 | Not decided |
-| C-008 | [[refactor-candidates/008-result-tag-schema]] | proposed | [[results-io-workflows]], [[terminology-report]], [[coupling-map]] | OQ-011 | Canonical result graph boundary accepted; mode value vocabulary remains open |
+| C-008 | [[refactor-candidates/008-result-tag-schema]] | proposed | [[results-io-workflows]], [[terminology-report]], [[coupling-map]] | None | Canonical result graph boundary accepted; symbols plus descriptions accepted for scalar quantities |
 | C-009 | [[refactor-candidates/009-sequence-index-vocabulary]] | proposed | [[glossary]], [[terminology-report]], [[crack-detection]], [[data-model-input]] | None | Planning vocabulary accepted |
 | C-010 | [[refactor-candidates/010-provenance-metadata-architecture]] | proposed | [[data-model-input]], [[results-io-workflows]], [[coupling-map]], provided metadata statement-bundle datapoint JSON | None | Planning vocabulary accepted; implementation not approved |
 

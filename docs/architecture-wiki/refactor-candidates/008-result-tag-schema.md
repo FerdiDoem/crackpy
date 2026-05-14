@@ -35,17 +35,19 @@ A scalar result should have its own quantity identity instead of being represent
 {
   "quantity_id": "quantity:sha256:...",
   "result_id": "result:fracture:example-001",
-  "quantity_kind": "stress_intensity_factor",
-  "symbol": "K",
-  "mode": "I",
+  "symbol": "K_I",
+  "description": "Mode I stress intensity factor derived from Williams coefficient a_1.",
   "value": 1.99,
   "unit": "MPa*sqrt(m)",
-  "estimator_method_id": "crackpy.fracture.williams_fit",
+  "method_id": "crackpy.fracture.williams_fit",
+  "derived_from_quantity_ids": ["quantity:williams-a1"],
   "legacy_aliases": ["Williams_fit_results.K_I"]
 }
 ```
 
 This quantity can then be translated into the compact KG statement-bundle format as a `ResultQuantity` subject linked to its `FractureAnalysisResult`, while a PROV-O-like exporter can keep it as a generated entity or domain quantity linked to the generating activity.
+
+Accepted OQ-011 boundary: keep current scientific symbols such as `K_I`, `K_II`, `K_F`, `K_R`, `T`, `a_1`, and `J_I` as the primary quantity labels for now. Use an expressive `description` string to explain scientific meaning and derivation context. Do not introduce mandatory structured descriptor fields such as `fracture_mode`, `component`, `series`, or `term_index` until the result ontology boundary is clearer.
 
 Result schema metadata should align with [[refactor-candidates/010-provenance-metadata-architecture]] so provenance exporters can identify result format versions reliably.
 
@@ -69,9 +71,9 @@ Result schema metadata should align with [[refactor-candidates/010-provenance-me
 
 - OQ-005: resolved; future main result output is versioned JSON, with legacy text/CSV/plots treated as adapters or helper projections.
 - OQ-006: resolved; canonical result JSON is graph-shaped and current result tags are legacy aliases.
-- OQ-011: still open for exact mode-value vocabulary, but public result field names should not encode mode as suffixes.
+- OQ-011: resolved; future quantity records keep `symbol` plus expressive `description` for now, while structured mode/component/term descriptors are deferred.
 - OQ-015: resolved; provenance metadata uses the `InputRecord`, `AnalysisRun`, `ResultRecord`, and `ProvenanceRecord` split.
 
 ## Decision State
 
-OQ-005 and OQ-006 planning boundaries accepted. No implementation approved. The concrete schema still needs a future implementation design, validation rules, and compatibility strategy.
+OQ-005, OQ-006, and OQ-011 planning boundaries accepted. No implementation approved. The concrete schema still needs a future implementation design, validation rules, and compatibility strategy.

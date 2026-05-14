@@ -393,7 +393,7 @@ OQ-006 is resolved as a schema-boundary decision. Future public result vocabular
 
 The future canonical CrackPy result JSON should be a small graph-shaped result/provenance bundle. It should contain typed nodes such as `Software`, `SoftwareConfiguration`, `InputRecord`, `AnalysisRun`, `ResultRecord`, `ResultQuantity`, `CrackTipEstimateResult`, and `ProvenanceRecord`, plus typed edges such as `used`, `wasAssociatedWith`, `wasGeneratedBy`, and `hasQuantity`. The names do not have to be literal PROV-O class names internally, but the structure should be directly mappable to PROV-O.
 
-Scalar scientific outputs should be represented as `ResultQuantity`-like subjects with their own identity. A mode I stress intensity factor from Williams fitting should therefore not be only a field named `K_I`. It should be a quantity node with fields such as `quantity_id`, `result_id`, `quantity_kind`, `symbol`, `mode`, `value`, `unit`, `estimator_method_id`, optional statistic/path metadata, and `legacy_aliases`.
+Scalar scientific outputs should be represented as `ResultQuantity`-like subjects with their own identity. A mode I stress intensity factor from Williams fitting should therefore not be only a field inside `Williams_fit_results`, because that ties the result meaning to a legacy writer section. OQ-011 decides the concrete quantity vocabulary: for now the quantity node keeps the familiar scientific `symbol` and an expressive `description` string instead of introducing mandatory structured descriptors such as fracture mode, component, or Williams term index.
 
 The compact KG grouped metadata statement bundle remains an export target, not the canonical CrackPy result schema. A KG translator should flatten selected graph nodes and edges into statements with `key`, `value`, `data_type`, `unit`, `metadata_type`, `source`, and `related_to`. The translator or KG importer decides grouping, subject URI minting, and namespace policy.
 
@@ -410,7 +410,38 @@ Consequences:
 - Current result tags and flattened CSV columns become legacy aliases or adapter vocabulary, not canonical public schema.
 - Future result writers should emit graph-shaped JSON as the canonical scalar result/provenance artifact.
 - Legacy text, current JSON sections, CSV flattening, plots, and optional table/array formats should be adapters over the canonical result graph.
-- OQ-011 is reframed: public result keys should not encode mode as Roman or numeric suffixes; mode should be a property of a quantity node. The exact allowed mode values can still be documented separately.
+- At the time of OQ-006, OQ-011 remained the follow-up decision on whether quantity semantics should use structured descriptors or stay closer to current symbols plus descriptions.
+- No production schema, writer, or reader change is approved by this decision.
+
+## 2026-05-14: ResultQuantity Keeps Symbol And Description Before Structured Descriptors
+
+Status: accepted for planning
+
+Decision:
+
+OQ-011 is resolved conservatively. Future `ResultQuantity` records should keep the familiar fracture-mechanics or CrackPy result symbol as the primary quantity label. Examples include `K_I`, `K_II`, `K_III`, `K_F`, `K_R`, `K_S`, `T`, `T_x`, `a_1`, `b_2`, `J_I`, and path/statistic variants where applicable.
+
+Do not introduce mandatory structured descriptor fields such as `fracture_mode`, `mode_index`, `component`, `series`, or `term_index` yet. The first planning target is a single scalar quantity node with fields such as `quantity_id`, `result_id`, `symbol`, `description`, `value`, `unit`, `method_id`, optional `derived_from_quantity_ids`, and `legacy_aliases`.
+
+The `description` field should explain the scientific meaning in plain language, including derivation context where it matters. Examples:
+
+- `Mode I stress intensity factor derived from Williams coefficient a_1.`
+- `CJP forward stress-intensity-like parameter K_F from mixed-mode CJP fitting.`
+- `T-stress derived from Williams coefficient a_2.`
+- `Mode I J-integral contribution from mode decomposition.`
+
+Rationale:
+
+CrackPy result symbols are not all variants of the same mode concept. `K_I`, `K_II`, and `K_III` are LEFM stress intensity factors for fracture modes. `K_F`, `K_R`, and `K_S` are CJP-model-specific field parameters. `T` is a non-singular stress term. Williams coefficients such as `a_1` and `b_2` can be primary fit outputs from which downstream quantities are derived. Forcing these into one early descriptor ontology would likely create unstable schema decisions before the refactor has clarified the full result model.
+
+The accepted compromise keeps result JSON readable and compatible with current scientific notation while still separating scalar values from legacy writer sections. A later schema version may introduce controlled structured descriptors if the ontology boundary becomes clear. That migration can use `symbol`, `description`, `method_id`, and `legacy_aliases` as source material instead of requiring every consumer to parse old section names.
+
+Consequences:
+
+- `symbol` is the primary canonical quantity label for now.
+- `description` carries human-readable scientific meaning and derivation context.
+- Structured fields for fracture mode, model component, Williams series, or term index are deferred.
+- Existing symbols and tags remain compatibility aliases where needed, but the canonical result node is still separate from legacy writer sections.
 - No production schema, writer, or reader change is approved by this decision.
 
 ## 2026-05-14: Model Names, Bueckner Spelling, And Fixture Keys Use Explicit Naming Boundaries
