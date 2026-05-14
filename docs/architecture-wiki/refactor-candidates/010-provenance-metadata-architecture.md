@@ -27,7 +27,9 @@ Observed gaps are also clear:
 
 ## Current Knowledge Graph Assumptions
 
-The provided MDIC datapoint JSON is a compact metadata-statement bundle grouped by entity-like keys such as `Experiment`, `Specimen`, `Crack`, `MachineConfiguration`, `AramisConfiguration`, `MicroscopeImage`, and `ExperimentProcedure`. Each record uses a regular shape:
+The provided microscope-DIC datapoint JSON is one concrete example of a more generic metadata statement bundle. It should not define CrackPy's internal architecture and should not be treated as an MDIC-only target. A comparable bundle could also describe FEM, synthetic benchmark data, imported reference fields, DVC, or another future source.
+
+The observed bundle is grouped by entity-like subject keys such as `Experiment`, `Specimen`, `Crack`, `MachineConfiguration`, `AramisConfiguration`, `MicroscopeImage`, and `ExperimentProcedure`. Each subject contains a list of metadata statements with a regular shape:
 
 ```text
 data_type
@@ -40,7 +42,27 @@ unit
 value
 ```
 
+Generic statement-bundle pattern:
+
+```text
+MetadataBundle
+  subject group:
+    MetadataStatement
+      key
+      value
+      data_type
+      unit
+      description
+      metadata_type
+      source
+      related_to
+```
+
+For microscope DIC, subject groups may be `Aramis`, `MicroscopeImage`, `Specimen`, `Crack`, or `ExperimentProcedure`. For FEM, equivalent subject groups could be `Solver`, `SolverConfiguration`, `Mesh`, `MaterialModel`, `BoundaryCondition`, `LoadStep`, `ResultField`, `CrackDefinition`, or `SimulationProcedure`.
+
 This suggests the existing graph is closer to a BFO-near or object/configuration-oriented model than a fully PROV-O-centered workflow graph. Software and procedure metadata are represented through entities and configuration/state metadata, not through a complete semantic activity chain.
+
+CrackPy should target the generic metadata statement-bundle pattern for compact export, not the microscope-DIC-specific subject vocabulary. A separate exporter can map the same internal metadata records into a PROV-O-like process graph.
 
 For CrackPy, the likely compact target groups are:
 
@@ -153,19 +175,24 @@ class InputRecord:
     sequence_index: int | None = None
     source_label: str | None = None
     source_hash: str | None = None
+    geometry_profile: str | None = None
 
 
 @dataclass(frozen=True)
 class AnalysisRun:
     run_id: str
     function_name: str
+    function_metadata_version: str
     input_ids: tuple[str, ...]
+    input_roles: Mapping[str, str]
     configuration_id: str
     parameter_hash: str
     started_at: str
-    completed_at: str | None
     crackpy_version: str
-    execution_commit: str | None
+    method_reference_ids: tuple[str, ...] = ()
+    model_ids: tuple[str, ...] = ()
+    completed_at: str | None = None
+    execution_commit: str | None = None
 
 
 @dataclass(frozen=True)
@@ -174,6 +201,7 @@ class ResultRecord:
     run_id: str
     schema_version: str
     output_ids: tuple[str, ...]
+    output_roles: Mapping[str, str]
     output_hashes: Mapping[str, str]
     units: Mapping[str, str]
 
@@ -185,7 +213,65 @@ class ProvenanceRecord:
     analysis_runs: tuple[AnalysisRun, ...]
     result_records: tuple[ResultRecord, ...]
     export_target: str | None = None
+    exporter_version: str | None = None
+    detailed_provenance_ref: str | None = None
 ```
+
+Field rationale for `InputRecord`:
+
+| Field | What | Why |
+| --- | --- | --- |
+| `input_id` | Stable identity of one concrete input record. | Matching, provenance links, result links, and targeted re-analysis need a durable reference that does not change when files are reordered or filtered. |
+| `data_ref` | Reference to the actual input data, such as a path, URI, dataset key, or object-store ID. | The metadata record should identify data without embedding large arrays or forcing every source into the same storage backend. |
+| `metadata` | Attached source, user, experiment, simulation, coordinate-system, and preprocessing metadata. | CrackPy needs to carry rich metadata without coupling the core pipeline to one DIC, FEM, or knowledge-graph schema. |
+| `sequence_index` | Optional ordering key within an input sequence. | Current `stage` use often means ordering, but future inputs may be FEM load steps, video frames, or synthetic sequences; ordering should not be confused with identity. |
+| `source_label` | Optional original source label, such as legacy `stage`, image name, load-step name, or solver step label. | Keeping the source label preserves traceability to external tools and existing files while allowing CrackPy to use generic internal vocabulary. |
+| `source_hash` | Optional hash of the source data or source artifact. | Hashes let an orchestrator detect changed inputs and decide whether existing results may be stale. |
+| `geometry_profile` | Optional declared spatial-domain profile, such as `surface_planar`, `surface_parameterized`, `surface_3d`, or `volumetric_field`. | Methods must know whether the data is a planar surface, parameterized surface, 3D surface, or volume so that 3D coordinates are not mistaken for general 3D fracture-mechanics support. |
+
+Field rationale for `AnalysisRun`:
+
+| Field | What | Why |
+| --- | --- | --- |
+| `run_id` | Stable identity of one analysis execution. | Results, logs, plots, and provenance exports need a common execution anchor. |
+| `function_name` | Stable analysis-function identity, for example `WilliamsFit` or `CrackTipDetection`. | Targeted re-analysis depends on knowing which analysis function produced a result. |
+| `function_metadata_version` | Version of the function metadata contract. | Function behavior, accepted inputs, outputs, defaults, or references may change even when the public function name stays stable. |
+| `input_ids` | Input records consumed by the run. | The run must explicitly state which data records were used to generate a result. |
+| `input_roles` | Role of each consumed input, keyed by `input_id`. | A PROV-O graph with only generic `used` edges is too weak; roles distinguish primary displacement field, representative crack-tip source, material definition, configuration, model weights, or post-processing input. |
+| `configuration_id` | Identity of the configuration snapshot used by the run. | Configuration needs its own identity so multiple runs can share, compare, cache, and export the same parameter set. |
+| `parameter_hash` | Hash of normalized parameter values and relevant defaults. | Hashes let an orchestrator detect parameter changes without comparing large nested configuration objects field by field. |
+| `started_at` | Execution start timestamp. | Time is needed for audit, ordering, reproducibility records, and knowledge-graph queries. |
+| `crackpy_version` | Package version used for the run. | Result interpretation and re-analysis need to know which CrackPy release generated the data. |
+| `method_reference_ids` | Literature or method reference IDs associated with the run. | Method-specific references should travel with results for scientific review, citation, and RDF export. |
+| `model_ids` | Optional neural-network or surrogate-model identities used by the run. | Crack-tip detection may depend on model weights, training convention, or model version, not only on CrackPy source code. |
+| `completed_at` | Optional execution completion timestamp. | A missing completion time can represent an interrupted, failed, or still-running analysis while retaining the run identity. |
+| `execution_commit` | Optional repository commit used for the run. | Commit identity supports code-level traceability when CrackPy runs from a checkout or build that can expose it. |
+
+Field rationale for `ResultRecord`:
+
+| Field | What | Why |
+| --- | --- | --- |
+| `result_id` | Stable identity of a generated result. | Downstream exports, plots, CSV rows, and provenance records need to refer to a result independently of filenames. |
+| `run_id` | Producing analysis run. | The result must link back to the execution that generated it. |
+| `schema_version` | Version of the result schema or output contract. | Readers and orchestrators need to know whether tags, units, columns, or JSON keys can be interpreted with the expected contract. |
+| `output_ids` | Identities or references for generated output artifacts. | A single result may generate text, JSON, CSV rows, plots, or other artifacts; each needs a stable reference. |
+| `output_roles` | Role of each output artifact, keyed by output ID. | Roles distinguish machine-readable result data, human-readable report, plot, flattened CSV projection, or export artifact. |
+| `output_hashes` | Hashes of output artifacts where practical. | Hashes support integrity checks, caching, and stale-result detection. |
+| `units` | Unit metadata for public result values. | Fracture-mechanics results are not safely interpretable without units, especially after flattening or RDF export. |
+
+Field rationale for `ProvenanceRecord`:
+
+| Field | What | Why |
+| --- | --- | --- |
+| `provenance_id` | Stable identity of the provenance envelope. | Compact metadata bundles, detailed PROV-O artifacts, and external knowledge graphs need an addressable provenance object. |
+| `input_records` | Input records included in this provenance envelope. | The envelope must contain or reference the consumed input identities and their minimal source metadata. |
+| `analysis_runs` | Analysis executions included in this provenance envelope. | The envelope needs the process anchors that connect inputs, configuration, software, and outputs. |
+| `result_records` | Result records included in this provenance envelope. | The envelope must state which generated results are covered by the traceability facts. |
+| `export_target` | Optional compact export target, such as the existing metadata statement-bundle shape. | Export metadata should be explicit because the same internal records may be mapped to RDF/Jena, JSON, JSON-LD, RO-Crate, or another artifact. |
+| `exporter_version` | Optional version of the exporter that generated the external representation. | Exporter behavior can change independently from numerical analysis behavior and should be traceable. |
+| `detailed_provenance_ref` | Optional link to a detailed provenance artifact. | The compact graph can stay small while a separate PROV-O-like graph, JSON-LD file, or RO-Crate carries richer process detail. |
+
+The important constraint is that links should carry semantic roles. A run should not only say that it used several records; it should say which record was the primary displacement field, representative crack-tip source, material definition, configuration, model weights, correction result, or post-processing input where applicable. This preserves enough meaning to export useful PROV-O later instead of a generic graph full of indistinguishable `used` edges.
 
 ## Analysis Function Interface
 
@@ -327,7 +413,18 @@ Recommendation for planning: use a small YAML/JSON method-reference registry as 
 
 The exporter should be an adapter. It should not define the internal CrackPy model.
 
-Mapping sketch to the observed datapoint style:
+Conceptual crosswalk:
+
+| CrackPy internal concept | Compact statement-bundle export | Optional PROV-O-like export |
+| --- | --- | --- |
+| `InputRecord` | `InputRecord`, `Nodemap`, `InputDataset`, `Mesh`, or source-specific input subject | `prov:Entity` |
+| `AnalysisRun` | `CrackPyAnalysis` | `prov:Activity` |
+| `ResultRecord` | `CrackPyAnalysisResult` | generated `prov:Entity` |
+| `ProvenanceRecord` | linked metadata bundle or export artifact subject | `prov:Bundle` or named graph |
+| CrackPy software | `Software` | `prov:SoftwareAgent` |
+| Configuration snapshot | `SoftwareConfiguration` or analysis-specific configuration subject | `prov:Entity` or `prov:Plan` |
+
+Mapping sketch to the generic statement-bundle style:
 
 ```text
 Software:
@@ -381,6 +478,8 @@ The exporter should normalize data types, units, and `source` values because the
 
 The compact graph should remain practical. A second optional layer can be more PROV-O-like and exported separately as JSON-LD, Turtle, or another RDF artifact.
 
+The proposed internal split is intentionally compatible with established provenance standards without forcing CrackPy internals to be named after those standards. `InputRecord` and `ResultRecord` map naturally to PROV-O entities, `AnalysisRun` maps to a PROV-O activity, and CrackPy, users, model providers, or external orchestrators map to PROV-O agents. This means CrackPy can later generate a standards-oriented process graph from the same internal records that also feed the compact metadata statement-bundle export.
+
 Candidate mapping:
 
 - `Activity`: one analysis execution, such as crack detection or Williams fit;
@@ -417,7 +516,7 @@ Candidate adoption stance:
 
 ## Open Design Questions
 
-- OQ-015: Which provenance metadata must be preserved across input loading, detection, fracture analysis, text/JSON output, CSV flattening, and plots?
+- OQ-015: resolved minimal traceability chain across input loading, detection, fracture analysis, text/JSON output, CSV flattening, and plots;
 - OQ-016: How should CrackPy define an analysis-function identity and function-level version?
 - OQ-017: Should function-relevant commits be computed automatically from Git history, declared manually, or generated at build time?
 - OQ-018: Should method references live in Python metadata, YAML/JSON, BibTeX, or a hybrid registry?
@@ -497,9 +596,9 @@ class AnalysisExecutionMetadata:
 ## Next Steps
 
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
-- Resolve OQ-015 through OQ-019 enough to define a minimal metadata scope.
+- Resolve OQ-016 through OQ-019 enough to define the remaining metadata scope.
 - Prototype a metadata record for `WilliamsFit` on paper before touching production code.
-- Define a compact target export profile using the provided MDIC datapoint shape.
+- Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint.
 - Decide whether method references should start as YAML/JSON registry entries.
 - Keep this note in planning state until the refactor specification is approved.
 

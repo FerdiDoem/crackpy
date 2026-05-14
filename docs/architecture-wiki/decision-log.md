@@ -113,3 +113,32 @@ Useful split:
 - Pipeline state and matching decisions are separate workflow concerns.
 - Minimal source/input provenance can live with `InputRecord`.
 - Processing provenance belongs to the objects that consume inputs and generate results.
+
+## 2026-05-14: Provenance Uses A Minimal Traceability Chain
+
+Status: accepted for planning
+
+Decision:
+
+CrackPy should preserve a minimal traceability chain across input loading, crack detection, fracture analysis, text/JSON output, CSV flattening, and plots. It should not try to preserve full internal execution history in every artifact.
+
+The planning split is:
+
+- `InputRecord`: concrete input data plus attached metadata and minimal source provenance.
+- `AnalysisRun`: one execution of a registered analysis function over one or more input records and a configuration snapshot.
+- `ResultRecord`: generated result identity, schema, units, hashes, and artifact references.
+- `ProvenanceRecord`: compact or detailed envelope linking inputs, analysis runs, results, software, configurations, and export metadata.
+
+Rationale:
+
+The split is compatible with established provenance concepts without forcing CrackPy internals to be named after them. `InputRecord` and `ResultRecord` can map to PROV-O entities, `AnalysisRun` can map to a PROV-O activity, and CrackPy, users, model providers, or orchestrators can map to PROV-O agents. The same internal model can feed both a compact metadata statement-bundle export and an optional detailed PROV-O-like graph.
+
+The provided microscope-DIC datapoint JSON is an example of a generic metadata statement-bundle pattern, not an MDIC-specific architectural boundary. A comparable bundle could describe DIC, FEM, synthetic benchmark data, imported reference fields, or another future source.
+
+Consequences:
+
+- The compact export should store facts needed for query, audit, and targeted re-analysis.
+- A detailed PROV-O-like artifact can be generated separately when richer process provenance is needed.
+- Links between records should carry semantic roles, such as primary displacement field, representative crack-tip source, configuration snapshot, material definition, model weights, correction result, or post-processing input.
+- Text/JSON and CSV outputs should preserve enough IDs, schema versions, hashes, and function/configuration references to determine whether a result is stale.
+- Plots should carry or link to the producing `result_id` or `run_id`, but should not duplicate the full provenance payload.
