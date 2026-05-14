@@ -282,10 +282,35 @@ Post-processing step that masks crack-path pixels near the detected crack tip, k
 #### Detection window
 Status: qualified term
 
-Square physical field of view mapped to `256 x 256` neural-network input pixels.
+Current square physical field of view mapped to neural-network input pixels. In current code this is `256 x 256` pixels. Future planning should prefer [[glossary#Detection window extent]] when the physical field of view may be rectangular.
 
 #### Detection window size
-Physical side length of the square detection window in millimeters. This is named `window_size` in `CrackDetectionSetup` and `detection_window_size` in `CrackDetection`.
+Physical side length of the current square detection window in millimeters. This is named `window_size` in `CrackDetectionSetup` and `detection_window_size` in `CrackDetection`. Treat this as square-only compatibility vocabulary; future architecture planning should prefer `detection_window_extent_mm`.
+
+#### Detection window extent
+Status: proposed architecture vocabulary
+
+Physical x/y extent of the detection window in millimeters. Future planning variable: `detection_window_extent_mm = (extent_x_mm, extent_y_mm)`. This avoids encoding a square-only assumption in the core term while preserving current behavior as `(detection_window_size_mm, detection_window_size_mm)`.
+
+#### Detection resampling grid
+Status: proposed architecture vocabulary
+
+Regular image-processing grid used to resample a physical detection window before neural crack detection. It is defined by `detection_window_extent_mm`, `detection_input_resolution_px`, and a coordinate-mapping convention. Current CrackPy models use `(256, 256)` pixels over a square physical extent.
+
+#### Detection input resolution
+Status: proposed architecture vocabulary
+
+Pixel width and height of the neural detector input, expressed as `detection_input_resolution_px = (width_px, height_px)`. This is model-facing image resolution, not physical resolution.
+
+#### Detection grid spacing
+Status: proposed architecture vocabulary
+
+Physical spacing represented by one adjacent grid interval in the detection resampling grid. Future planning variables: `detection_grid_spacing_x_mm_per_px = extent_x_mm / (width_px - 1)` and `detection_grid_spacing_y_mm_per_px = extent_y_mm / (height_px - 1)`. The `_mm_per_px` suffix records the physical unit even though the value is derived from grid intervals, not raw camera pixels.
+
+#### Endpoint-inclusive detection mapping
+Status: proposed architecture vocabulary
+
+Coordinate-mapping convention where the first and last detection-grid samples lie on the physical detection-window boundaries. With `detection_input_resolution_px = (256, 256)`, each axis has `255` intervals. This is why current conversion code uses `detection_window_size / 255`. The convention is align-corners-like in image-processing vocabulary, but is documented here as a CrackPy detection-grid mapping rather than a PyTorch API setting.
 
 #### Interpolation size
 Signed detection-window size used internally by neural crack detection. Positive values represent the right-side convention; negative values are used for left-side mirroring and displacement sign handling.
@@ -299,10 +324,10 @@ Millimeter shift of the detection window origin. Batch detection mutates the off
 Neural-network orientation convention where the crack starts on the left side of the interpolated image and grows in positive x-direction. Left-side data is mirrored into this convention before inference. See also [[glossary#Side]] and [[glossary#Coordinate system]].
 
 #### Crack tip pixel
-Detected crack-tip position on the `256 x 256` neural-network grid. The implementation often stores this as row/column order before conversion into x/y millimeter coordinates.
+Detected crack-tip position on the neural-network [[glossary#Detection resampling grid]]. The current implementation uses a `256 x 256` grid and often stores the position in row/column order before conversion into x/y millimeter coordinates.
 
 #### Crack tip in mm
-Global crack-tip coordinate after pixel-to-millimeter scaling, side mirroring, and window offset have been applied.
+Global crack-tip coordinate after detection-grid spacing, side mirroring, and window offset have been applied.
 
 #### Crack tip mask
 Status: qualified term

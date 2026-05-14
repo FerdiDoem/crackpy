@@ -42,6 +42,11 @@ This note separates observed terminology from proposed canonicalization. The sta
 - `CrackTipDetection`: neural crack-tip detector wrapper.
 - `CrackPathDetection`: neural crack-path detector wrapper.
 - `CrackAngleEstimation`: local angle-estimation post-processing.
+- `Detection resampling grid`: proposed future vocabulary for the regular image-processing grid used to resample the physical detection window before neural crack detection.
+- `Detection window extent`: proposed future vocabulary for physical x/y detection-window extent in millimeters.
+- `Detection input resolution`: proposed future vocabulary for neural detector input width/height in pixels.
+- `Detection grid spacing`: proposed future vocabulary for physical millimeters per adjacent detection-grid interval.
+- `Endpoint-inclusive detection mapping`: proposed future vocabulary for the current `256` sample / `255` interval coordinate mapping.
 - `Detection window size`: physical side length of the neural-network field of view.
 - `Interpolation size`: signed size used for side mirroring.
 - `Offset` / `start offset`: moving millimeter offset of the detection window.
@@ -129,7 +134,8 @@ This note separates observed terminology from proposed canonicalization. The sta
 ### Window, Size, And Offset
 
 - `window_size`, `detection_window_size`, `interp_size`, `size`, crop size, and line-intercept `window_size` are overloaded.
-- The glossary now reserves `Detection window size` for physical millimeter size and `Interpolation size` for the signed mirroring value.
+- The glossary reserves `Detection window size` for the current square physical millimeter size and `Interpolation size` for the signed mirroring value.
+- Resolved OQ-013: future planning vocabulary should prefer [[glossary#Detection resampling grid]], [[glossary#Detection window extent]], [[glossary#Detection input resolution]], [[glossary#Detection grid spacing]], and [[glossary#Endpoint-inclusive detection mapping]]. Use unit-bearing variable names such as `detection_window_extent_mm`, `detection_input_resolution_px`, and `detection_grid_spacing_x_mm_per_px`.
 - Line-intercept `window_size` is really a consecutive fitted crack-path sample count. Future planning vocabulary should use [[glossary#Min consecutive strain exceedance count]] and keep `window_size` as a legacy implementation name.
 - Related line-intercept constructor names also need more precise descriptions: `x_min`/`x_max`/`y_min`/`y_max` bound the line-intercept evaluation region, `tick_size_x`/`tick_size_y` are nominal interpolation-grid spacing controls, `grid_component` selects the fitted displacement component, `eps_vm_threshold` is applied along the fitted crack path, and `angle_estimation_mm_radius` selects samples for local angle fitting.
 
@@ -205,7 +211,7 @@ Related question IDs:
 - OQ-010: resolved explicit defaults boundary; use [[glossary#Normalized configuration]], [[glossary#Result-affecting default]], [[glossary#Derived default]], and [[glossary#Workflow composition setting]] for future planning vocabulary.
 - OQ-011: resolved; canonical scalar quantity planning keeps the domain-facing `symbol` plus an expressive `description` string for now. Structured fracture-mode, component, series, and term-index descriptors are deferred.
 - OQ-012: resolved `buckner` as legacy implementation spelling and `bueckner_chen_*` as future refactor vocabulary.
-- OQ-013: 256-sample / 255-interval detection-grid convention.
+- OQ-013: resolved; use [[glossary#Detection resampling grid]] and unit-bearing variables for the current `256` sample / `255` interval detection-grid convention. `255` is the derived interval count, not a standalone magic constant.
 - OQ-014: resolved fixture-name vocabulary as non-domain preset/test data keys.
 
 ## Documentation Files Updated

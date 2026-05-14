@@ -52,6 +52,25 @@ Model expectations:
 
 `get_model()` supports only `ParallelNets` and `UNetPath`. If weights are missing, it creates a local model directory and downloads from Zenodo.
 
+Detection-grid coordinate mapping:
+
+- current neural detection resamples each physical detection window to a `256 x 256` grid;
+- interpolation uses endpoint-inclusive coordinates through `np.linspace(..., pixels)`;
+- therefore `256` samples span `255` physical intervals on each axis;
+- current crack-tip, crack-path, and angle-radius conversions use `detection_window_size / 255`;
+- future planning vocabulary should express this as [[glossary#Detection resampling grid]], `detection_window_extent_mm`, `detection_input_resolution_px`, and derived grid spacing values such as `detection_grid_spacing_x_mm_per_px`;
+- current `detection_window_size` remains square-only compatibility vocabulary.
+
+For the current square model, the conceptual mapping is:
+
+```python
+detection_window_extent_mm = (detection_window_size_mm, detection_window_size_mm)
+detection_input_resolution_px = (256, 256)
+
+detection_grid_spacing_x_mm_per_px = detection_window_extent_mm[0] / (detection_input_resolution_px[0] - 1)
+detection_grid_spacing_y_mm_per_px = detection_window_extent_mm[1] / (detection_input_resolution_px[1] - 1)
+```
+
 ## CrackDetectionPipeline
 
 `CrackDetectionSetup` stores specimen size, sides, stage selection, window size, detection boundaries, start offset, and angle detection radius.

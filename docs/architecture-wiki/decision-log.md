@@ -476,6 +476,44 @@ Consequences:
 - `None` as a method-selection switch belongs to workflow composition and should be normalized before individual method execution.
 - Current mutable default object patterns remain observed implementation debt; this decision does not approve production code changes.
 
+## 2026-05-14: Detection Resampling Grid Uses Explicit Extent, Resolution, And Spacing
+
+Status: accepted for planning
+
+Decision:
+
+OQ-013 is resolved as a detection-grid terminology decision. The current `256` sample / `255` interval pixel-to-millimeter convention should be named explicitly, but only as neural crack-detection grid vocabulary. It should not become a general CrackPy coordinate-system rule.
+
+Future planning should use [[glossary#Detection resampling grid]] as the main concept. The grid is described by:
+
+- `detection_window_extent_mm = (extent_x_mm, extent_y_mm)`;
+- `detection_input_resolution_px = (width_px, height_px)`;
+- endpoint-inclusive coordinate mapping;
+- derived spacing values such as `detection_grid_spacing_x_mm_per_px` and `detection_grid_spacing_y_mm_per_px`.
+
+Current CrackPy behavior is the square special case:
+
+```python
+detection_window_extent_mm = (detection_window_size_mm, detection_window_size_mm)
+detection_input_resolution_px = (256, 256)
+detection_grid_spacing_x_mm_per_px = detection_window_extent_mm[0] / (detection_input_resolution_px[0] - 1)
+detection_grid_spacing_y_mm_per_px = detection_window_extent_mm[1] / (detection_input_resolution_px[1] - 1)
+```
+
+Rationale:
+
+The code already fixes the current neural detector input to `256 x 256` pixels. The important architectural point is that interpolation uses endpoint-inclusive coordinates, so `256` samples span `255` physical intervals. Current conversion code therefore uses `detection_window_size / 255` for crack-tip, crack-path, and angle-radius conversions.
+
+The accepted vocabulary follows image-processing language more closely than a bare "pixel-to-mm" term. A detection window is resampled onto a grid; the model consumes an input resolution in pixels; physical spacing is a derived value. This matches common ideas such as resampling grid, pixel spacing, and align-corners-like coordinate mapping without tying CrackPy to a specific external API.
+
+Consequences:
+
+- `255` should be documented as `detection_input_resolution_px - 1`, not as an unexplained magic number.
+- Future architecture planning should avoid square-only names as canonical terms. Current `detection_window_size` remains compatibility vocabulary.
+- Unit-bearing variable names are preferred where practical: `_mm`, `_px`, and `_mm_per_px`.
+- Rectangular model inputs remain possible because extent and resolution are both x/y quantities.
+- No production detector implementation change is approved by this decision.
+
 ## 2026-05-14: Domain Workflow Runners Stay, Current Pipelines Become Compatibility Facades
 
 Status: accepted for planning
