@@ -279,3 +279,28 @@ Consequences:
 - The compact export should link to the detailed artifact by artifact ID, URI, or file path.
 - URI and namespace policy must be defined by the exporter profile or KG importer; CrackPy internal records should provide stable IDs and types.
 - A provenance granularity policy is needed so detailed artifacts are consistent across methods.
+
+## 2026-05-14: Crack-Tip Estimates Are Result Dependencies
+
+Status: accepted for planning
+
+Decision:
+
+The compact KG may contain multiple physical crack tips when the specimen or input state contains multiple crack tips. A physical crack tip is a domain object, not the same thing as a method-specific computational estimate.
+
+Crack-tip detection, correction, manual import, or future uncertainty/fusion methods should produce `CrackTipEstimateResult`-like computational result records. These records should carry their own `CrackTipEstimateConfiguration`-like configuration link because neural detection, line-intercept detection, correction, and manual import can all depend on method-specific settings, model weights, thresholds, windows, conventions, or source metadata.
+
+Fracture-analysis results that consume a crack-tip estimate should link to that estimate explicitly, for example through a `used_crack_tip_estimate` role. The crack-tip estimate should not be hidden only inside `used_configuration`. Configuration describes how the fracture-analysis method runs; the crack-tip estimate is data or an intermediate result consumed by that run.
+
+Rationale:
+
+Fracture analysis changes when the crack-tip estimate changes, even if the Williams-fit, line-integral, material, or optimization configuration stays identical. Treating the estimate as configuration would blur method settings with data dependencies and make stale-result detection harder.
+
+Keeping CrackPy as one software entity remains sufficient. The graph should split outputs and dependencies, not split CrackPy itself. Crack-tip detection results and fracture-analysis results can both be produced by CrackPy while carrying different `method_id`, configuration, run, and result records.
+
+Consequences:
+
+- `CrackTipEstimateResult` should have its own `configuration_id`, method metadata, input links, result schema, and optional uncertainty metadata.
+- `FractureAnalysisResult` should link to the consumed crack-tip estimate in addition to input data and fracture-analysis configuration.
+- Manual crack tips should be represented as user- or import-sourced crack-tip estimates, not as fracture-analysis configuration only.
+- A physical `CrackTip` may later be associated with one or more estimates and uncertainty/fusion records, but this is not required for the first compact KG export profile.
