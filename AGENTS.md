@@ -26,6 +26,8 @@ Keep three layers separate:
 
 Do not mix proposed architecture into observed-system notes. If a design decision becomes stable, record it separately rather than rewriting history.
 
+When proposing future containers, dataclasses, configuration objects, protocols, or complex functions/classes in architecture notes, document the fields or parameters at the point of introduction. Explain both what each field means and why it exists; names and type hints alone are not sufficient for planning documents.
+
 ## Subagent Discipline
 
 Use subagents to inspect the architecture wiki when the task touches architecture planning, terminology, refactor candidates, or documentation consolidation. Prefer multiple narrow, read-only subagents over one broad scan when the work spans distinct areas such as observed-system notes, glossary/terminology, and refactor planning.
