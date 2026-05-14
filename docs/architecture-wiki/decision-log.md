@@ -304,3 +304,26 @@ Consequences:
 - `FractureAnalysisResult` should link to the consumed crack-tip estimate in addition to input data and fracture-analysis configuration.
 - Manual crack tips should be represented as user- or import-sourced crack-tip estimates, not as fracture-analysis configuration only.
 - A physical `CrackTip` may later be associated with one or more estimates and uncertainty/fusion records, but this is not required for the first compact KG export profile.
+
+## 2026-05-14: Crack-Tip Correction Produces Corrected Estimates And Deltas
+
+Status: accepted for planning
+
+Decision:
+
+Future crack-tip correction vocabulary should model both the absolute corrected crack-tip estimate and the relative correction delta. The corrected estimate is the primary result consumed by downstream fracture analysis. The correction delta is retained as audit, comparison, and legacy-compatibility metadata.
+
+A correction-derived `CrackTipEstimateResult` should link to the source estimate that was corrected, for example through `source_crack_tip_estimate_id`. It should avoid unqualified result names such as `ct_corr` or generic `correction` when those names do not make clear whether the value is a delta or an absolute estimate.
+
+Rationale:
+
+Current correction formulas and APIs naturally compute shifts such as `dx` and `dy`, and current plotting applies those shifts to an already detected crack tip. Downstream fracture analysis, however, needs a crack-tip position or frame, not only a relative shift. Treating the corrected estimate as the primary result preserves the value that later methods consume, while keeping the delta preserves traceability to the correction method and the source estimate.
+
+This also fits the provenance model: a correction is another estimate-producing method that consumes a previous crack-tip estimate, its own configuration, and input data. A bare delta is not enough to reconstruct the corrected crack-tip state unless the source estimate and coordinate frame are known.
+
+Consequences:
+
+- Future correction result records should expose fields equivalent to `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate_id`.
+- Deltas should carry units and coordinate-frame context because they are not meaningful on their own.
+- Legacy delta-returning APIs can be supported by compatibility adapters during migration.
+- Fracture-analysis provenance should link to the corrected estimate it actually consumed, not only to the original detected estimate or to a correction configuration.

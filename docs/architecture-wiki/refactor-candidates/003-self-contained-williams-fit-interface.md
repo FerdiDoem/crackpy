@@ -17,6 +17,8 @@ Williams fitting is reusable, but its current interface depends on transformed `
 
 Expose a computational interface that accepts explicit arrays, material parameters, terms, and fitting-domain settings, then returns coefficients and residual metrics. Pipeline classes can adapt `InputData` into that interface.
 
+Correction interfaces built on this fitting layer should emit an absolute corrected crack-tip estimate plus an audit correction delta. Compatibility adapters can translate existing delta-returning correction APIs during migration.
+
 ## Seams / Interfaces / Adapters
 
 - Interface: Williams fit input arrays, material data, fitting-domain settings, and coefficient result.
@@ -31,8 +33,12 @@ Expose a computational interface that accepts explicit arrays, material paramete
 
 ## Open Questions
 
-- OQ-007: Should correction return values consistently mean relative shifts or absolute corrected crack-tip coordinates?
+- None for the current planning state.
+
+## Resolved Planning Constraints
+
+- OQ-007: Crack-tip correction should expose a corrected crack-tip estimate as the primary result and retain the correction delta for audit, comparison, and legacy compatibility.
 
 ## Decision State
 
-Not decided. No implementation approved.
+Planning vocabulary accepted. No implementation approved.

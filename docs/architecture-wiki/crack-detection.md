@@ -124,6 +124,8 @@ Each candidate correction deep-copies `InputData`, transforms it to a candidate 
 
 `CustomCorrection` expects full coefficient coverage from `A_-3..A_7` and `B_-3..B_7`; missing terms are filled with zero after warning.
 
+Current correction APIs mostly return relative `dx`/`dy` shifts, and plotting applies those shifts to the detected crack tip. Future result modeling should make the corrected crack-tip estimate the primary output, retain the correction delta as audit metadata, and link to the source crack-tip estimate. This is a planning vocabulary decision; the current code still exposes delta-shaped return values.
+
 ## Side Effects
 
 - `get_model()` can create directories and download model weights.

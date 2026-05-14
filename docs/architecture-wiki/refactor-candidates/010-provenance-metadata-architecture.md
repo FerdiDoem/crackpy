@@ -74,7 +74,7 @@ For CrackPy, the likely compact target groups are:
 - `CrackPyAnalysisConfiguration`: serialized analysis configuration and parameter values;
 - `CrackDetectionConfiguration` or `CrackTipEstimateConfiguration`: detection model, side convention, window, offset, thresholds, correction settings, manual/import source handling;
 - `FractureAnalysisConfiguration`: material, optimization, integral, path, and coordinate-system settings;
-- `CrackTipEstimateResult` or `CrackDetectionResult`: crack-tip x/y, angle or frame, side compatibility label, detection/correction/import method, confidence or uncertainty values where available;
+- `CrackTipEstimateResult` or `CrackDetectionResult`: crack-tip x/y, angle or frame, side compatibility label, detection/correction/import method, source estimate link for corrections, corrected estimate fields, correction delta fields, confidence or uncertainty values where available;
 - `FractureAnalysisResult`: Williams fit, CJP, SIF, J-integral, T-stress, path and aggregate result metadata;
 - `InputRecord` or current `Nodemap`/`InputDataset`: source file identity, hash, input ID, optional sequence index, source-specific stage metadata, force/cycle/load metadata, and minimal input/source provenance.
 
@@ -617,6 +617,8 @@ A physical `CrackTip` in the KG should be treated as a domain object, not as one
 
 Crack-tip estimates are dependencies, not configuration-only values. A `CrackTipEstimateResult` should have its own method metadata and configuration link, because a detector, correction routine, manual import, or future fusion method can depend on settings, model weights, thresholds, windows, coordinate conventions, and source metadata. A downstream `FractureAnalysisResult` should link to the estimate through a role such as `used_crack_tip_estimate` instead of burying the estimate inside `used_configuration`.
 
+For correction-derived crack-tip estimates, the compact result vocabulary should distinguish the absolute corrected estimate from the relative correction delta. The corrected estimate is the primary value consumed by downstream fracture analysis; the delta is audit metadata that explains how far the correction moved the source estimate. A correction result should also link to `source_crack_tip_estimate_id` so provenance can reconstruct the estimate chain without interpreting a bare `dx`/`dy` value as a final crack-tip coordinate.
+
 Mapping sketch to the generic statement-bundle style:
 
 ```text
@@ -650,6 +652,7 @@ CrackTipEstimateResult:
   crackpy_result_id
   cracktip_estimate_id
   physical_crack_tip_id_optional
+  source_cracktip_estimate_id_optional
   cracktip_estimate_source
   crackpy_input_id
   crackpy_configuration_id
@@ -659,6 +662,14 @@ CrackTipEstimateResult:
   cracktip_x
   cracktip_y
   cracktip_z_optional
+  corrected_cracktip_x_optional
+  corrected_cracktip_y_optional
+  corrected_cracktip_z_optional
+  correction_delta_x_optional
+  correction_delta_y_optional
+  correction_delta_z_optional
+  correction_delta_units_optional
+  correction_delta_frame_id_optional
   cracktip_uncertainty_ref_optional
 
 CrackPyAnalysisResult:

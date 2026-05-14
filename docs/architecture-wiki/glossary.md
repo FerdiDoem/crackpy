@@ -22,7 +22,7 @@ Local coordinate-system concept used around a crack tip or crack front. In Crack
 Domain object representing a crack tip or crack-front location believed to exist in the specimen or input state. Multiple physical crack tips may exist in the knowledge graph, but a method-specific detection or correction should not create a new physical crack tip by itself.
 
 #### CrackTipEstimateResult
-Computational result or observation that estimates a crack-tip position, frame, direction, and optional uncertainty. It may come from neural detection, line-intercept detection, correction, manual import, or a future fusion method. Downstream fracture-analysis results should treat this as an input or intermediate result dependency, not as configuration only.
+Computational result or observation that estimates a crack-tip position, frame, direction, and optional uncertainty. It may come from neural detection, line-intercept detection, correction, manual import, or a future fusion method. Correction-derived estimates should expose the absolute [[glossary#Corrected crack-tip estimate]] as the primary result, retain [[glossary#Correction delta]] for audit, and link to the source estimate where available. Downstream fracture-analysis results should treat crack-tip estimates as input or intermediate result dependencies, not as configuration only.
 
 #### CrackTipEstimateConfiguration
 Configuration used to produce a [[glossary#CrackTipEstimateResult]], such as detector model, model weights, detection window, threshold settings, correction method, manual/import source handling, side-compatibility adapter, or coordinate convention.
@@ -36,7 +36,16 @@ Status: proposed internal architecture term
 Canonical proposed internal model for crack-tip orientation and position. A `CrackTipFrame` carries a `tip_id`, an origin, local axes, a [[glossary#Geometry profile]], and optional compatibility labels such as current `side`. Local x is the crack-extension direction, local y is the crack-opening direction or method-specific crack-plane normal direction, and local z is profile-specific: for current planar DIC workflows it is usually the assumed surface normal or out-of-plane direction; for true 3D crack-front workflows it would need an explicit crack-front or surface-frame definition. This term does not imply that current CrackPy algorithms support general 3D fracture mechanics.
 
 #### Crack-tip correction
-Post-detection refinement of the crack-tip position. In CrackPy, correction methods generally re-evaluate Williams fitting after shifting the candidate crack tip.
+Post-detection refinement of the crack-tip estimate. In current CrackPy code, correction methods generally compute x/y shifts by re-evaluating Williams fitting after moving the candidate crack tip. Future result vocabulary distinguishes the absolute [[glossary#Corrected crack-tip estimate]] from the relative [[glossary#Correction delta]].
+
+#### Corrected crack-tip estimate
+Absolute crack-tip estimate produced by a correction method, expressed as corrected coordinates or a corrected [[glossary#CrackTipFrame]] where available. This is the canonical value a downstream fracture-analysis run should consume.
+
+#### Correction delta
+Relative shift from a source crack-tip estimate to a corrected crack-tip estimate. It should carry units and coordinate-frame context because a delta is only meaningful relative to the source estimate and frame in which it was computed.
+
+#### Source crack-tip estimate
+Crack-tip estimate used as the input to a correction, fusion, or downstream analysis step. A correction-derived [[glossary#CrackTipEstimateResult]] should link to this source estimate so provenance can reconstruct what changed and why.
 
 #### Rethore correction
 Iterative crack-tip correction method based on Williams coefficients, using `dx = -2*a_-1/a_1` and keeping `dy = 0`.

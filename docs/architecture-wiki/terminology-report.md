@@ -177,7 +177,7 @@ Related question IDs:
 - OQ-004: line-intercept `window_size`.
 - OQ-005: result schema or format versioning.
 - OQ-006: public result names versus legacy implementation names.
-- OQ-007: crack-tip correction return semantics.
+- OQ-007: resolved crack-tip correction return semantics; use `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate` in future planning vocabulary.
 - OQ-009: `UNetPath` model role versus implementation class.
 - OQ-011: Roman mode labels versus numeric suffixes.
 - OQ-012: Bueckner-Chen spelling.
