@@ -169,6 +169,17 @@ Example future object sketch, not an implementation contract:
 ```python
 @dataclass(frozen=True)
 class InputRecord:
+    """Concrete input data plus attached metadata.
+
+    `input_id` is the durable identity for matching, result links, and
+    re-analysis. `data_ref` locates the data without embedding large arrays.
+    `metadata` keeps source, user, experiment, simulation, coordinate-system,
+    and preprocessing context schema-neutral. `sequence_index` orders inputs
+    without replacing identity. `source_label` preserves external labels such
+    as a legacy stage or solver step. `source_hash` detects changed inputs.
+    `geometry_profile` declares spatial assumptions for method compatibility.
+    """
+
     input_id: str
     data_ref: str
     metadata: Mapping[str, object]
@@ -180,6 +191,15 @@ class InputRecord:
 
 @dataclass(frozen=True)
 class AnalysisRun:
+    """One execution of one registered analysis function.
+
+    The run ties function identity and metadata version to consumed inputs,
+    explicit input roles, configuration identity, parameter hash, timestamps,
+    CrackPy version, execution commit, method references, and optional model
+    identities. This is the process anchor for targeted re-analysis and for
+    later PROV-O activity export.
+    """
+
     run_id: str
     function_name: str
     function_metadata_version: str
@@ -197,6 +217,14 @@ class AnalysisRun:
 
 @dataclass(frozen=True)
 class ResultRecord:
+    """Generated result and its output artifacts.
+
+    `result_id` gives downstream tools a stable result handle independent of
+    filenames. `run_id` links the result to the producing execution.
+    `schema_version`, output roles, hashes, and units make JSON, text, CSV,
+    plot, and RDF exports interpretable and stale-result checks possible.
+    """
+
     result_id: str
     run_id: str
     schema_version: str
@@ -208,6 +236,14 @@ class ResultRecord:
 
 @dataclass(frozen=True)
 class ProvenanceRecord:
+    """Traceability envelope linking inputs, runs, results, and exports.
+
+    The envelope can drive a compact metadata statement-bundle export while
+    optionally pointing to a detailed PROV-O-like artifact. Export target and
+    exporter version are tracked because export behavior can change
+    independently from numerical analysis behavior.
+    """
+
     provenance_id: str
     input_records: tuple[InputRecord, ...]
     analysis_runs: tuple[AnalysisRun, ...]
@@ -216,60 +252,6 @@ class ProvenanceRecord:
     exporter_version: str | None = None
     detailed_provenance_ref: str | None = None
 ```
-
-Field rationale for `InputRecord`:
-
-| Field | What | Why |
-| --- | --- | --- |
-| `input_id` | Stable identity of one concrete input record. | Matching, provenance links, result links, and targeted re-analysis need a durable reference that does not change when files are reordered or filtered. |
-| `data_ref` | Reference to the actual input data, such as a path, URI, dataset key, or object-store ID. | The metadata record should identify data without embedding large arrays or forcing every source into the same storage backend. |
-| `metadata` | Attached source, user, experiment, simulation, coordinate-system, and preprocessing metadata. | CrackPy needs to carry rich metadata without coupling the core pipeline to one DIC, FEM, or knowledge-graph schema. |
-| `sequence_index` | Optional ordering key within an input sequence. | Current `stage` use often means ordering, but future inputs may be FEM load steps, video frames, or synthetic sequences; ordering should not be confused with identity. |
-| `source_label` | Optional original source label, such as legacy `stage`, image name, load-step name, or solver step label. | Keeping the source label preserves traceability to external tools and existing files while allowing CrackPy to use generic internal vocabulary. |
-| `source_hash` | Optional hash of the source data or source artifact. | Hashes let an orchestrator detect changed inputs and decide whether existing results may be stale. |
-| `geometry_profile` | Optional declared spatial-domain profile, such as `surface_planar`, `surface_parameterized`, `surface_3d`, or `volumetric_field`. | Methods must know whether the data is a planar surface, parameterized surface, 3D surface, or volume so that 3D coordinates are not mistaken for general 3D fracture-mechanics support. |
-
-Field rationale for `AnalysisRun`:
-
-| Field | What | Why |
-| --- | --- | --- |
-| `run_id` | Stable identity of one analysis execution. | Results, logs, plots, and provenance exports need a common execution anchor. |
-| `function_name` | Stable analysis-function identity, for example `WilliamsFit` or `CrackTipDetection`. | Targeted re-analysis depends on knowing which analysis function produced a result. |
-| `function_metadata_version` | Version of the function metadata contract. | Function behavior, accepted inputs, outputs, defaults, or references may change even when the public function name stays stable. |
-| `input_ids` | Input records consumed by the run. | The run must explicitly state which data records were used to generate a result. |
-| `input_roles` | Role of each consumed input, keyed by `input_id`. | A PROV-O graph with only generic `used` edges is too weak; roles distinguish primary displacement field, representative crack-tip source, material definition, configuration, model weights, or post-processing input. |
-| `configuration_id` | Identity of the configuration snapshot used by the run. | Configuration needs its own identity so multiple runs can share, compare, cache, and export the same parameter set. |
-| `parameter_hash` | Hash of normalized parameter values and relevant defaults. | Hashes let an orchestrator detect parameter changes without comparing large nested configuration objects field by field. |
-| `started_at` | Execution start timestamp. | Time is needed for audit, ordering, reproducibility records, and knowledge-graph queries. |
-| `crackpy_version` | Package version used for the run. | Result interpretation and re-analysis need to know which CrackPy release generated the data. |
-| `method_reference_ids` | Literature or method reference IDs associated with the run. | Method-specific references should travel with results for scientific review, citation, and RDF export. |
-| `model_ids` | Optional neural-network or surrogate-model identities used by the run. | Crack-tip detection may depend on model weights, training convention, or model version, not only on CrackPy source code. |
-| `completed_at` | Optional execution completion timestamp. | A missing completion time can represent an interrupted, failed, or still-running analysis while retaining the run identity. |
-| `execution_commit` | Optional repository commit used for the run. | Commit identity supports code-level traceability when CrackPy runs from a checkout or build that can expose it. |
-
-Field rationale for `ResultRecord`:
-
-| Field | What | Why |
-| --- | --- | --- |
-| `result_id` | Stable identity of a generated result. | Downstream exports, plots, CSV rows, and provenance records need to refer to a result independently of filenames. |
-| `run_id` | Producing analysis run. | The result must link back to the execution that generated it. |
-| `schema_version` | Version of the result schema or output contract. | Readers and orchestrators need to know whether tags, units, columns, or JSON keys can be interpreted with the expected contract. |
-| `output_ids` | Identities or references for generated output artifacts. | A single result may generate text, JSON, CSV rows, plots, or other artifacts; each needs a stable reference. |
-| `output_roles` | Role of each output artifact, keyed by output ID. | Roles distinguish machine-readable result data, human-readable report, plot, flattened CSV projection, or export artifact. |
-| `output_hashes` | Hashes of output artifacts where practical. | Hashes support integrity checks, caching, and stale-result detection. |
-| `units` | Unit metadata for public result values. | Fracture-mechanics results are not safely interpretable without units, especially after flattening or RDF export. |
-
-Field rationale for `ProvenanceRecord`:
-
-| Field | What | Why |
-| --- | --- | --- |
-| `provenance_id` | Stable identity of the provenance envelope. | Compact metadata bundles, detailed PROV-O artifacts, and external knowledge graphs need an addressable provenance object. |
-| `input_records` | Input records included in this provenance envelope. | The envelope must contain or reference the consumed input identities and their minimal source metadata. |
-| `analysis_runs` | Analysis executions included in this provenance envelope. | The envelope needs the process anchors that connect inputs, configuration, software, and outputs. |
-| `result_records` | Result records included in this provenance envelope. | The envelope must state which generated results are covered by the traceability facts. |
-| `export_target` | Optional compact export target, such as the existing metadata statement-bundle shape. | Export metadata should be explicit because the same internal records may be mapped to RDF/Jena, JSON, JSON-LD, RO-Crate, or another artifact. |
-| `exporter_version` | Optional version of the exporter that generated the external representation. | Exporter behavior can change independently from numerical analysis behavior and should be traceable. |
-| `detailed_provenance_ref` | Optional link to a detailed provenance artifact. | The compact graph can stay small while a separate PROV-O-like graph, JSON-LD file, or RO-Crate carries richer process detail. |
 
 The important constraint is that links should carry semantic roles. A run should not only say that it used several records; it should say which record was the primary displacement field, representative crack-tip source, material definition, configuration, model weights, correction result, or post-processing input where applicable. This preserves enough meaning to export useful PROV-O later instead of a generic graph full of indistinguishable `used` edges.
 
@@ -547,6 +529,13 @@ Sketch of internal records:
 ```python
 @dataclass(frozen=True)
 class MethodReference:
+    """Compact citation record for one scientific or numerical method.
+
+    `key` is the stable identifier used by analysis metadata and exports.
+    The remaining fields keep method references machine-readable without
+    overloading package-level `CITATION.cff`.
+    """
+
     key: str
     authors: tuple[str, ...]
     title: str
@@ -558,6 +547,14 @@ class MethodReference:
 
 @dataclass(frozen=True)
 class AnalysisMetadata:
+    """Static metadata carried by a registered analysis function.
+
+    This describes what the function is, where it is implemented, which
+    method references and schemas define it, and which source ranges or helper
+    modules belong to its change-tracking scope. It is separate from any one
+    execution.
+    """
+
     name: str
     category: str
     implementation_ref: str
@@ -570,6 +567,13 @@ class AnalysisMetadata:
 
 @dataclass(frozen=True)
 class AnalysisExecutionMetadata:
+    """Execution metadata for one run of a registered analysis function.
+
+    The record connects function identity, package and commit state,
+    parameters, input/output hashes, and timestamps so an orchestrator can
+    audit the run and decide whether existing results need re-analysis.
+    """
+
     run_id: str
     function_name: str
     crackpy_version: str
