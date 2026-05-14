@@ -147,8 +147,25 @@ No findings closed yet.
   - Dassault Systemes, Abaqus documentation, "Contour integral evaluation", accessed 2026-05-14, `https://docs.software.vt.edu/abaqusv2024/English/SIMACAEANLRefMap/simaanl-c-contintegral.htm`; basis: FEM contour-integral vocabulary for J-integral, SIFs, T-stress, crack tips, and crack fronts.
 - Result: no new source-backed terminology inconsistencies were found. The checked standards support treating `method_id`, `method_revision`, `implementation_fingerprint`, `dependency_scope`, `result_schema_version`, compact KG grouping, URI policy, and detailed provenance artifacts as local CrackPy planning vocabulary that can map outward to PROV-O, JSON-LD, RO-Crate, CodeMeta, CFF, and JSON Schema concepts without needing to adopt their names internally. Scientific and CrackPy-adjacent sources support keeping crack-tip correction and model-name terms as local result/provenance vocabulary unless they become formal method-reference registry entries. Existing FINDING-20260514-001 remains the only open source-backed conflict.
 
+### 2026-05-15T01:20:22+02:00
+
+- Checked range: `e418d1a961784e04f7c1f0219d33855d0e7fe8eb..cb6b3694b2650f084ca6c1dd33bb127c5173cdd0`; uncommitted wiki hunks were also present in `docs/architecture-wiki/README.md`, `docs/architecture-wiki/refactor-notes.md`, and new `docs/architecture-wiki/refactor-roadmap.md`.
+- Changed terminology focus: canonical result graph bundle, `ResultQuantity`, symbol/description quantity vocabulary, legacy result-tag aliases, `SoftwareConfiguration` content-addressing, normalized configuration, result-affecting default, derived default, workflow composition setting, domain workflow runner, adapter policy, compatibility facade, detection resampling grid, detection window extent, detection input resolution, detection grid spacing, endpoint-inclusive detection mapping, `256` samples / `255` intervals, and roadmap sequencing across already accepted refactor candidates.
+- Read-only subagent checks:
+  - Diff extraction found that the committed range and uncommitted wiki hunks are architecture-planning terminology consolidation, with only the standing high-risk fracture/DIC terms remaining literature-sensitive.
+  - Glossary comparison found no new internal contradiction; the changed vocabulary is either local CrackPy planning vocabulary or compatibility vocabulary already settled by decision-log entries.
+- Sources consulted:
+  - Timothy Lebo, Satya Sahoo, and Deborah McGuinness, "PROV-O: The PROV Ontology", 2013 W3C Recommendation, accessed 2026-05-15, `https://www.w3.org/TR/2013/REC-prov-o-20130430/`; basis: `prov:Entity`, `prov:Activity`, `prov:Agent`, `prov:Plan`, qualified usage, association, and role vocabulary for mapping CrackPy graph-shaped provenance without adopting PROV-O names internally.
+  - W3C JSON-LD Working Group, "JSON-LD 1.1", 2020 W3C Recommendation, accessed 2026-05-15, `https://www.w3.org/TR/json-ld/`; basis: JSON-LD as JSON-based linked-data serialization and a stable recommendation for optional linked-data export.
+  - JSON Schema project, "Specification", accessed 2026-05-15, `https://json-schema.org/specification`; basis: current JSON Schema 2020-12 split between Core and Validation for future result-schema validation vocabulary.
+  - RO-Crate contributors, "RO-Crate 1.1 Specification", accessed 2026-05-15, `https://www.researchobject.org/ro-crate/specification/1.1/introduction.html`; basis: JSON-LD research-object packaging that can describe data resources and contextual entities such as people, organizations, software, equipment, and workflows.
+  - NumPy project, "`numpy.linspace`", accessed 2026-05-15, `https://numpy.org/doc/stable/reference/generated/numpy.linspace.html`; basis: endpoint-inclusive sampling over a closed interval when `endpoint=True`, supporting the wiki's `num_samples - 1` interval explanation for the current detection grid.
+  - Pydantic project, "JSON Schema", accessed 2026-05-15, `https://pydantic.dev/docs/validation/dev/concepts/json_schema/`; basis: Pydantic model-level and field-level JSON Schema generation/customization for future configuration/result schema builders.
+  - Software Heritage, "SoftWare Heritage persistent IDentifiers (SWHIDs)", accessed 2026-05-15, `https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html`; basis: intrinsic content-derived identifiers as a source-backed analogy for content-addressed software/configuration traceability.
+- Result: no new source-backed terminology inconsistency was found. The checked standards support treating `Canonical result graph bundle`, `ResultQuantity`, `SoftwareConfiguration`, `Normalized configuration`, `Domain workflow runner`, `Adapter policy`, `Compatibility facade`, and detection-grid terms as local CrackPy planning vocabulary that is compatible with external standards but not dictated by them. The endpoint-inclusive `256` sample / `255` interval wording is supported by NumPy's `linspace` semantics. Existing FINDING-20260514-001 remains the only open source-backed conflict.
+
 ## Automation State
 
-- Last checked commit: `e418d1a961784e04f7c1f0219d33855d0e7fe8eb`
-- Last checked range: `8d24a550515754e90734360bea39bc526dd46eb5..e418d1a961784e04f7c1f0219d33855d0e7fe8eb`; no uncommitted wiki hunks were present
-- Last run: `2026-05-14T22:21:55+02:00`
+- Last checked commit: `cb6b3694b2650f084ca6c1dd33bb127c5173cdd0`
+- Last checked range: `e418d1a961784e04f7c1f0219d33855d0e7fe8eb..cb6b3694b2650f084ca6c1dd33bb127c5173cdd0`; uncommitted wiki hunks were present in `docs/architecture-wiki/README.md`, `docs/architecture-wiki/refactor-notes.md`, and `docs/architecture-wiki/refactor-roadmap.md`
+- Last run: `2026-05-15T01:20:22+02:00`
