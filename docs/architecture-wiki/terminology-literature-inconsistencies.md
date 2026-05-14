@@ -112,8 +112,23 @@ No findings closed yet.
   - W3C, "PROV-Overview", 2013 W3C Working Group Note, accessed 2026-05-14, `https://www.w3.org/TR/prov-overview/`; basis: provenance overview for interoperable data, process, and responsibility metadata.
 - Result: no new source-backed terminology inconsistencies were found. The checked sources support treating `stage`, DIC image-series/frame terminology, FEM load-step terminology, and facet/subset vocabulary as source-system or domain-context vocabulary; treating `Nodemap` as CrackPy's node-wise neutral result container rather than a generic mapping-policy term; treating `CrackTipFrame` and geometry profiles as CrackPy planning vocabulary; and keeping input records/entities separate from processing runs/activities in provenance planning. Existing FINDING-20260514-001 remains open.
 
+### 2026-05-14T18:32:55+02:00
+
+- Checked range: `022c3beeeff58952294b29dad33c66c9e90f933c..8d24a550515754e90734360bea39bc526dd46eb5`; no uncommitted wiki hunks were present.
+- Changed terminology focus: provenance planning vocabulary around `InputRecord`, `AnalysisRun`, `ResultRecord`, `ProvenanceRecord`, `AnalysisMetadata`, `AnalysisExecutionMetadata`, `MethodReference`, generic metadata statement bundles, compact RDF/JSON export, optional PROV-O-like export, JSON-LD, RO-Crate, CodeMeta, CFF, RDFLib, Pydantic JSON Schema, function metadata version, function-relevant commit, `run_id`, `result_id`, hashes, and result schema version.
+- Sources consulted:
+  - W3C, "PROV-Overview", 2013 W3C Working Group Note, accessed 2026-05-14, `https://www.w3.org/TR/prov-overview/`; basis: provenance as information about entities, activities, and people involved in producing data, plus the PROV family split between data model, serializations, constraints, and access.
+  - Timothy Lebo, Satya Sahoo, and Deborah McGuinness, "PROV-O: The PROV Ontology", 2013 W3C Recommendation, accessed 2026-05-14, `https://www.w3.org/TR/2013/REC-prov-o-20130430/`; basis: `prov:Entity`, `prov:Activity`, `prov:Agent`, `prov:Bundle`, `prov:Plan`, `used`, `wasGeneratedBy`, and related RDF provenance vocabulary.
+  - W3C JSON-LD Working Group, "JSON-LD 1.1", 2020 W3C Recommendation, accessed 2026-05-14, `https://www.w3.org/TR/json-ld/`; basis: JSON-LD as a JSON-based linked-data serialization that can be used as JSON and as RDF.
+  - RO-Crate contributors, "RO-Crate 1.1 Specification", accessed 2026-05-14, `https://www.researchobject.org/ro-crate/specification/1.1/introduction.html`; basis: RO-Crate as JSON-LD metadata for aggregating and describing research data and contextual entities such as software and equipment.
+  - CodeMeta Project, "The CodeMeta JSON-LD Representation" and "Crosswalks", accessed 2026-05-14, `https://codemeta.github.io/jsonld/` and `https://codemeta.github.io/crosswalk/`; basis: CodeMeta as JSON-LD software metadata and crosswalk vocabulary between software metadata standards.
+  - Citation File Format project, "Citation File Format (CFF)", accessed 2026-05-14, `https://citation-file-format.github.io/`; basis: `CITATION.cff` as human- and machine-readable citation metadata for software and datasets.
+  - RDFLib project documentation, "Navigating Graphs", accessed 2026-05-14, `https://rdflib.readthedocs.io/en/7.1.2/intro_to_graphs.html`; basis: RDFLib graph handling around RDF triples and graph operations.
+  - Pydantic documentation, "JSON Schema", accessed 2026-05-14, `https://pydantic.dev/docs/validation/latest/concepts/json_schema/`; basis: Pydantic support for generating and customizing JSON Schema from models.
+- Result: no new source-backed terminology inconsistencies were found. The checked sources support the wiki's current separation between compact CrackPy-specific metadata records and optional standards-oriented PROV-O/JSON-LD export. `InputRecord`, `AnalysisRun`, `ResultRecord`, `ProvenanceRecord`, function-relevant commit, and metadata statement bundle remain local planning vocabulary rather than literature-standard names. Existing FINDING-20260514-001 remains the only open source-backed conflict in the ledger.
+
 ## Automation State
 
-- Last checked commit: `022c3beeeff58952294b29dad33c66c9e90f933c`
-- Last checked range: `ce4ddc7dbecc088db86bca30d970b78be5e58271..022c3beeeff58952294b29dad33c66c9e90f933c`; no uncommitted wiki hunks were present
-- Last run: `2026-05-14T17:35:09+02:00`
+- Last checked commit: `8d24a550515754e90734360bea39bc526dd46eb5`
+- Last checked range: `022c3beeeff58952294b29dad33c66c9e90f933c..8d24a550515754e90734360bea39bc526dd46eb5`; no uncommitted wiki hunks were present
+- Last run: `2026-05-14T18:32:55+02:00`
