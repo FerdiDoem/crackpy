@@ -6,6 +6,8 @@ tom.egg-info
 /docs/*
 !/docs/architecture-wiki/
 !/docs/architecture-wiki/**
+!/docs/code-style/
+!/docs/code-style/**
 /data/
 /venv/
 /plots/
