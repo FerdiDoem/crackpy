@@ -96,8 +96,24 @@ No findings closed yet.
   - International Digital Image Correlation Society, "A Good Practices Guide for Digital Image Correlation", accessed 2026-05-14, `https://digitalimagecorrelation.org/`; basis: subset/facet/DIC-point terminology and 2D/3D displacement component vocabulary.
 - Result: one source-backed inconsistency was added: FINDING-20260514-001 for `Bueckner-Chen` versus implementation `buckner_*`. The checked sources support keeping `side` as CrackPy compatibility vocabulary and treating `CrackTipFrame` / geometry profiles as planning vocabulary rather than literature-standard terms. Existing open questions remain the right place for mode labels, result schema boundaries, and DIC nodemap/facet terminology cleanup.
 
+### 2026-05-14T17:35:09+02:00
+
+- Checked range: `ce4ddc7dbecc088db86bca30d970b78be5e58271..022c3beeeff58952294b29dad33c66c9e90f933c`; no uncommitted wiki hunks were present.
+- Changed terminology focus: `CrackTipFrame`, crack-tip coordinate system/frame, geometry profiles (`surface_planar`, `surface_parameterized`, `surface_3d`, `volumetric_field`), `stage` as source metadata, `sequence_index`, `input_id`, `representative_input_id`, `InputRecord`, `input metadata`, `mapping policy`, `AnalysisRun`, `ResultRecord`, and `ProvenanceRecord`.
+- Sources consulted:
+  - ZEISS, "Digital Image Correlation", accessed 2026-05-14, `https://www.zeiss.com/metrology/us/explore/topics/digital-image-correlation.html`; basis: DIC source vocabulary for reference stage, facets/subsets, surface coordinates, displacement, and strain results.
+  - Dassault Systemes, Abaqus documentation, "Contour integral evaluation", accessed 2026-05-14, `https://abaqus.uclouvain.be/English/SIMACAEANLRefMap/simaanl-c-contintegral.htm`; basis: fracture/FEM vocabulary for crack tips, crack lines, crack fronts, virtual crack extension direction, J-integral, SIFs, T-stress, and contour-integral output.
+  - International Digital Image Correlation Society, "A Good Practices Guide for Digital Image Correlation", accessed 2026-05-14, `https://digitalimagecorrelation.org/`; basis: subset/facet/DIC-point terminology and DIC displacement vocabulary.
+  - Yuling Niu, Huayan Wang, and S. B. Park, "A general strategy of in-situ warpage characterization for solder attached packages with digital image correlation method", 2017, DOI `10.1016/j.optlaseng.2017.01.008`; basis: DIC literature treating facet/subset vocabulary as the correlation-unit level.
+  - Gilles Besnard, Sandra Guerard, Stephane Roux, and Francois Hild, "A space-time approach in digital image correlation: Movie-DIC", 2011, DOI `10.1016/j.optlaseng.2010.08.012`; basis: DIC temporal vocabulary around image series, time sequences, and successive image pairs.
+  - Assef Mohamad-Hussein and Juliane Heiland, "3D finite element modelling of multilateral junction wellbore stability", 2018, DOI `10.1007/s12182-018-0251-0`; basis: FEM loading-path vocabulary using discrete loading steps.
+  - Tobias Strohmann, David Melching, Florian Paysan, Eric Dietrich, Guillermo Requena, and Eric Breitbarth, "Next generation fatigue crack growth experiments of aerospace materials", 2024, DOI `10.1038/s41598-024-63915-x`; basis: CrackPy-adjacent definition of "Nodemap" as node-wise neutral text files containing coordinates, displacement vectors, surface strain tensors, metadata, and possible DIC or simulated FE origin.
+  - W3C, "PROV-O: The PROV Ontology", 2013 W3C Recommendation, accessed 2026-05-14, `https://www.w3.org/TR/prov-o/`; basis: provenance separation between entities, activities, agents, usage, and generation.
+  - W3C, "PROV-Overview", 2013 W3C Working Group Note, accessed 2026-05-14, `https://www.w3.org/TR/prov-overview/`; basis: provenance overview for interoperable data, process, and responsibility metadata.
+- Result: no new source-backed terminology inconsistencies were found. The checked sources support treating `stage`, DIC image-series/frame terminology, FEM load-step terminology, and facet/subset vocabulary as source-system or domain-context vocabulary; treating `Nodemap` as CrackPy's node-wise neutral result container rather than a generic mapping-policy term; treating `CrackTipFrame` and geometry profiles as CrackPy planning vocabulary; and keeping input records/entities separate from processing runs/activities in provenance planning. Existing FINDING-20260514-001 remains open.
+
 ## Automation State
 
-- Last checked commit: `ce4ddc7dbecc088db86bca30d970b78be5e58271`
-- Last checked range: first run; `eba4d7abf683c502bdfa8ef0f438cf89585d4ddf..ce4ddc7dbecc088db86bca30d970b78be5e58271` plus uncommitted wiki hunks present during the run
-- Last run: `2026-05-14T16:29:58+02:00`
+- Last checked commit: `022c3beeeff58952294b29dad33c66c9e90f933c`
+- Last checked range: `ce4ddc7dbecc088db86bca30d970b78be5e58271..022c3beeeff58952294b29dad33c66c9e90f933c`; no uncommitted wiki hunks were present
+- Last run: `2026-05-14T17:35:09+02:00`
