@@ -125,7 +125,7 @@ CrackPy should preserve a minimal traceability chain across input loading, crack
 The planning split is:
 
 - `InputRecord`: concrete input data plus attached metadata and minimal source provenance.
-- `AnalysisRun`: one execution of a registered analysis function over one or more input records and a configuration snapshot.
+- `AnalysisRun`: one execution of a registered method over one or more input records and a configuration snapshot.
 - `ResultRecord`: generated result identity, schema, units, hashes, and artifact references.
 - `ProvenanceRecord`: compact or detailed envelope linking inputs, analysis runs, results, software, configurations, and export metadata.
 
@@ -143,29 +143,83 @@ Consequences:
 - Text/JSON and CSV outputs should preserve enough IDs, schema versions, hashes, and function/configuration references to determine whether a result is stale.
 - Plots should carry or link to the producing `result_id` or `run_id`, but should not duplicate the full provenance payload.
 
-## 2026-05-14: Analysis Function Identity Is A Stable Contract ID
+## 2026-05-14: Method ID Is Stable Provenance Vocabulary
 
 Status: accepted for planning
 
 Decision:
 
-Future provenance and orchestration should identify analysis functions by a stable registry-owned contract ID, not by the current Python module, class, or function path. The stable ID should describe the scientific or computational contract that produced a result, for example `crackpy.fracture.williams_fit`, `crackpy.detection.unet_crack_tip_detection`, or `crackpy.fracture.bueckner_chen_integral`.
+Future provenance and orchestration should identify registered methods by a stable registry-owned method ID, not by the current Python module, class, or function path. The stable ID should describe the scientific, numerical, or workflow method that produced a result, for example `crackpy.fracture.williams_fit`, `crackpy.detection.unet_crack_tip_detection`, or `crackpy.fracture.bueckner_chen_integral`.
 
 Rationale:
 
-CrackPy is expected to undergo refactors that move code, split `InputData` responsibilities, and expose self-contained analysis functions. If provenance uses implementation paths as durable identities, old results may appear unrelated to new code after a harmless move. A stable contract ID lets results survive code movement while still recording the concrete implementation reference that ran.
+CrackPy is expected to undergo refactors that move code, split `InputData` responsibilities, and expose self-contained methods. If provenance uses implementation paths as durable identities, old results may appear unrelated to new code after a harmless move. A stable method ID lets results survive code movement while still recording the concrete implementation reference that ran.
 
 The planning model separates:
 
-- `analysis_function_id`: durable scientific or computational contract identity;
+- `method_id`: durable scientific or computational method identity;
 - `display_name`: human-facing label for reports and documentation;
 - `implementation_ref`: current Python location or source reference;
-- `metadata_version`: maintainer-controlled version of the function contract;
-- `crackpy_version`, `execution_commit`, and later function-relevant commits: package and source-code traceability.
+- `method_revision`: maintainer-controlled method-level revision;
+- `crackpy_version`, `execution_commit`, and implementation fingerprints: package and source-code traceability.
 
 Consequences:
 
-- Result metadata should store `analysis_function_id` rather than relying on display names or Python paths.
+- Result metadata should store `method_id` rather than relying on display names or Python paths.
 - Python paths remain useful as `implementation_ref`, but they are allowed to change during refactors.
-- `metadata_version` should change when function semantics, inputs, outputs, defaults, references, model dependencies, schemas, or result meanings change.
-- OQ-017 can now focus on how to compute or declare function-relevant commits for a stable dependency scope.
+- `method_revision` should change when method semantics, inputs, outputs, defaults, references, model dependencies, schemas, or result meanings change.
+- OQ-017 resolved the supporting traceability model around dependency scopes, implementation fingerprints, build validation, aliases, and method registry status.
+
+## 2026-05-14: Method Revision Is Manual And Implementation Fingerprint Is Build-Validated
+
+Status: accepted for planning
+
+Decision:
+
+Registered CrackPy methods should use plain method-level vocabulary:
+
+- `method_id`: stable canonical identity of a registered method, for example `crackpy.fracture.williams_fit`, `crackpy.fracture.bueckner_chen_integral`, or `crackpy.detection.unet_crack_tip_detection`;
+- `method_revision`: maintainer-declared revision of the method's scientific, numerical, and output meaning inside CrackPy;
+- `implementation_fingerprint`: automatically generated traceability value over the method's declared dependency scope;
+- `dependency_scope`: declared files, source ranges, helper modules, configuration/default providers, model artifacts, and other implementation assets that can affect method behavior.
+
+CrackPy should not rely only on manual `method_revision` updates. A build or release validation step should generate a method manifest, compute implementation fingerprints, compare them against the previous committed or released manifest, and require each changed fingerprint to be classified.
+
+Release validation should fail when a registered method's fingerprint changed and neither of the following is true:
+
+- `method_revision` was changed because the method meaning, default behavior, model dependency, result schema, or result interpretation changed;
+- the change was explicitly classified as non-semantic, for example a pure move, formatting pass, behavior-preserving cleanup, or equivalent implementation refactor.
+
+Rationale:
+
+Git can detect that source files changed, but it cannot decide whether a scientific method changed. A Williams-fit edit might be a harmless rename, a changed default term set, a sign convention fix, a numerical bug fix, or a result-schema change. Those cases have different stale-result consequences. `method_revision` is therefore the human semantic marker, while `implementation_fingerprint` is the automatic traceability marker that prevents silent drift.
+
+The dependency scope must be declared but audited automatically. The first version should prefer coarse scopes over fragile function-only scopes. For example, `crackpy.fracture.williams_fit` should include the optimization code, analytical Williams-field helpers, interpolation helpers, material behavior, and relevant result-schema writers rather than only a single top-level function. Build checks should verify that scope entries resolve, fingerprints are reproducible, aliases are unique, and newly touched method dependencies are classified.
+
+Registry identity policy:
+
+- `method_id` is stable provenance vocabulary, not an implementation path.
+- A method ID may change only through an explicit registry migration.
+- `aliases` are a list of one-to-one legacy names that resolve to exactly one canonical `method_id`; new results must write the canonical ID.
+- `successors` are used for one-to-many replacements or method splits where an old broad ID cannot be automatically mapped to one new method without extra metadata.
+- `status` should use `active`, `deprecated`, or `removed`.
+
+Status meanings:
+
+- `active`: accepted canonical method ID for new results.
+- `deprecated`: known historical or transitional ID; old results remain interpretable, but new results should not write it.
+- `removed`: known historical ID with no current implementation; provenance can still be read, but direct recomputation is not available without a migration path.
+
+Stale-result policy:
+
+- Recompute when `method_revision`, normalized parameters, inputs, model hashes, configuration schema, or result schema changed.
+- Flag for review, or recompute under conservative policy, when only `implementation_fingerprint` changed.
+- Record `crackpy_version` and `execution_commit` separately from method-level values because one CrackPy release can change zero, one, or many methods.
+
+Consequences:
+
+- The earlier `analysis_function_id` wording is superseded by `method_id` as canonical field vocabulary.
+- The earlier `metadata_version` and `function_metadata_version` wording is superseded by `method_revision`.
+- The earlier `function_last_modified_commit` wording is superseded by `implementation_fingerprint`; commit IDs may be one ingredient in the fingerprint when Git metadata is available.
+- OQ-018 can now focus on how method references attach to `method_id` entries.
+- OQ-019 can now decide which manifest fields belong in the compact knowledge-graph export and which belong only in detailed provenance artifacts.

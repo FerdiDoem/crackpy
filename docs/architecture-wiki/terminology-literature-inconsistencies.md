@@ -115,7 +115,7 @@ No findings closed yet.
 ### 2026-05-14T18:32:55+02:00
 
 - Checked range: `022c3beeeff58952294b29dad33c66c9e90f933c..8d24a550515754e90734360bea39bc526dd46eb5`; no uncommitted wiki hunks were present.
-- Changed terminology focus: provenance planning vocabulary around `InputRecord`, `AnalysisRun`, `ResultRecord`, `ProvenanceRecord`, `AnalysisMetadata`, `AnalysisExecutionMetadata`, `MethodReference`, generic metadata statement bundles, compact RDF/JSON export, optional PROV-O-like export, JSON-LD, RO-Crate, CodeMeta, CFF, RDFLib, Pydantic JSON Schema, function metadata version, function-relevant commit, `run_id`, `result_id`, hashes, and result schema version.
+- Changed terminology focus: provenance planning vocabulary around `InputRecord`, `AnalysisRun`, `ResultRecord`, `ProvenanceRecord`, `MethodMetadata`, `AnalysisExecutionMetadata`, `MethodReference`, generic metadata statement bundles, compact RDF/JSON export, optional PROV-O-like export, JSON-LD, RO-Crate, CodeMeta, CFF, RDFLib, Pydantic JSON Schema, method revision, implementation fingerprint, `run_id`, `result_id`, hashes, and result schema version.
 - Sources consulted:
   - W3C, "PROV-Overview", 2013 W3C Working Group Note, accessed 2026-05-14, `https://www.w3.org/TR/prov-overview/`; basis: provenance as information about entities, activities, and people involved in producing data, plus the PROV family split between data model, serializations, constraints, and access.
   - Timothy Lebo, Satya Sahoo, and Deborah McGuinness, "PROV-O: The PROV Ontology", 2013 W3C Recommendation, accessed 2026-05-14, `https://www.w3.org/TR/2013/REC-prov-o-20130430/`; basis: `prov:Entity`, `prov:Activity`, `prov:Agent`, `prov:Bundle`, `prov:Plan`, `used`, `wasGeneratedBy`, and related RDF provenance vocabulary.
@@ -125,7 +125,7 @@ No findings closed yet.
   - Citation File Format project, "Citation File Format (CFF)", accessed 2026-05-14, `https://citation-file-format.github.io/`; basis: `CITATION.cff` as human- and machine-readable citation metadata for software and datasets.
   - RDFLib project documentation, "Navigating Graphs", accessed 2026-05-14, `https://rdflib.readthedocs.io/en/7.1.2/intro_to_graphs.html`; basis: RDFLib graph handling around RDF triples and graph operations.
   - Pydantic documentation, "JSON Schema", accessed 2026-05-14, `https://pydantic.dev/docs/validation/latest/concepts/json_schema/`; basis: Pydantic support for generating and customizing JSON Schema from models.
-- Result: no new source-backed terminology inconsistencies were found. The checked sources support the wiki's current separation between compact CrackPy-specific metadata records and optional standards-oriented PROV-O/JSON-LD export. `InputRecord`, `AnalysisRun`, `ResultRecord`, `ProvenanceRecord`, function-relevant commit, and metadata statement bundle remain local planning vocabulary rather than literature-standard names. Existing FINDING-20260514-001 remains the only open source-backed conflict in the ledger.
+- Result: no new source-backed terminology inconsistencies were found. The checked sources support the wiki's current separation between compact CrackPy-specific metadata records and optional standards-oriented PROV-O/JSON-LD export. `InputRecord`, `AnalysisRun`, `ResultRecord`, `ProvenanceRecord`, method revision, implementation fingerprint, and metadata statement bundle remain local planning vocabulary rather than literature-standard names. Existing FINDING-20260514-001 remains the only open source-backed conflict in the ledger.
 
 ## Automation State
 

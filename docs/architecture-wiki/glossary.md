@@ -401,28 +401,49 @@ Training/evaluation setup field listing model layers used for Grad-CAM-style vis
 Currently empty module under `crackpy.results`. It is a placeholder name, not an implemented structured result container.
 
 #### Provenance metadata
-Structured metadata that records how a CrackPy result was produced, including software version, execution commit, analysis-function identity, configuration, inputs, outputs, method references, timestamps, and optional hashes.
+Structured metadata that records how a CrackPy result was produced, including software version, execution commit, method identity, configuration, inputs, outputs, method references, timestamps, implementation fingerprints, and optional hashes.
+
+#### Method ID
+Stable canonical identity of a registered CrackPy method, such as `crackpy.fracture.williams_fit`, `crackpy.detection.unet_crack_tip_detection`, or `crackpy.fracture.bueckner_chen_integral`. A `method_id` describes the scientific, numerical, or workflow method that produced a result, not the current Python module, class, or function path.
 
 #### Analysis function identity
-Stable registry-owned contract ID for a computational analysis step, such as `crackpy.fracture.williams_fit`, `crackpy.detection.unet_crack_tip_detection`, or `crackpy.fracture.bueckner_chen_integral`. This identity describes the scientific or computational contract that produced a result, not the current Python module, class, or function path.
+Earlier planning term for [[glossary#Method ID]]. Use `method_id` for new provenance and registry vocabulary.
 
 #### Display name
-Human-facing label for an analysis function, such as `WilliamsFit`. Display names are useful in reports and plots but should not be the stable provenance identity because they can be renamed for readability.
+Human-facing label for a registered method, such as `WilliamsFit`. Display names are useful in reports and plots but should not be the stable provenance identity because they can be renamed for readability.
 
 #### Implementation reference
-Current Python module, class, function, or source-range reference for an analysis function. This connects metadata to code for maintainers and tooling, but it may change during refactors and should not be used as the durable result identity.
+Current Python module, class, function, or source-range reference for a registered method. This connects metadata to code for maintainers and tooling, but it may change during refactors and should not be used as the durable result identity.
+
+#### Method revision
+Maintainer-declared revision of a registered method's scientific, numerical, and output meaning inside CrackPy. A `method_revision` should change when defaults, assumptions, sign conventions, model dependencies, fitting logic, correction logic, output schema, units, or result interpretation change. It does not need to change for pure file moves, formatting, renames, or behavior-preserving refactors.
 
 #### Function metadata version
-Maintainer-controlled version of an analysis function's metadata contract. It should change when inputs, outputs, defaults, method assumptions, references, model dependencies, schemas, or result meanings change, even if the Python path and package version stay the same.
+Earlier planning term for [[glossary#Method revision]]. Use `method_revision` for new provenance and registry vocabulary.
+
+#### Dependency scope
+Declared implementation scope for a registered method. It may include files, source ranges, helper modules, configuration/default providers, model artifacts, result-schema writers, and other assets that can affect method behavior. The scope is used to compute an [[glossary#Implementation fingerprint]] and should be broad enough to reduce silent drift.
+
+#### Implementation fingerprint
+Automatically generated traceability value for a method's declared [[glossary#Dependency scope]]. It may be derived from Git commits, file hashes, source-range hashes, packaged build metadata, model hashes, or artifact hashes. It helps detect unreviewed implementation changes but does not by itself decide whether method meaning changed.
 
 #### Function-relevant commit
-Commit identifier representing the latest relevant change to an analysis function or its declared dependency scope. This may differ from the execution commit when results are compared against newer CrackPy code.
+Earlier planning term for the Git-based part of an [[glossary#Implementation fingerprint]]. Use `implementation_fingerprint` for new vocabulary because relevant method behavior may depend on model artifacts, file hashes, or packaged metadata as well as commits.
+
+#### Method alias
+Legacy or alternate method ID that resolves one-to-one to a canonical [[glossary#Method ID]]. Aliases preserve old provenance records after naming cleanup. New results should write the canonical `method_id`, not an alias.
+
+#### Method successor
+Replacement method ID used when an old method ID was split or replaced. Successors are not aliases when the mapping is one-to-many; old results may require extra metadata to choose the correct successor.
+
+#### Method registry status
+Lifecycle status for a registered method ID. `active` means new results may use the canonical ID. `deprecated` means old results remain readable but new results should not write the ID. `removed` means the historical ID remains known for provenance, but no current implementation is available for direct recomputation.
 
 #### Result schema version
 Explicit version for a serialized result format, including text tags, JSON keys, units, and nested result structure.
 
 #### Method reference
-Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific analysis function.
+Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific registered method.
 
 #### Compact knowledge-graph export
 Reduced metadata export intended for the main RDF/JSON knowledge graph. It stores the facts needed for querying, traceability, and targeted re-analysis without modeling every internal helper call.
@@ -433,7 +454,7 @@ Optional richer provenance document, potentially PROV-O-like or JSON-LD/RDF-base
 #### AnalysisRun
 Status: proposed architecture vocabulary
 
-Future processing-provenance record for one analysis execution. It should reference consumed `input_id` values, analysis-function identity, configuration, software version, commit information, timestamps, and generated outputs.
+Future processing-provenance record for one analysis execution. It should reference consumed `input_id` values, method identity, configuration, software version, implementation traceability, timestamps, and generated outputs.
 
 #### ResultRecord
 Status: proposed architecture vocabulary
@@ -443,7 +464,7 @@ Future result/provenance record describing a generated result artifact, its sche
 #### ProvenanceRecord
 Status: proposed architecture vocabulary
 
-Future umbrella record for traceability facts that do not belong inside the input data itself, especially processing history, analysis-function metadata, configuration snapshots, result identity, and export metadata.
+Future umbrella record for traceability facts that do not belong inside the input data itself, especially processing history, method metadata, configuration snapshots, result identity, and export metadata.
 
 ### Legacy And Fixture Vocabulary
 

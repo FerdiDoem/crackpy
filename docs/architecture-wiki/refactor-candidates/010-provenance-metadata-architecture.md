@@ -7,7 +7,7 @@ Related: [[refactor-candidates/001-explicit-analysis-result]], [[refactor-candid
 
 ## Motivation
 
-CrackPy should eventually emit enough provenance and metadata to make analysis results traceable, selectively refreshable, and exportable into the existing RDF / Apache Jena knowledge graph. The target is not to model every internal call as a semantic process in the main graph. The target is a compact, queryable representation that records which software, configuration, analysis function, inputs, parameters, methods, and outputs produced a result.
+CrackPy should eventually emit enough provenance and metadata to make analysis results traceable, selectively refreshable, and exportable into the existing RDF / Apache Jena knowledge graph. The target is not to model every internal call as a semantic process in the main graph. The target is a compact, queryable representation that records which software, configuration, registered method, inputs, parameters, method references, and outputs produced a result.
 
 The current code already has useful fragments:
 
@@ -19,7 +19,7 @@ The current code already has useful fragments:
 
 Observed gaps are also clear:
 
-- result files do not record the CrackPy version, repository commit, analysis-function version, input hash, result schema version, detection model identifier, model hash, dependency snapshot, or function-level method references;
+- result files do not record the CrackPy version, repository commit, method revision, input hash, result schema version, detection model identifier, model hash, dependency snapshot, or method-level references;
 - analysis methods are identified mostly by Python method names and result tags, not by stable metadata records;
 - literature references are stored in README prose, docstrings, and comments rather than method-specific structured metadata;
 - crack detection output records crack-tip coordinates, angle, and side, but not model/configuration provenance;
@@ -82,7 +82,7 @@ The main graph can keep this compact by storing one statement per relevant prope
 
 - Reproduce how a result was produced from nodemap data, crack-tip information, configuration, and analysis methods.
 - Let an external orchestrator identify which existing results may be stale after a code or configuration change.
-- Query results by CrackPy version, function version, method, literature reference, material, input hash, side/orientation convention, result schema version, or input metadata.
+- Query results by CrackPy version, method revision, method ID, literature reference, material, input hash, side/orientation convention, result schema version, or input metadata.
 - Export CrackPy result metadata into the existing JSON/RDF shape without forcing CrackPy internals to mirror the external ontology directly.
 - Preserve enough method metadata for software citation, method citation, and scientific review.
 - Support future command-line, Model Context Protocol (MCP), and workflow-manager execution without relying on implicit `InputData` state.
@@ -93,7 +93,7 @@ Required compact metadata:
 
 - software name and package version;
 - repository URL and execution commit, when available;
-- stable analysis-function ID, display name, category, function metadata version, implementation reference, and last function-relevant commit;
+- stable method ID, display name, category, method revision, implementation reference, dependency scope, implementation fingerprint, and method registry status;
 - result schema version;
 - execution timestamp and timezone policy;
 - input identifiers and optional hashes;
@@ -117,28 +117,37 @@ Non-goals for the compact main model:
 CrackPy should own an internal metadata model first, then map it outward. A possible minimal model:
 
 ```python
-AnalysisMetadata(
-    analysis_function_id="crackpy.fracture.williams_fit",
+MethodMetadata(
+    method_id="crackpy.fracture.williams_fit",
+    aliases=(),
     display_name="WilliamsFit",
     category="stress_intensity_factor_evaluation",
     implementation_ref="crackpy.fracture_analysis.optimization:Optimization.optimize_williams_displacements_xy",
-    metadata_version="1",
+    method_revision="1",
+    status="active",
     references=["williams_1961", "kuna_williams_coefficients"],
     input_schema="williams_fit_input.v1",
     output_schema="williams_fit_output.v1",
+    dependency_scope=[
+        "crackpy/fracture_analysis/analysis.py",
+        "crackpy/fracture_analysis/optimization.py",
+        "crackpy/fracture_analysis/crack_tip.py",
+        "crackpy/fracture_analysis/utils.py",
+        "crackpy/results/write.py",
+    ],
 )
 ```
 
-Execution metadata should be separate from static function metadata:
+Execution metadata should be separate from static method metadata:
 
 ```python
 AnalysisExecutionMetadata(
     run_id="...",
-    analysis_function_id="crackpy.fracture.williams_fit",
-    function_metadata_version="1",
+    method_id="crackpy.fracture.williams_fit",
+    method_revision="1",
     crackpy_version="1.3.0",
     execution_commit="...",
-    function_last_modified_commit="...",
+    implementation_fingerprint="sha256:...",
     input_ids=["nodemap:..."],
     input_hashes={"nodemap": "..."},
     output_ids=["result:..."],
@@ -150,20 +159,20 @@ AnalysisExecutionMetadata(
 
 The internal model should distinguish:
 
-- static function metadata: stable contract identity, display name, category, references, schemas, and implementation reference;
+- static method metadata: stable method identity, display name, category, references, schemas, implementation reference, revision, registry status, aliases, and dependency scope;
 - execution metadata: run ID, timestamp, software version, commit, inputs, outputs;
 - configuration metadata: parameter values, defaults, validation state, hash;
 - result metadata: result ID, schema version, units, output artifacts;
 - export metadata: mapping target, exporter version, generated artifact ID.
 
-Input metadata should remain separate from processing provenance. A future `InputRecord` can pair data with attached source/user metadata, stable `input_id`, optional `sequence_index`, hashes, and minimal input/source provenance. Processing history, analysis-function identity, configuration snapshots, and result identity belong to execution or result records that consume input records.
+Input metadata should remain separate from processing provenance. A future `InputRecord` can pair data with attached source/user metadata, stable `input_id`, optional `sequence_index`, hashes, and minimal input/source provenance. Processing history, method identity, configuration snapshots, and result identity belong to execution or result records that consume input records.
 
-Planning decision for OQ-016: the stable provenance value is `analysis_function_id`, a registry-owned contract ID independent of current Python location. A separate `display_name` can stay human-readable, and `implementation_ref` records the module, class, function, or source reference that ran. `metadata_version` is the maintainer-controlled version of that analysis contract and should change when semantics, inputs, outputs, defaults, references, model dependencies, schemas, or result meanings change.
+Planning decisions for OQ-016 and OQ-017: the stable provenance value is `method_id`, a registry-owned method identity independent of current Python location. A separate `display_name` can stay human-readable, and `implementation_ref` records the module, class, function, or source reference that ran. `method_revision` is the maintainer-declared revision of the method's scientific, numerical, and output meaning. `implementation_fingerprint` is generated from the declared `dependency_scope` and should be checked during build or release validation so method changes cannot drift silently.
 
 Useful split for planning:
 
 - `InputRecord`: data plus attached metadata, stable identity, ordering hints, hashes, and minimal input/source provenance.
-- `AnalysisRun`: one execution of a registered analysis function over one or more input records and a configuration snapshot.
+- `AnalysisRun`: one execution of a registered method over one or more input records and a configuration snapshot.
 - `ResultRecord`: identity, schema, units, hashes, and artifact references for generated outputs.
 - `ProvenanceRecord`: compact or detailed traceability envelope linking input records, analysis runs, result records, software, configuration, and export metadata.
 
@@ -202,15 +211,16 @@ class InputRecord:
 
 @dataclass(frozen=True)
 class AnalysisRun:
-    """One execution of one registered analysis function.
+    """One execution of one registered method.
 
     Fields:
     - run_id: durable execution identity; anchors logs, results, plots, and
       provenance exports.
-    - analysis_function_id: stable registry-owned analysis contract ID; tells
-      an orchestrator which method produced a result even after code moves.
-    - function_metadata_version: version of the function contract; changes when
-      inputs, outputs, defaults, references, or semantics change.
+    - method_id: stable registry-owned method ID; tells an orchestrator which
+      method produced a result even after code moves.
+    - method_revision: maintainer-declared method revision; changes when
+      scientific meaning, numerical behavior, defaults, schemas, references, or
+      result interpretation change.
     - input_ids: consumed input records; makes data dependencies explicit.
     - input_roles: role for each input ID; distinguishes primary field,
       representative crack-tip source, material, configuration, model weights,
@@ -221,8 +231,10 @@ class AnalysisRun:
       result detection without deep object comparison.
     - started_at and completed_at: execution timestamps; support audit, ordering,
       failed-run detection, and knowledge-graph queries.
-    - crackpy_version and execution_commit: software state; supports
+    - crackpy_version and execution_commit: package and source state; supports
       reproducibility and code-level traceability.
+    - implementation_fingerprint: generated fingerprint over the declared
+      dependency scope; flags unreviewed implementation changes.
     - method_reference_ids: literature or method references; keeps scientific
       method citation attached to the run.
     - model_ids: optional model artifacts; captures neural-network or surrogate
@@ -230,8 +242,8 @@ class AnalysisRun:
     """
 
     run_id: str
-    analysis_function_id: str
-    function_metadata_version: str
+    method_id: str
+    method_revision: str
     input_ids: tuple[str, ...]
     input_roles: Mapping[str, str]
     configuration_id: str
@@ -242,6 +254,7 @@ class AnalysisRun:
     model_ids: tuple[str, ...] = ()
     completed_at: str | None = None
     execution_commit: str | None = None
+    implementation_fingerprint: str | None = None
 
 
 @dataclass(frozen=True)
@@ -306,15 +319,16 @@ class ProvenanceRecord:
 
 The important constraint is that links should carry semantic roles. A run should not only say that it used several records; it should say which record was the primary displacement field, representative crack-tip source, material definition, configuration, model weights, correction result, or post-processing input where applicable. This preserves enough meaning to export useful PROV-O later instead of a generic graph full of indistinguishable `used` edges.
 
-## Analysis Function Interface
+## Method Interface
 
-The future interface should make analysis functions callable without relying on a live `InputData` pipeline object where possible. Candidate shapes:
+The future interface should make registered methods callable without relying on a live `InputData` pipeline object where possible. Candidate shapes:
 
 Decorator style:
 
 ```python
 @analysis_step(
-    analysis_function_id="crackpy.fracture.williams_fit",
+    method_id="crackpy.fracture.williams_fit",
+    method_revision="1",
     display_name="WilliamsFit",
     category="stress_intensity_factor_evaluation",
     references=["williams_1961", "sanford_2003"],
@@ -327,8 +341,9 @@ Class style:
 
 ```python
 class WilliamsFit(AnalysisFunction[WilliamsFitInput, WilliamsFitConfig, WilliamsFitOutput]):
-    metadata = AnalysisMetadata(
-        analysis_function_id="crackpy.fracture.williams_fit",
+    metadata = MethodMetadata(
+        method_id="crackpy.fracture.williams_fit",
+        method_revision="1",
         display_name="WilliamsFit",
         category="stress_intensity_factor_evaluation",
         references=["williams_1961"],
@@ -338,7 +353,7 @@ class WilliamsFit(AnalysisFunction[WilliamsFitInput, WilliamsFitConfig, Williams
         ...
 ```
 
-Decorator style is lightweight and can wrap existing functions incrementally. Class style gives a stronger place for metadata, validation, versioning, and orchestration. A mixed approach is possible: a decorator registers simple functions into an `AnalysisRegistry`, while richer classes implement the same protocol.
+Decorator style is lightweight and can wrap existing functions incrementally. Class style gives a stronger place for metadata, validation, versioning, and orchestration. A mixed approach is possible: a decorator registers simple functions into a method registry, while richer classes implement the same protocol.
 
 The key interface requirement is explicit inputs and outputs. The future `WilliamsFit` interface should not require callers to know the entire [[glossary#Implicit InputData workflow]] if the computational inputs can be expressed as coordinate arrays, displacement arrays, material properties, crack-tip-centered coordinate metadata, and fit configuration.
 
@@ -365,31 +380,114 @@ Configuration should preserve:
 
 ## Version and Commit Tracking
 
-Three levels should be separated:
+Four levels should be separated:
 
 - package version: the installed CrackPy release, currently `crackpy.__version__`;
 - execution commit: the repository commit used for a local editable or source checkout, if available;
-- function-relevant commit: the latest commit that changed the registered analysis function or its declared dependency set.
+- method revision: maintainer-declared revision of one registered method's scientific, numerical, and output meaning;
+- implementation fingerprint: generated traceability value over the registered method's declared dependency scope.
 
 Possible automation sources:
 
 - `importlib.metadata.version("crackpy")` or `crackpy.__version__` for package version;
 - `git rev-parse HEAD` for source-checkout execution commit;
-- `git blame -L` or `git log -L` over registered source ranges for function-level changes;
+- Git commits, source-range hashes, file hashes, artifact hashes, or packaged build metadata for implementation fingerprints;
 - a build-time generated metadata file for installed wheels where `.git` is absent;
-- manually maintained `metadata_version` when a semantic method change occurs without easy source-range detection.
+- manually maintained `method_revision` when method meaning changes.
 
-Function-level tracking should not rely only on the function body. Important changes may occur in helpers, defaults, config classes, model weights, or constants. Each `AnalysisMetadata` record therefore needs a declared dependency scope:
+Method-level tracking should not rely only on the top-level function body. Important changes may occur in helpers, defaults, config classes, model weights, constants, result-schema writers, or interpolation behavior. Each `MethodMetadata` record therefore needs a declared dependency scope:
 
 ```python
 dependency_scope=[
+    "crackpy/fracture_analysis/analysis.py",
     "crackpy/fracture_analysis/optimization.py",
     "crackpy/fracture_analysis/crack_tip.py",
+    "crackpy/fracture_analysis/utils.py",
     "crackpy/structure_elements/material.py",
+    "crackpy/results/write.py",
 ]
 ```
 
-For incremental re-analysis, the conservative rule is: a result may be stale if its producing analysis-function ID, function metadata version, dependency-scope commit, configuration schema version, parameter hash, input hash, model hash, or result schema version no longer matches the current expected value.
+The scope should start coarse enough to avoid silent drift. A Williams-fit scope that watches only `optimize_williams_displacements_xy()` would miss changes in analytical Williams fields, interpolation helpers, material assumptions, default completion, or result writers. A crack-tip detection scope must include preprocessing and model artifacts, not only the Python class that calls the neural network.
+
+The build or release process should generate a method manifest:
+
+```json
+{
+  "method_id": "crackpy.fracture.williams_fit",
+  "aliases": [],
+  "method_revision": "1",
+  "status": "active",
+  "crackpy_version": "1.3.0",
+  "source_commit": "abc123",
+  "dependency_scope": [
+    "crackpy/fracture_analysis/analysis.py",
+    "crackpy/fracture_analysis/optimization.py",
+    "crackpy/fracture_analysis/crack_tip.py",
+    "crackpy/fracture_analysis/utils.py",
+    "crackpy/results/write.py"
+  ],
+  "implementation_fingerprint": "sha256:...",
+  "change_classification": "semantic"
+}
+```
+
+Build validation should check:
+
+- every registered method has a unique canonical `method_id`;
+- aliases resolve one-to-one and do not collide with canonical IDs;
+- `status` is one of `active`, `deprecated`, or `removed`;
+- every dependency-scope entry resolves or is explicitly marked external;
+- generated implementation fingerprints are reproducible;
+- model, reference, and configuration IDs referenced by method metadata resolve or are explicitly external;
+- a changed implementation fingerprint is classified before release.
+
+Release validation should fail when a registered method's implementation fingerprint changed without either:
+
+- a `method_revision` change, meaning the method's scientific, numerical, or output meaning changed; or
+- an explicit non-semantic classification, meaning the implementation changed but the method meaning is intentionally unchanged.
+
+Concrete examples:
+
+| Method | Dependency-scope examples | Revision-changing cases | Fingerprint-only or review cases |
+| --- | --- | --- | --- |
+| `crackpy.fracture.williams_fit` | `analysis.py`, `optimization.py`, analytical Williams-field helpers in `crack_tip.py`, interpolation helpers, material behavior, result writer keys. | Changed default Williams terms, residual definition, fitting domain defaults, SIF/T-stress sign convention, output units, or exported result meaning. | Moving `_run_williams_optimization`, renaming implementation classes, formatting, or a behavior-preserving cleanup. |
+| `crackpy.detection.unet_crack_tip_detection` | detection preprocessing, interpolation, mirroring/right-side convention, `UNet` architecture, `get_model()`, model weights, model source/hash. | Changed pixel-to-mm convention, preprocessing normalization, trained weights, model architecture, crack-tip coordinate convention, or output meaning. | Changing a download URL while the verified model hash is identical, or moving model-loading code without changing behavior. |
+| `crackpy.fracture.bueckner_chen_integral` | line-integration code, integration path construction, Bueckner-Chen solver, interpolation helpers, unit conversion, aggregation, result writer keys. | Changed integral formulas, default Williams terms, path construction semantics, outlier aggregation, unit conversion, or public result tags. | Internal spelling cleanup from `buckner` to `bueckner` if formulas and outputs remain identical. |
+
+Default handling needs special care. If `terms=None` in Williams fitting currently resolves to a default list, changing that default affects callers who did not provide terms. That should change the normalized parameter hash and usually the `method_revision`. If a caller explicitly provided the old terms, the parameter hash may remain comparable even though the implementation fingerprint changed.
+
+Dependency-scope drift remains a risk. The validation target is not perfect inference; it is to make unreviewed changes visible. A future check can start by verifying declared paths, comparing generated fingerprints, and requiring change classification. Later checks could add import or call-graph audits to flag method code that starts touching CrackPy modules outside its declared scope.
+
+Method ID migration should be explicit:
+
+```python
+# Abbreviated registry sketch; unchanged metadata fields omitted.
+MethodMetadata(
+    method_id="crackpy.fracture.bueckner_chen_integral",
+    aliases=("crackpy.fracture.buckner_chen_integral",),
+    status="active",
+)
+```
+
+Aliases cover one-to-one renames. They are not enough for method splits, where one old ID maps to multiple possible successors:
+
+```python
+# Abbreviated registry sketch; unchanged metadata fields omitted.
+MethodMetadata(
+    method_id="crackpy.detection.crack_tip_detection",
+    status="deprecated",
+    successors=(
+        "crackpy.detection.unet_crack_tip_detection",
+        "crackpy.detection.line_intercept_crack_tip_detection",
+        "crackpy.detection.manual_crack_tip_import",
+    ),
+)
+```
+
+New results should write only canonical `active` method IDs. Old results using aliases or deprecated IDs should remain readable. `removed` means the historical ID is known for provenance but no current implementation is available for direct recomputation.
+
+For incremental re-analysis, the semantic rule is: a result should be recomputed if its producing `method_id`, `method_revision`, configuration schema version, parameter hash, input hash, model hash, or result schema version no longer matches the current expected value. If only the `implementation_fingerprint` changed, the result should be flagged for review or recomputed under a conservative policy.
 
 ## Result Update Logic / Orchestrator Use Case
 
@@ -397,12 +495,13 @@ An external orchestrator should be able to ask:
 
 ```text
 Find results where:
-  analysis_function_id == "crackpy.fracture.williams_fit"
+  method_id == "crackpy.fracture.williams_fit"
   and (
-    function_last_modified_commit != current_function_last_modified_commit
-    or function_metadata_version != current_function_metadata_version
+    method_revision != current_method_revision
+    or implementation_fingerprint != current_implementation_fingerprint
     or parameter_hash != current_parameter_hash
     or input_hash != current_input_hash
+    or model_hash != current_model_hash
     or result_schema_version != current_result_schema_version
   )
 ```
@@ -410,10 +509,10 @@ Find results where:
 The result metadata should therefore include:
 
 - stable result ID;
-- producing stable analysis-function ID;
-- static metadata version;
+- producing stable method ID;
+- method revision;
 - execution commit;
-- last function-relevant commit;
+- implementation fingerprint;
 - dependency-scope identifier or hash;
 - input IDs and hashes;
 - parameter hash;
@@ -421,6 +520,12 @@ The result metadata should therefore include:
 - execution timestamp.
 
 This enables targeted refresh of affected Williams fits, crack-tip detections, SIF evaluations, interpolation steps, or preprocessing steps without re-running unrelated analyses.
+
+The orchestrator should distinguish recomputation triggers from review triggers:
+
+- Recompute when `method_revision`, normalized parameters, inputs, model hashes, configuration schema, or result schema changed.
+- Flag for review, or recompute under a conservative policy, when only `implementation_fingerprint` changed.
+- Keep `crackpy_version` and `execution_commit` for reproducibility, but do not treat a package-version change alone as proof that every method result is stale.
 
 ## Literature and Method References
 
@@ -475,7 +580,9 @@ SoftwareConfiguration:
 
 CrackPyAnalysis:
   crackpy_analysis_run_id
-  crackpy_analysis_function_id
+  crackpy_method_id
+  crackpy_method_revision
+  crackpy_implementation_fingerprint
   crackpy_analysis_display_name
   crackpy_analysis_category
   crackpy_analysis_started_at
@@ -498,8 +605,8 @@ Each exported metadata statement can use the target record shape:
 ```json
 {
   "data_type": "string",
-  "description": "Stable ID of the CrackPy analysis function contract that generated this result",
-  "key": "crackpy_analysis_function_id",
+  "description": "Stable ID of the CrackPy method that generated this result",
+  "key": "crackpy_method_id",
   "metadata_type": "IdentityMetadata",
   "related_to": "CrackPyAnalysis",
   "source": "Code",
@@ -541,20 +648,20 @@ Standards and tools worth evaluating:
 - [Pydantic JSON Schema](https://pydantic.dev/docs/validation/2.5/concepts/json_schema): useful for typed internal metadata and configuration schemas if dependency cost is acceptable.
 - [FAIR Digital Object Framework](https://fairdigitalobjectframework.org/): useful conceptual reference for persistent identifiers and metadata records, but currently more infrastructure-oriented than CrackPy needs.
 - [FORCE11 Software Citation Principles](https://force11.org/info/software-citation-principles-published-2016/): supports the separation between citing CrackPy as software and recording execution provenance for specific results.
-- Git line-history tools such as `git blame -L` and `git log -L`: useful for function-level change tracking, with the limitation that deleted/replaced code and helper dependencies need additional handling.
+- Git line-history tools such as `git blame -L` and `git log -L`: useful as one source for implementation fingerprints, with the limitation that deleted/replaced code, helper dependencies, packaged wheels, and model artifacts need additional handling.
 
 Candidate adoption stance:
 
 - adopt compact internal metadata and result IDs early;
 - adapt PROV-O concepts only for the optional detailed layer;
-- adapt CodeMeta/CFF for package-level citation, not function-level method metadata;
+- adapt CodeMeta/CFF for package-level citation, not method-level provenance metadata;
 - avoid making RDFLib, Pydantic, or RO-Crate hard runtime dependencies in the numerical core until an exporter package or optional extra is designed.
 
 ## Open Design Questions
 
 - OQ-015: resolved minimal traceability chain across input loading, detection, fracture analysis, text/JSON output, CSV flattening, and plots;
-- OQ-016: resolved stable registry-owned analysis-function ID and maintainer-controlled metadata version;
-- OQ-017: Should function-relevant commits be computed automatically from Git history, declared manually, or generated at build time?
+- OQ-016: resolved stable registry-owned method identity;
+- OQ-017: resolved method revision, implementation fingerprint, dependency-scope validation, aliases, successors, and method registry status;
 - OQ-018: Should method references live in Python metadata, YAML/JSON, BibTeX, or a hybrid registry?
 - OQ-019: Which parts of provenance belong in the compact knowledge graph, and which belong only in an optional detailed artifact?
 
@@ -571,12 +678,13 @@ Related existing questions:
 Possible phased implementation, after planning approval:
 
 1. Add internal metadata dataclasses or Pydantic models in a new provenance/result-metadata module.
-2. Add an `AnalysisMetadata` registry and register a small number of pilot functions, starting with `WilliamsFit`, crack-tip detection, and SIF/integral evaluation.
+2. Add a `MethodMetadata` registry and register a small number of pilot methods, starting with `WilliamsFit`, crack-tip detection, and SIF/integral evaluation.
 3. Add `AnalysisExecutionMetadata` creation around analysis execution without changing numerical behavior.
-4. Extend JSON result output with package version, result schema version, execution commit, function metadata, parameter hash, input hash, and reference IDs.
-5. Add a compact exporter from internal metadata records into the observed datapoint JSON shape.
-6. Add an optional detailed PROV-O-like exporter behind an optional dependency group.
-7. Teach the future orchestrator to compare result metadata with current metadata and mark stale results for targeted re-analysis.
+4. Add build validation that generates a method manifest, computes implementation fingerprints, checks aliases/status values, and fails release builds on unclassified dependency-scope changes.
+5. Extend JSON result output with package version, result schema version, execution commit, method metadata, parameter hash, input hash, and reference IDs.
+6. Add a compact exporter from internal metadata records into the observed datapoint JSON shape.
+7. Add an optional detailed PROV-O-like exporter behind an optional dependency group.
+8. Teach the future orchestrator to compare result metadata with current metadata and mark stale results for targeted re-analysis.
 
 Sketch of internal records:
 
@@ -603,32 +711,44 @@ class MethodReference:
 
 
 @dataclass(frozen=True)
-class AnalysisMetadata:
-    """Static metadata carried by a registered analysis function.
+class MethodMetadata:
+    """Static metadata carried by a registered CrackPy method.
 
     Fields:
-    - analysis_function_id: stable registry-owned contract ID; lets results
-      survive Python refactors that move or rename implementation details.
+    - method_id: stable canonical method ID; lets results survive Python
+      refactors that move or rename implementation details.
+    - aliases: one-to-one legacy or alternate IDs; keep old provenance records
+      resolvable after naming cleanup without writing aliases for new results.
     - display_name: human-facing name; supports reports and documentation
       without becoming the durable provenance identity.
     - category: method family; supports grouping such as crack detection,
       Williams fitting, SIF evaluation, or preprocessing.
     - implementation_ref: current Python implementation location; lets
       maintainers and tooling connect metadata to code.
-    - metadata_version: version of this function contract; changes when
-      semantics, schemas, defaults, or references change.
+    - method_revision: maintainer-declared method revision; changes when
+      scientific meaning, numerical behavior, schemas, defaults, model
+      dependencies, or references change.
+    - status: registry lifecycle state; controls whether new results may use
+      the ID (`active`), only old results should use it (`deprecated`), or no
+      current implementation exists (`removed`).
+    - successors: replacement method IDs for one-to-many splits or removals;
+      supports migrations that aliases cannot represent safely.
     - references: method-reference IDs; attaches scientific basis to results.
     - input_schema and output_schema: explicit contracts; support validation,
       CLI exposure, orchestration, and result interpretation.
-    - dependency_scope: source ranges or helper modules relevant for behavior;
-      bounds function-level change tracking beyond a single function body.
+    - dependency_scope: files, source ranges, helper modules, config/default
+      providers, model artifacts, or result writers relevant for behavior;
+      bounds implementation fingerprinting beyond a single top-level callable.
     """
 
-    analysis_function_id: str
+    method_id: str
+    aliases: tuple[str, ...]
     display_name: str
     category: str
     implementation_ref: str
-    metadata_version: str
+    method_revision: str
+    status: Literal["active", "deprecated", "removed"]
+    successors: tuple[str, ...]
     references: tuple[str, ...]
     input_schema: str
     output_schema: str
@@ -637,16 +757,18 @@ class AnalysisMetadata:
 
 @dataclass(frozen=True)
 class AnalysisExecutionMetadata:
-    """Execution metadata for one run of a registered analysis function.
+    """Execution metadata for one run of a registered method.
 
     Fields:
     - run_id: durable execution identity; anchors produced results.
-    - analysis_function_id: registered analysis contract ID; enables
-      function-specific stale-result checks across Python refactors.
+    - method_id: registered method ID; enables method-specific stale-result
+      checks across Python refactors.
+    - method_revision: revision used for the run; allows result compatibility
+      checks below the package-version level.
     - crackpy_version and execution_commit: package and source state; support
       reproducibility when the run came from an installed wheel or checkout.
-    - function_last_modified_commit: last relevant code change; lets an
-      orchestrator update only results affected by changed functions.
+    - implementation_fingerprint: generated dependency-scope fingerprint used
+      to flag unreviewed implementation changes.
     - parameter_hash: normalized parameter/default hash; detects configuration
       changes without comparing full objects.
     - input_hashes and output_hashes: data and artifact fingerprints; support
@@ -656,10 +778,11 @@ class AnalysisExecutionMetadata:
     """
 
     run_id: str
-    analysis_function_id: str
+    method_id: str
+    method_revision: str
     crackpy_version: str
     execution_commit: str | None
-    function_last_modified_commit: str | None
+    implementation_fingerprint: str | None
     parameter_hash: str
     input_hashes: Mapping[str, str]
     output_hashes: Mapping[str, str]
@@ -671,7 +794,8 @@ class AnalysisExecutionMetadata:
 
 - Too much provenance will make the graph noisy and harder to query.
 - Too little provenance will not support targeted re-analysis after method changes.
-- Function-level Git tracking is fragile when behavior depends on helper functions, defaults, model weights, or external dependencies.
+- Implementation fingerprinting is only as good as the declared dependency scope; build validation and review gates are needed to reduce scope drift.
+- Git history is not enough for method traceability when behavior depends on helper functions, defaults, model weights, packaged artifacts, or external dependencies.
 - Pydantic improves validation and JSON Schema generation but adds a dependency and model-design burden.
 - A class-based analysis interface is cleaner but requires more refactoring than decorator-based registration.
 - RDF/JSON exporter requirements may distort the internal model if introduced too early.
@@ -681,7 +805,7 @@ class AnalysisExecutionMetadata:
 ## Next Steps
 
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
-- Resolve OQ-017 through OQ-019 enough to define the remaining metadata scope.
+- Resolve OQ-018 and OQ-019 enough to define method-reference storage and compact-versus-detailed metadata scope.
 - Prototype a metadata record for `WilliamsFit` on paper before touching production code.
 - Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint.
 - Decide whether method references should start as YAML/JSON registry entries.
