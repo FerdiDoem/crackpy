@@ -223,3 +223,31 @@ Consequences:
 - The earlier `function_last_modified_commit` wording is superseded by `implementation_fingerprint`; commit IDs may be one ingredient in the fingerprint when Git metadata is available.
 - OQ-018 can now focus on how method references attach to `method_id` entries.
 - OQ-019 can now decide which manifest fields belong in the compact knowledge-graph export and which belong only in detailed provenance artifacts.
+
+## 2026-05-14: Method References Use A Hybrid Registry
+
+Status: accepted for planning
+
+Decision:
+
+Method-level scientific references should use a hybrid model:
+
+- `CITATION.cff` remains the package-level citation file for CrackPy as software.
+- A small versioned YAML or JSON method-reference registry becomes the source of truth for method-level references.
+- Python method metadata stores only stable method-reference IDs, for example `references=("williams_1961", "sanford_2003")`.
+- BibTeX support can be added later as import/export tooling, but should not be the primary internal source of truth.
+
+Rationale:
+
+CrackPy needs references attached to specific registered methods, not only a package citation. The method registry should be able to state that `crackpy.fracture.williams_fit` is linked to Williams-series literature, while `crackpy.fracture.bueckner_chen_integral` or crack-tip detection methods have their own reference sets.
+
+A YAML or JSON registry is easier to validate, diff, package, and export into the compact RDF/JSON statement-bundle shape than free-form docstrings or BibTeX alone. It also keeps Python method metadata small: method entries point to IDs, while the reference registry carries authors, title, year, DOI, venue, URL, and optional notes or roles.
+
+Consequences:
+
+- Method metadata should carry reference IDs, not full bibliography records.
+- Build or documentation validation should fail when a method references an unknown ID or when a registry entry is missing required fields.
+- `method_revision` should change when reference changes alter the claimed scientific basis, assumptions, or interpretation of a method.
+- `CITATION.cff` remains focused on citing CrackPy as software and should not become the method bibliography.
+- BibTeX remains useful for papers and documentation export, but the registry should be the canonical CrackPy planning vocabulary.
+- OQ-019 can now assume method references are externally resolvable from `method_id` entries through the reference registry.

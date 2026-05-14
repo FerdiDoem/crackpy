@@ -443,7 +443,18 @@ Lifecycle status for a registered method ID. `active` means new results may use 
 Explicit version for a serialized result format, including text tags, JSON keys, units, and nested result structure.
 
 #### Method reference
-Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific registered method.
+Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific registered method. Future method metadata should point to method-reference IDs instead of embedding full bibliography records.
+
+#### Method reference registry
+Status: proposed architecture vocabulary
+
+Versioned YAML or JSON source of truth for method-level references. The registry stores stable reference IDs plus reduced citation fields such as authors, title, year, DOI, venue, URL, and optional method notes. Python method metadata should reference these IDs; `CITATION.cff` remains package-level software citation metadata.
+
+#### Method reference ID
+Stable key for one entry in the [[glossary#Method reference registry]], such as `williams_1961` or `sanford_2003`. Method reference IDs let method metadata, result metadata, RDF/JSON export, and documentation resolve the same scientific source without duplicating citation records.
+
+#### Package citation
+Software-level citation metadata for CrackPy as a package, currently represented by `CITATION.cff`. This is separate from method-level references because one package release may contain many methods with different scientific foundations.
 
 #### Compact knowledge-graph export
 Reduced metadata export intended for the main RDF/JSON knowledge graph. It stores the facts needed for querying, traceability, and targeted re-analysis without modeling every internal helper call.

@@ -529,7 +529,14 @@ The orchestrator should distinguish recomputation triggers from review triggers:
 
 ## Literature and Method References
 
-CrackPy needs method-level references, not only package-level citation. A reduced reference record should be enough:
+CrackPy needs method-level references, not only package-level citation. The accepted planning direction for OQ-018 is a hybrid model:
+
+- `CITATION.cff` remains package-level citation metadata for CrackPy as software.
+- A small versioned YAML or JSON method-reference registry is the source of truth for method-level references.
+- Python method metadata stores only stable method-reference IDs, such as `references=("williams_1961", "sanford_2003")`.
+- BibTeX support can be added later as import/export tooling, but should not be the primary internal source of truth.
+
+A reduced registry entry should be enough:
 
 ```yaml
 williams_1961:
@@ -538,16 +545,24 @@ williams_1961:
   year: 1961
   doi: null
   venue: "Journal of Applied Mechanics"
+  url: null
+  notes: "Williams-series basis for crack-tip field representation."
 ```
 
-Possible storage locations:
+This keeps method entries compact while preserving scientific traceability:
 
-- Python metadata constants: easiest to package, but harder for documentation tooling;
-- YAML or JSON registry: easy to validate and export;
-- BibTeX-compatible file: useful for papers, but less direct for Python metadata;
-- `CITATION.cff`: good for software citation, not sufficient for method-level references.
+```python
+MethodMetadata(
+    method_id="crackpy.fracture.williams_fit",
+    method_revision="1",
+    references=("williams_1961", "sanford_2003"),
+    # Other metadata omitted.
+)
+```
 
-Recommendation for planning: use a small YAML/JSON method-reference registry as the internal source, and keep `CITATION.cff` for package citation. Exporters can map method reference IDs into RDF/JSON statements and documentation.
+Validation should check that every method-reference ID used by `MethodMetadata.references` exists in the registry and that each registry entry has the required reduced citation fields. A `method_revision` should change when reference changes alter the claimed scientific basis, assumptions, or interpretation of a method. Pure bibliography cleanup, such as correcting capitalization without changing the scientific basis, should not force a revision.
+
+Exporters can map method-reference IDs into RDF/JSON statements, JSON-LD, RO-Crate, or documentation. BibTeX remains useful for paper writing and documentation export, but the YAML/JSON registry should remain the canonical CrackPy source so provenance export does not depend on parsing free-form bibliography syntax.
 
 ## Export to Existing RDF/JSON Format
 
@@ -662,7 +677,7 @@ Candidate adoption stance:
 - OQ-015: resolved minimal traceability chain across input loading, detection, fracture analysis, text/JSON output, CSV flattening, and plots;
 - OQ-016: resolved stable registry-owned method identity;
 - OQ-017: resolved method revision, implementation fingerprint, dependency-scope validation, aliases, successors, and method registry status;
-- OQ-018: Should method references live in Python metadata, YAML/JSON, BibTeX, or a hybrid registry?
+- OQ-018: resolved method-level references use a hybrid model with package-level `CITATION.cff`, a YAML/JSON method-reference registry, Python reference IDs, and optional BibTeX import/export;
 - OQ-019: Which parts of provenance belong in the compact knowledge graph, and which belong only in an optional detailed artifact?
 
 Related existing questions:
@@ -678,7 +693,7 @@ Related existing questions:
 Possible phased implementation, after planning approval:
 
 1. Add internal metadata dataclasses or Pydantic models in a new provenance/result-metadata module.
-2. Add a `MethodMetadata` registry and register a small number of pilot methods, starting with `WilliamsFit`, crack-tip detection, and SIF/integral evaluation.
+2. Add a `MethodMetadata` registry and method-reference registry, then register a small number of pilot methods, starting with `WilliamsFit`, crack-tip detection, and SIF/integral evaluation.
 3. Add `AnalysisExecutionMetadata` creation around analysis execution without changing numerical behavior.
 4. Add build validation that generates a method manifest, computes implementation fingerprints, checks aliases/status values, and fails release builds on unclassified dependency-scope changes.
 5. Extend JSON result output with package version, result schema version, execution commit, method metadata, parameter hash, input hash, and reference IDs.
@@ -694,7 +709,8 @@ class MethodReference:
     """Compact citation record for one scientific or numerical method.
 
     Fields:
-    - key: stable method-reference ID; used by analysis metadata and exports.
+    - key: stable method-reference ID; used by method metadata, analysis
+      metadata, exports, and documentation without duplicating citation records.
     - authors, title, year: minimum human-readable citation; supports review
       without requiring a BibTeX parser in the core package.
     - doi, venue, url: optional resolution and publication context; improves
@@ -805,10 +821,10 @@ class AnalysisExecutionMetadata:
 ## Next Steps
 
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
-- Resolve OQ-018 and OQ-019 enough to define method-reference storage and compact-versus-detailed metadata scope.
+- Resolve OQ-019 enough to define compact-versus-detailed metadata scope.
 - Prototype a metadata record for `WilliamsFit` on paper before touching production code.
 - Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint.
-- Decide whether method references should start as YAML/JSON registry entries.
+- Sketch the first YAML/JSON method-reference registry entries for Williams fitting, Bueckner-Chen, line integrals, and crack-tip detection.
 - Keep this note in planning state until the refactor specification is approved.
 
 ## Decision State
