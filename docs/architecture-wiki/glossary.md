@@ -587,6 +587,21 @@ Where an interface lives and where behavior can vary without editing callers.
 #### Adapter
 Concrete implementation at a seam, such as a file loader, model provider, progress reporter, or result writer.
 
+#### Adapter policy
+Status: proposed architecture vocabulary
+
+Boundary behavior selected outside the computational core, such as file layout, text/JSON/CSV serialization, plotting, progress reporting, multiprocessing, model download/cache behavior, VTK export, or RDF/knowledge-graph export.
+
+#### Domain workflow runner
+Status: proposed architecture vocabulary
+
+Future CrackPy-owned orchestration component that executes valid scientific sequencing and returns explicit records or artifacts without choosing filesystem, plotting, progress, network, or execution policy. Examples include preparing analysis input, applying the crack-tip frame transform, computing stresses before line integrals, running analysis methods in order, aggregating path results, and attaching metadata.
+
+#### Compatibility facade
+Status: proposed architecture vocabulary
+
+Wrapper that preserves current script and pipeline behavior while delegating future computation to domain workflow runners and future side effects to adapters. Current side-effect-heavy pipelines such as `CrackDetectionPipeline` and `FractureAnalysisPipeline` are candidates for this role during migration.
+
 #### Mapping policy
 Status: proposed architecture vocabulary
 

@@ -444,6 +444,32 @@ Consequences:
 - Existing symbols and tags remain compatibility aliases where needed, but the canonical result node is still separate from legacy writer sections.
 - No production schema, writer, or reader change is approved by this decision.
 
+## 2026-05-14: Domain Workflow Runners Stay, Current Pipelines Become Compatibility Facades
+
+Status: accepted for planning
+
+Decision:
+
+OQ-008 is resolved as an orchestration boundary decision. CrackPy should keep package-owned workflow logic where the sequencing is scientific or domain-specific, but future runners should be side-effect-light and record-oriented. Current `CrackDetectionPipeline` and `FractureAnalysisPipeline` should be treated as compatibility facades during a future migration, not as the target architecture.
+
+CrackPy-owned workflow logic includes preparing analysis inputs, transforming data into a crack-tip-centered frame, computing stresses before line integrals, running crack-tip detection, correction, and fracture analysis in a valid order, constructing or auto-detecting integration paths, aggregating path results, and attaching method, configuration, result, and provenance metadata.
+
+Adapter policy includes legacy text writing, current JSON writing, future canonical result JSON writing, old `crack_info_by_nodemap.txt` handoff import/export, flattened CSV export, plot generation, folder layout, progress reporting, multiprocessing choice, neural-network model download/cache behavior, VTK export, and RDF/knowledge-graph export.
+
+Rationale:
+
+The current pipelines are useful because they bundle workflow knowledge that should not be pushed entirely into external orchestrators. At the same time, they currently mix computation with file writes, plots, progress UI, process-pool execution, directory conventions, and model-provider behavior. That coupling makes it hard to reuse the same scientific runner from a CLI, Model Context Protocol (MCP) tool, workflow manager, graph orchestrator, or test harness without inheriting side effects.
+
+The future boundary should therefore preserve CrackPy-owned domain sequencing while making side effects explicit. External orchestrators should compose CrackPy runners and adapters; they should not have to reimplement the scientific order of operations.
+
+Consequences:
+
+- Future architecture can expose domain workflow runners that return `InputRecord`, `AnalysisRun`, `ResultRecord`, crack-tip estimate, and provenance-oriented records.
+- Current side-effect-heavy pipelines remain candidates for compatibility facades so existing scripts and output behavior can be preserved during migration.
+- Legacy text files, current JSON sections, flattened CSV, plots, folder names, progress UI, model-cache policy, and KG/RDF export are adapter or compatibility vocabulary.
+- `crack_info_by_nodemap.txt` remains an important compatibility handoff artifact, but future internal handoffs should use explicit crack-tip estimate records.
+- No production pipeline refactor is approved by this decision.
+
 ## 2026-05-14: Model Names, Bueckner Spelling, And Fixture Keys Use Explicit Naming Boundaries
 
 Status: accepted for planning

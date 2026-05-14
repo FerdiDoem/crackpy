@@ -24,6 +24,9 @@ This note separates observed terminology from proposed canonicalization. The sta
 - `CrackDetectionPipeline`: batch neural-network detection orchestration.
 - `FractureAnalysis`: single-nodemap analysis facade.
 - `FractureAnalysisPipeline`: batch fracture-analysis orchestration.
+- `Domain workflow runner`: proposed CrackPy-owned runner for scientific sequencing without filesystem, plotting, progress, network, or execution policy.
+- `Adapter policy`: proposed boundary vocabulary for output, progress, execution, model-provider, and export choices outside the computational core.
+- `Compatibility facade`: proposed wrapper role for preserving current side-effect-heavy pipeline behavior during migration.
 - `OptimizationProperties`: fitting-domain configuration.
 - `IntegralProperties`: multi-path line-integral configuration.
 - `PathProperties`: single integration-path configuration.
@@ -157,6 +160,7 @@ This note separates observed terminology from proposed canonicalization. The sta
 - Some scripts use `results` as an output folder.
 - `Plotter` filenames and `OutputWriter` text filenames do not follow exactly the same suffix convention.
 - Resolved OQ-014: `Dummy2`, `EBr10`, `Aramis_in_line`, and similar hard-coded preset names are fixture/workflow keys, not domain vocabulary.
+- Resolved OQ-008: CrackPy-owned scientific sequencing should live in future domain workflow runners, while folder layout, plotting, legacy text/JSON, CSV projection, progress, multiprocessing, and model download/cache behavior are adapter policy. Current side-effect-heavy pipelines are compatibility-facade candidates, not the target architecture.
 
 ## Ambiguous Or Overloaded Terms
 
@@ -183,6 +187,7 @@ Related question IDs:
 - OQ-005: resolved result schema versioning and main JSON output.
 - OQ-006: resolved public result names versus legacy implementation names; use [[glossary#Canonical result graph bundle]] and [[glossary#ResultQuantity]] for future planning vocabulary.
 - OQ-007: resolved crack-tip correction return semantics; use `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate` in future planning vocabulary.
+- OQ-008: resolved pipeline side-effect boundary; use [[glossary#Domain workflow runner]], [[glossary#Adapter policy]], and [[glossary#Compatibility facade]] for future planning vocabulary.
 - OQ-009: resolved `UNetPath` as compatibility vocabulary for the current crack-path detector selector and weights; future metadata should use explicit model identity fields.
 - OQ-011: resolved; canonical scalar quantity planning keeps the domain-facing `symbol` plus an expressive `description` string for now. Structured fracture-mode, component, series, and term-index descriptors are deferred.
 - OQ-012: resolved `buckner` as legacy implementation spelling and `bueckner_chen_*` as future refactor vocabulary.

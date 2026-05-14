@@ -12,7 +12,7 @@ These notes intentionally separate proposed future architecture from current sys
 | C-001 | [[refactor-candidates/001-explicit-analysis-result]] | proposed | [[fracture-analysis]], [[results-io-workflows]], [[coupling-map]] | None | Canonical result graph boundary accepted; implementation not approved |
 | C-002 | [[refactor-candidates/002-input-loading-seam]] | proposed | [[data-model-input]], [[system-map]], [[coupling-map]] | OQ-015 | Stage/input-record planning vocabulary accepted |
 | C-003 | [[refactor-candidates/003-self-contained-williams-fit-interface]] | proposed | [[fracture-analysis]], [[crack-detection]], [[coupling-map]] | None | Correction result vocabulary accepted |
-| C-004 | [[refactor-candidates/004-separate-orchestration-from-adapters]] | proposed | [[system-map]], [[fracture-analysis]], [[crack-detection]], [[results-io-workflows]] | OQ-008 | Not decided |
+| C-004 | [[refactor-candidates/004-separate-orchestration-from-adapters]] | proposed | [[system-map]], [[fracture-analysis]], [[crack-detection]], [[results-io-workflows]] | None | Domain runner and adapter boundary accepted; implementation not approved |
 | C-005 | [[refactor-candidates/005-side-orientation-module]] | proposed | [[glossary]], [[crack-detection]], [[terminology-report]], [[coupling-map]] | OQ-001, OQ-003 | Not decided |
 | C-006 | [[refactor-candidates/006-model-provider-seam]] | proposed | [[crack-detection]], [[results-io-workflows]], [[coupling-map]] | None | Model naming boundary accepted; implementation not approved |
 | C-007 | [[refactor-candidates/007-defaults-and-options-cleanup]] | proposed | [[fracture-analysis]], [[data-model-input]], [[coupling-map]] | OQ-010 | Not decided |
