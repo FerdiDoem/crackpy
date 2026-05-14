@@ -386,10 +386,13 @@ Pydantic is a candidate because it can produce JSON-serializable models and JSON
 Configuration should preserve:
 
 - raw caller-provided values;
-- normalized values after default completion;
+- normalized values after explicit default resolution;
+- value origin for result-affecting values, such as caller-provided, model default, or derived default;
 - units and coordinate frame where relevant;
 - parameter schema version;
 - parameter hash for re-analysis decisions.
+
+OQ-010 resolves the default boundary for this model. Result-affecting defaults and derived defaults belong in the normalized configuration and should be included in `parameter_hash` or `configuration_hash` after resolution. Computational methods should receive concrete values or reject ambiguous missing inputs. Method-selection switches are workflow composition settings, and output, plotting, progress, multiprocessing, or export choices belong to adapters unless they affect numerical results.
 
 ## Version and Commit Tracking
 
@@ -897,12 +900,12 @@ Candidate adoption stance:
 - OQ-018: resolved method-level references use a hybrid model with package-level `CITATION.cff`, a YAML/JSON method-reference registry, Python reference IDs, and optional BibTeX import/export;
 - OQ-019: resolved compact KG export is result-centric; detailed provenance is process-centric and uses a declared granularity policy.
 - OQ-006: resolved canonical result JSON is a PROV-compatible graph-shaped bundle; current result tags and internal names are legacy adapter aliases.
+- OQ-010: resolved result-affecting defaults and derived defaults must be explicit in normalized configuration before method execution.
 
 Related existing questions:
 
 - OQ-002: resolved stage/source metadata, sequence index, input identity, and mapping-policy vocabulary;
 - OQ-007: crack-tip correction coordinate semantics;
-- OQ-010: public defaults versus incidental implementation defaults.
 
 ## Implementation Sketch
 

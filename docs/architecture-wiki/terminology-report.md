@@ -27,6 +27,10 @@ This note separates observed terminology from proposed canonicalization. The sta
 - `Domain workflow runner`: proposed CrackPy-owned runner for scientific sequencing without filesystem, plotting, progress, network, or execution policy.
 - `Adapter policy`: proposed boundary vocabulary for output, progress, execution, model-provider, and export choices outside the computational core.
 - `Compatibility facade`: proposed wrapper role for preserving current side-effect-heavy pipeline behavior during migration.
+- `Normalized configuration`: proposed validated configuration snapshot used for provenance, hashing, comparison, and method execution.
+- `Result-affecting default`: default value or policy that can change numerical results, result shape, units, scientific interpretation, or selected method behavior.
+- `Derived default`: result-affecting value resolved from explicit inputs before method execution.
+- `Workflow composition setting`: orchestration setting that decides which methods or workflow steps run.
 - `OptimizationProperties`: fitting-domain configuration.
 - `IntegralProperties`: multi-path line-integral configuration.
 - `PathProperties`: single integration-path configuration.
@@ -154,6 +158,15 @@ This note separates observed terminology from proposed canonicalization. The sta
 - `mean_wo_outliers` and `rej_out_mean` refer to the same aggregate result bucket.
 - Some fixtures and current writer output differ on tags such as `CJP_modeI_results` and Williams error fields.
 
+### Defaults And Options
+
+- Current option objects mix result-affecting method defaults, derived defaults, method-selection switches, adapter settings, and incidental implementation defaults.
+- Resolved OQ-010: future methods should receive fully resolved, explicit result-affecting configuration at method entry.
+- Result-affecting defaults and derived defaults belong in [[glossary#Normalized configuration]] and should be included in configuration hashes after resolution.
+- Derived defaults should be applied by user-facing configuration builders or models and stored as concrete values with value origin; computational methods may reject ambiguous missing values.
+- Method-selection choices are [[glossary#Workflow composition setting]] values, while plotting, folders, progress, multiprocessing, and export choices are [[glossary#Adapter policy]].
+- Mutable default object instances and hidden random optimizer initialization are implementation debt, not future public behavior.
+
 ### Output And Workflow Folders
 
 - The fracture-analysis pipeline writes to `txt-files`, `plots`, and `json`.
@@ -189,6 +202,7 @@ Related question IDs:
 - OQ-007: resolved crack-tip correction return semantics; use `corrected_crack_tip_estimate`, `correction_delta`, and `source_crack_tip_estimate` in future planning vocabulary.
 - OQ-008: resolved pipeline side-effect boundary; use [[glossary#Domain workflow runner]], [[glossary#Adapter policy]], and [[glossary#Compatibility facade]] for future planning vocabulary.
 - OQ-009: resolved `UNetPath` as compatibility vocabulary for the current crack-path detector selector and weights; future metadata should use explicit model identity fields.
+- OQ-010: resolved explicit defaults boundary; use [[glossary#Normalized configuration]], [[glossary#Result-affecting default]], [[glossary#Derived default]], and [[glossary#Workflow composition setting]] for future planning vocabulary.
 - OQ-011: resolved; canonical scalar quantity planning keeps the domain-facing `symbol` plus an expressive `description` string for now. Structured fracture-mode, component, series, and term-index descriptors are deferred.
 - OQ-012: resolved `buckner` as legacy implementation spelling and `bueckner_chen_*` as future refactor vocabulary.
 - OQ-013: 256-sample / 255-interval detection-grid convention.

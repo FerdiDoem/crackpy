@@ -444,6 +444,38 @@ Consequences:
 - Existing symbols and tags remain compatibility aliases where needed, but the canonical result node is still separate from legacy writer sections.
 - No production schema, writer, or reader change is approved by this decision.
 
+## 2026-05-14: Result-Affecting Defaults Must Be Explicit Before Method Execution
+
+Status: accepted for planning
+
+Decision:
+
+OQ-010 is resolved as a configuration-boundary decision. Future CrackPy methods should receive fully resolved, explicit result-affecting configuration at method entry. Result-affecting defaults may exist in user-facing configuration builders, Pydantic models, dataclasses, or equivalent validation layers, but they should not be hidden inside computational methods.
+
+The accepted split is:
+
+- Result-affecting method defaults belong in normalized configuration if they can change numerical results, result shape, units, scientific interpretation, or selected method behavior.
+- Derived defaults are allowed only when they are resolved before execution by an explicit user-facing model or builder, then stored as concrete values in the normalized configuration.
+- Computational methods may reject ambiguous missing values with assertions or validation errors instead of silently inventing defaults.
+- Method selection switches, such as whether fitting or integral evaluation runs, are workflow composition settings, not the same thing as a method's numerical configuration.
+- Adapter and execution settings, such as output folders, legacy text or JSON writing, plotting, progress bars, multiprocessing, and export choices, remain outside method configuration unless they affect numerical results.
+- Incidental implementation defaults, including mutable default object instances and hidden random optimizer initialization, are migration debt and should not be preserved as future public behavior.
+
+Rationale:
+
+Current CrackPy defaults are mixed across `OptimizationProperties`, `IntegralProperties`, `FractureAnalysis`, pipeline arguments, and helper methods. Some defaults are scientifically meaningful, such as Williams fitting terms, fitting radii, line-integral path geometry, Bueckner-Chen terms, material settings, and integral mask or node choices. Others are orchestration or adapter policy, such as plotting, output folders, progress, and process count. Treating all of them as one configuration layer would make provenance noisy and would cause harmless adapter changes to invalidate scientific result hashes. Treating none of them as public behavior would miss stale results after meaningful method or parameter changes.
+
+Derived defaults need special handling. A result file that only says "default radius" is not reproducible if the actual radius was computed from crack-tip position or input state. The future configuration record should therefore store the resolved values and their origin, such as caller-provided, model default, or derived default. If a default cannot be derived unambiguously, the method should require it as explicit input.
+
+Consequences:
+
+- Future configuration records should distinguish caller-provided values, resolved values, and value origin.
+- `parameter_hash` or `configuration_hash` should include resolved result-affecting defaults, not only caller-provided fields.
+- Hidden defaults inside computational methods should be removed during a future refactor or moved behind explicit config builders.
+- Random initial coefficients should become explicit inputs or reproducible configuration, for example through a seed or stored initial values, if they can affect results.
+- `None` as a method-selection switch belongs to workflow composition and should be normalized before individual method execution.
+- Current mutable default object patterns remain observed implementation debt; this decision does not approve production code changes.
+
 ## 2026-05-14: Domain Workflow Runners Stay, Current Pipelines Become Compatibility Facades
 
 Status: accepted for planning

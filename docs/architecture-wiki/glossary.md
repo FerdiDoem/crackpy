@@ -245,6 +245,26 @@ Configuration object for multi-path line-integral evaluation. It controls number
 #### PathProperties
 Configuration object for one generated integration path, usually derived from `IntegralProperties`.
 
+#### Normalized configuration
+Status: proposed architecture vocabulary
+
+Canonical, validated configuration snapshot used for provenance, hashing, comparison, and execution. It should contain explicit result-affecting values after default resolution, plus enough metadata to distinguish caller-provided values from model defaults or derived defaults.
+
+#### Result-affecting default
+Status: proposed architecture vocabulary
+
+Default value or default policy that can change numerical results, result shape, units, scientific interpretation, or selected method behavior. Future planning treats these defaults as part of normalized configuration, not as hidden computational-method behavior.
+
+#### Derived default
+Status: proposed architecture vocabulary
+
+Result-affecting value computed from other explicit inputs, such as crack-tip position, material data, facet size, stress fields, or a validated configuration model. A derived default should be resolved before method execution and stored as a concrete value with its origin; a core method should reject ambiguous missing values instead of silently deriving them.
+
+#### Workflow composition setting
+Status: proposed architecture vocabulary
+
+Setting that decides which workflow steps or registered methods are run, such as enabling fitting, integral evaluation, plotting, or export. Method-enabling choices belong to orchestration planning, while plotting and export choices usually belong to [[glossary#Adapter policy]].
+
 ### Crack Detection Implementation Terms
 
 #### CrackDetection
