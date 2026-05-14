@@ -457,10 +457,19 @@ Stable key for one entry in the [[glossary#Method reference registry]], such as 
 Software-level citation metadata for CrackPy as a package, currently represented by `CITATION.cff`. This is separate from method-level references because one package release may contain many methods with different scientific foundations.
 
 #### Compact knowledge-graph export
-Reduced metadata export intended for the main RDF/JSON knowledge graph. It stores the facts needed for querying, traceability, and targeted re-analysis without modeling every internal helper call.
+Reduced, result-centric metadata export intended for the main RDF/JSON knowledge graph. It links a result to input records, CrackPy as software, CrackPy configuration, method identity, method revision, result schema, minimal hashes, and a provenance artifact reference without modeling every internal process-chain step.
+
+#### Grouped metadata statement bundle
+Compact export shape where metadata statements are grouped by subject-like categories such as `Software`, `SoftwareConfiguration`, `InputRecord`, or `CrackPyAnalysisResult`. The existing datapoint example uses top-level groups and a repeated `related_to` field; if the knowledge-graph importer calls this `grouped_by`, the exporter should conform to that convention. Grouping alone is not a durable URI policy.
+
+#### Metadata statement
+One key-value metadata record in a [[glossary#Grouped metadata statement bundle]]. Expected fields include `key`, `value`, `data_type`, `unit`, `metadata_type`, `source`, and `related_to`.
 
 #### Detailed provenance artifact
-Optional richer provenance document, potentially PROV-O-like or JSON-LD/RDF-based, that records execution activities, used entities, generated entities, and software/user/orchestrator agents outside the compact main graph.
+Optional richer provenance document, potentially PROV-O-like or JSON-LD/RDF-based, that records the relevant CrackPy process chain outside the compact main graph. Relevant steps are scientifically or computationally meaningful activities such as loading, transformations, preprocessing, crack-tip detection, correction, fitting, line integrals, optimization, aggregation, and export, not every private helper call.
+
+#### Provenance granularity policy
+Declared rule for how much execution detail a provenance artifact records. Planning levels are `compact` for result-centric KG metadata only, `standard` for major CrackPy analysis stages, `detailed` for scientifically meaningful substeps, and `debug` for optional low-level traces that are not normal KG export.
 
 #### AnalysisRun
 Status: proposed architecture vocabulary
@@ -475,7 +484,7 @@ Future result/provenance record describing a generated result artifact, its sche
 #### ProvenanceRecord
 Status: proposed architecture vocabulary
 
-Future umbrella record for traceability facts that do not belong inside the input data itself, especially processing history, method metadata, configuration snapshots, result identity, and export metadata.
+Future umbrella record for traceability facts that do not belong inside the input data itself. It can link input records, analysis runs, result records, software, configuration, compact KG export metadata, and optional detailed provenance artifacts without making the compact KG carry the full process history.
 
 ### Legacy And Fixture Vocabulary
 

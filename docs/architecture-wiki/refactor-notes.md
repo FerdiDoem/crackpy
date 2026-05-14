@@ -18,7 +18,7 @@ These notes intentionally separate proposed future architecture from current sys
 | C-007 | [[refactor-candidates/007-defaults-and-options-cleanup]] | proposed | [[fracture-analysis]], [[data-model-input]], [[coupling-map]] | OQ-010 | Not decided |
 | C-008 | [[refactor-candidates/008-result-tag-schema]] | proposed | [[results-io-workflows]], [[terminology-report]], [[coupling-map]] | OQ-005, OQ-006 | Not decided |
 | C-009 | [[refactor-candidates/009-sequence-index-vocabulary]] | proposed | [[glossary]], [[terminology-report]], [[crack-detection]], [[data-model-input]] | None | Planning vocabulary accepted |
-| C-010 | [[refactor-candidates/010-provenance-metadata-architecture]] | proposed | [[data-model-input]], [[results-io-workflows]], [[coupling-map]], provided MDIC datapoint JSON | OQ-015, OQ-016, OQ-017, OQ-018, OQ-019 | Not decided |
+| C-010 | [[refactor-candidates/010-provenance-metadata-architecture]] | proposed | [[data-model-input]], [[results-io-workflows]], [[coupling-map]], provided metadata statement-bundle datapoint JSON | None | Planning vocabulary accepted; implementation not approved |
 
 ## How To Use This Index
 

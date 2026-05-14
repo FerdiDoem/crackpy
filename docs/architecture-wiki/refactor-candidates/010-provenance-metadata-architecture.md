@@ -42,6 +42,8 @@ unit
 value
 ```
 
+The example does not expose a literal `grouped_by` field, but its top-level groups and repeated `related_to` values act like a grouped metadata statement bundle. If the knowledge-graph importer treats `related_to` as the grouping key or names this convention `grouped_by`, the compact exporter should follow that convention. This grouping identifies the subject category for a statement; it does not by itself define a durable URI for a concrete individual.
+
 Generic statement-bundle pattern:
 
 ```text
@@ -62,7 +64,7 @@ For microscope DIC, subject groups may be `Aramis`, `MicroscopeImage`, `Specimen
 
 This suggests the existing graph is closer to a BFO-near or object/configuration-oriented model than a fully PROV-O-centered workflow graph. Software and procedure metadata are represented through entities and configuration/state metadata, not through a complete semantic activity chain.
 
-CrackPy should target the generic metadata statement-bundle pattern for compact export, not the microscope-DIC-specific subject vocabulary. A separate exporter can map the same internal metadata records into a PROV-O-like process graph.
+CrackPy should target the generic metadata statement-bundle pattern for compact export, not the microscope-DIC-specific subject vocabulary. A separate exporter can map the same internal metadata records into a PROV-O-like process graph. URI minting should remain part of the exporter profile or KG import policy: CrackPy internal records should provide stable IDs and types, while the KG-facing adapter decides how those IDs become subject URIs.
 
 For CrackPy, the likely compact target groups are:
 
@@ -76,7 +78,7 @@ For CrackPy, the likely compact target groups are:
 - `FractureAnalysisResult`: Williams fit, CJP, SIF, J-integral, T-stress, path and aggregate result metadata;
 - `InputRecord` or current `Nodemap`/`InputDataset`: source file identity, hash, input ID, optional sequence index, source-specific stage metadata, force/cycle/load metadata, and minimal input/source provenance.
 
-The main graph can keep this compact by storing one statement per relevant property, while a linked artifact can hold detailed process provenance if needed.
+The main graph can keep this compact by storing one statement per relevant property, while a linked artifact can hold detailed process provenance if needed. The compact KG should be result-centric: its primary job is to say which result was produced from which input by CrackPy with which configuration and method metadata, not to describe every step inside CrackPy.
 
 ## Target Use Cases
 
@@ -89,21 +91,30 @@ The main graph can keep this compact by storing one statement per relevant prope
 
 ## Core Requirements
 
-Required compact metadata:
+Required compact KG metadata:
 
 - software name and package version;
 - repository URL and execution commit, when available;
-- stable method ID, display name, category, method revision, implementation reference, dependency scope, implementation fingerprint, and method registry status;
+- stable method ID, display name, category, method revision, implementation fingerprint, and method registry status;
 - result schema version;
 - execution timestamp and timezone policy;
 - input identifiers and optional hashes;
 - output identifiers and optional hashes;
-- explicit configuration object and parameter snapshot;
+- configuration identifier plus parameter or configuration hash;
 - selected method and numerical options;
 - literature/method reference identifiers;
 - coordinate-system and side/orientation convention;
 - input metadata such as source-specific stage labels, sequence index, force, cycle, and load where available;
 - model provenance for neural detection, including model name, weights source, and hash when available.
+
+Detailed metadata that should be linked rather than expanded in the compact KG:
+
+- full normalized configuration JSON;
+- full dependency-scope manifests;
+- detailed implementation references beyond stable method identity and fingerprints;
+- full method-reference records when a method-reference registry can resolve the IDs;
+- logs, intermediate arrays, transformation history, and helper-step provenance;
+- full process-chain activities that belong in a PROV-O-like artifact.
 
 Non-goals for the compact main model:
 
@@ -568,16 +579,40 @@ Exporters can map method-reference IDs into RDF/JSON statements, JSON-LD, RO-Cra
 
 The exporter should be an adapter. It should not define the internal CrackPy model.
 
+Accepted OQ-019 planning boundary: the compact KG export is result-centric. It is the query and re-analysis index for the main graph. The full history of what happened inside CrackPy, including transformations and detailed process-chain steps, belongs in the optional detailed provenance artifact.
+
 Conceptual crosswalk:
 
 | CrackPy internal concept | Compact statement-bundle export | Optional PROV-O-like export |
 | --- | --- | --- |
 | `InputRecord` | `InputRecord`, `Nodemap`, `InputDataset`, `Mesh`, or source-specific input subject | `prov:Entity` |
-| `AnalysisRun` | `CrackPyAnalysis` | `prov:Activity` |
-| `ResultRecord` | `CrackPyAnalysisResult` | generated `prov:Entity` |
+| `AnalysisRun` | `run_id` and lightweight method/run facts attached to the result, or an optional `CrackPyAnalysis` summary subject if the KG profile requires it | `prov:Activity` |
+| `ResultRecord` | `CrackPyAnalysisResult` as the compact anchor | generated `prov:Entity` |
 | `ProvenanceRecord` | linked metadata bundle or export artifact subject | `prov:Bundle` or named graph |
 | CrackPy software | `Software` | `prov:SoftwareAgent` |
 | Configuration snapshot | `SoftwareConfiguration` or analysis-specific configuration subject | `prov:Entity` or `prov:Plan` |
+
+The compact KG should link a result to:
+
+- input identity and optional input hash;
+- CrackPy as software, including CrackPy version;
+- CrackPy configuration identity and parameter or configuration hash;
+- method identity, method revision, and implementation fingerprint;
+- result identity, result schema version, units, output artifact references, and output hashes where practical;
+- `run_id` and `provenance_artifact_ref` for resolving the detailed process graph;
+- method-reference IDs, not duplicated full citation records;
+- model IDs and model or weights hashes when a method depends on trained artifacts.
+
+The compact KG should not contain:
+
+- every internal helper call;
+- full normalized configuration JSON when a stable configuration ID and hash are enough for graph queries;
+- full dependency-scope manifests;
+- logs and intermediate arrays;
+- large result tables, fields, or plotting payloads;
+- PROV-O activity/entity/agent chains for every CrackPy step.
+
+A physical `CrackTip` in the KG should be treated as a domain object, not as one object per computational method. Different crack-tip detection or correction methods may generate different computational estimates or results about the same physical crack tip. Those estimates belong in result data or detailed provenance unless the KG explicitly introduces an observation model.
 
 Mapping sketch to the generic statement-bundle style:
 
@@ -610,6 +645,17 @@ CrackPyAnalysisConfiguration:
 
 CrackPyAnalysisResult:
   crackpy_result_id
+  crackpy_analysis_run_id
+  crackpy_input_id
+  crackpy_configuration_id
+  crackpy_method_id
+  crackpy_method_revision
+  crackpy_implementation_fingerprint
+  crackpy_result_schema_version
+  crackpy_parameter_hash
+  crackpy_input_hash
+  crackpy_result_hash
+  crackpy_provenance_artifact_ref
   crackpy_output_schema
   crackpy_output_hash
   crackpy_output_artifact_path
@@ -632,6 +678,14 @@ Each exported metadata statement can use the target record shape:
 
 The exporter should normalize data types, units, and `source` values because the example datapoint mixes capitalization such as `String` / `string` and `User` / `user`.
 
+The compact exporter should also define an explicit grouping and URI policy:
+
+- grouping policy: whether statements are grouped by top-level subject keys, by `related_to`, or by a formal `grouped_by` field expected by the KG importer;
+- subject identity policy: whether the compact bundle carries only local IDs such as `result_id` and `input_id`, or also a KG-facing `subject_uri`;
+- URI minting policy: whether URIs are generated by the KG importer from subject type plus local ID, or by a CrackPy exporter profile configured with the KG namespace.
+
+The computational core should not hard-code URI namespaces. It should provide stable IDs, subject types, and semantic roles so the exporter can produce conformal KG metadata.
+
 ## Optional Detailed PROV-O-like Provenance Layer
 
 The compact graph should remain practical. A second optional layer can be more PROV-O-like and exported separately as JSON-LD, Turtle, or another RDF artifact.
@@ -647,6 +701,23 @@ Candidate mapping:
 - `wasGeneratedBy`: result entity was generated by activity;
 - `wasAssociatedWith`: activity was associated with software/user/orchestrator;
 - `wasDerivedFrom`: result derived from nodemap and crack-tip data.
+
+Relevant process-chain activities may include:
+
+- input loading and source-metadata binding;
+- coordinate transformation, projection, or unwrapping;
+- masking, filtering, interpolation, or resampling;
+- crack-tip detection and crack-tip correction;
+- displacement, strain, or stress evaluation;
+- Williams fitting, line-integral evaluation, and optimization;
+- result aggregation, schema projection, text/JSON writing, CSV flattening, plotting, or RDF/JSON export.
+
+The detailed artifact should use a declared provenance granularity policy:
+
+- `compact`: result-centric KG metadata only; normally this is not the PROV-O artifact.
+- `standard`: major CrackPy analysis stages.
+- `detailed`: major stages plus scientifically meaningful substeps.
+- `debug`: low-level execution traces for development, not normal KG export.
 
 This detailed layer should be optional because full provenance can become large and hard to query. The compact main graph should link to the detailed artifact through an artifact ID, URI, or file path.
 
@@ -678,7 +749,7 @@ Candidate adoption stance:
 - OQ-016: resolved stable registry-owned method identity;
 - OQ-017: resolved method revision, implementation fingerprint, dependency-scope validation, aliases, successors, and method registry status;
 - OQ-018: resolved method-level references use a hybrid model with package-level `CITATION.cff`, a YAML/JSON method-reference registry, Python reference IDs, and optional BibTeX import/export;
-- OQ-019: Which parts of provenance belong in the compact knowledge graph, and which belong only in an optional detailed artifact?
+- OQ-019: resolved compact KG export is result-centric; detailed provenance is process-centric and uses a declared granularity policy.
 
 Related existing questions:
 
@@ -821,9 +892,8 @@ class AnalysisExecutionMetadata:
 ## Next Steps
 
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
-- Resolve OQ-019 enough to define compact-versus-detailed metadata scope.
 - Prototype a metadata record for `WilliamsFit` on paper before touching production code.
-- Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint.
+- Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint, including grouping, subject identity, and URI minting policy.
 - Sketch the first YAML/JSON method-reference registry entries for Williams fitting, Bueckner-Chen, line integrals, and crack-tip detection.
 - Keep this note in planning state until the refactor specification is approved.
 

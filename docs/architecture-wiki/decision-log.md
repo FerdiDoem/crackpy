@@ -251,3 +251,31 @@ Consequences:
 - `CITATION.cff` remains focused on citing CrackPy as software and should not become the method bibliography.
 - BibTeX remains useful for papers and documentation export, but the registry should be the canonical CrackPy planning vocabulary.
 - OQ-019 can now assume method references are externally resolvable from `method_id` entries through the reference registry.
+
+## 2026-05-14: Compact KG Export Is Result-Centric, Detailed Provenance Is Process-Centric
+
+Status: accepted for planning
+
+Decision:
+
+The compact knowledge-graph export should be result-centric. In the main KG, a result should link to the relevant input, CrackPy as software, the CrackPy configuration that was used, method identity, method revision, result schema, minimal hashes, and a pointer to the detailed provenance artifact. The compact KG should not try to represent the full internal CrackPy process chain.
+
+The compact export may include `run_id`, but `run_id` alone is not sufficient evidence for stale-result checks. It should be accompanied by stable IDs and minimal fingerprints such as `input_id`, `result_id`, `configuration_id`, `parameter_hash` or configuration hash, input hash, result hash where practical, `method_id`, `method_revision`, result schema version, CrackPy version, and `provenance_artifact_ref`.
+
+The optional detailed provenance artifact should own process semantics. It should represent all scientifically or computationally relevant steps in the CrackPy process chain at a declared granularity level, such as input loading, metadata binding, coordinate transformations, masking, preprocessing, interpolation, crack-tip detection, crack-tip correction, Williams fitting, line-integral evaluation, optimization, aggregation, and export. It should not record every private helper call by default.
+
+Rationale:
+
+The existing KG setup is closer to a compact object/configuration/result model than a full process graph. From that perspective, it is sensible to link a result to input data, CrackPy, and CrackPyConfiguration in the main graph while keeping full execution history in a PROV-O-like artifact. This keeps the Jena graph queryable and avoids forcing CrackPy internals to mimic the RDF process model.
+
+A physical crack tip should not be multiplied into one KG entity per detection or analysis method. Multiple methods may produce computational observations or results about the same physical crack tip, but they should not create multiple physical crack-tip objects in the compact KG. Method-specific crack-tip estimates belong in result metadata or detailed provenance unless the KG intentionally models them as observations.
+
+The provided metadata bundle is best treated as a grouped metadata statement bundle. It is grouped by top-level subject-like keys, and each statement repeats a `related_to` field. If the KG importer uses a `grouped_by` convention, the compact exporter should conform to it. Grouping does not by itself define concrete subject URIs, so URI minting remains an exporter or KG-import policy rather than a computational-core concern.
+
+Consequences:
+
+- The compact KG stores the query and re-analysis index, not the full process history.
+- The detailed PROV-O-like artifact stores process-chain detail and can map `InputRecord` and `ResultRecord` to entities, `AnalysisRun` to activities, and CrackPy, users, models, or orchestrators to agents.
+- The compact export should link to the detailed artifact by artifact ID, URI, or file path.
+- URI and namespace policy must be defined by the exporter profile or KG importer; CrackPy internal records should provide stable IDs and types.
+- A provenance granularity policy is needed so detailed artifacts are consistent across methods.
