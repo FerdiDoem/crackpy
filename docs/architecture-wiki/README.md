@@ -46,6 +46,7 @@ This directory is an Obsidian-style working memory for CrackPy architecture plan
 ## Architecture Friction And Future Decisions
 
 - [[coupling-map]]: observed coupling, side effects, implicit interfaces, repeated patterns, and shallow modules.
+- [[refactor-roadmap]]: higher-level sequencing view across resolved decisions and future refactor candidates.
 - [[refactor-notes]]: index of future architecture candidates.
 - [[refactor-candidates/index]]: detailed future candidate notes.
 - [[refactor-candidates/010-provenance-metadata-architecture]]: future provenance and metadata architecture concept for compact RDF/JSON export and optional detailed provenance.

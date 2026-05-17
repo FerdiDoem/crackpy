@@ -43,3 +43,17 @@ Subagents should not spawn further subagents by default. Allow nested subagents 
 ## Refactor Rule
 
 Until the planning phase is complete, limit work to architecture wiki notes, glossary updates, decision framing, and architecture proposals. When later changing architecture, preserve the current architecture wiki notes as the baseline. Update them only when the code reality changes or when new facts are discovered.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the default five-label vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context repo using `docs/architecture-wiki/` as the domain and architecture working memory. See `docs/agents/domain.md`.

@@ -1,9 +1,11 @@
 # Refactor Notes
 
 Status: future architecture index, not observed behavior
-Role: Navigate proposed future architecture candidates. Detailed candidate notes live in [[refactor-candidates/index]]; unresolved questions live in [[open-questions]]; accepted or rejected planning decisions live in [[decision-log]].
+Role: Navigate proposed future architecture candidates. The cross-candidate sequencing view lives in [[refactor-roadmap]]; detailed candidate notes live in [[refactor-candidates/index]]; unresolved questions live in [[open-questions]]; accepted or rejected planning decisions live in [[decision-log]].
 
 These notes intentionally separate proposed future architecture from current system reality. No refactoring was performed in this architecture mapping phase.
+
+For higher-level sequencing across candidates, use [[refactor-roadmap]].
 
 ## Candidate Index
 

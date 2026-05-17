@@ -4,6 +4,8 @@
 .ipynb_chekpoints
 tom.egg-info
 /docs/*
+!/docs/agents/
+!/docs/agents/**
 !/docs/architecture-wiki/
 !/docs/architecture-wiki/**
 !/docs/code-style/
