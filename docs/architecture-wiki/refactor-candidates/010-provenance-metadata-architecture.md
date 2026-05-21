@@ -25,6 +25,21 @@ Observed gaps are also clear:
 - crack detection output records crack-tip coordinates, angle, and side, but not model/configuration provenance;
 - result schema naming is stringly typed and currently handled by writer/reader conventions.
 
+## Integration Checkpoint From External KG Artifacts
+
+The recent comparison of the provided datapoint JSON, Turtle export, diagram sketch, code screenshot, and throwaway result-spine prototype confirms the broad direction of this candidate, but it narrows the first practical target.
+
+The direction that still holds:
+
+- CrackPy should define internal result/provenance records first, then map those records outward through adapters.
+- The compact knowledge-graph export should remain a result-centric projection, not the canonical CrackPy internal schema.
+- Detailed process provenance should stay optional and separate from the compact KG export.
+- The first approved specification should be smaller than this full candidate: a minimal result/provenance envelope plus one compact KG projection for one vertical slice, such as a Williams-fit result or a crack-tip-estimate result.
+
+The first slice should not attempt to introduce the full registry, fingerprint, configuration, input-identity, crack-tip-frame, KG, and optional PROV layers at once. It should define the smallest complete envelope that can carry `result_id`, `input_id`, `method_id`, `configuration_id`, `configuration_hash` or `parameter_hash`, `result_schema_version`, scalar quantities, output artifact references, and minimal provenance roles such as `used_input`, `used_configuration`, `used_crack_tip_estimate`, and `generated_result`.
+
+The `prototypes/result_spine` experiment in the prototype worktree supports the conceptual shape, but it is a clean-room prototype. It is useful evidence that the record split is coherent; it is not migration evidence for the current `InputData`, `FractureAnalysis`, and result-writer implementation.
+
 ## Current Knowledge Graph Assumptions
 
 The provided microscope-DIC datapoint JSON is one concrete example of a more generic metadata statement bundle. It should not define CrackPy's internal architecture and should not be treated as an MDIC-only target. A comparable bundle could also describe FEM, synthetic benchmark data, imported reference fields, DVC, or another future source.
@@ -65,6 +80,15 @@ For microscope DIC, subject groups may be `Aramis`, `MicroscopeImage`, `Specimen
 This suggests the existing graph is closer to a BFO-near or object/configuration-oriented model than a fully PROV-O-centered workflow graph. Software and procedure metadata are represented through entities and configuration/state metadata, not through a complete semantic activity chain.
 
 CrackPy should target the generic metadata statement-bundle pattern for compact export, not the microscope-DIC-specific subject vocabulary. A separate exporter can map the same internal metadata records into a PROV-O-like process graph. URI minting should remain part of the exporter profile or KG import policy: CrackPy internal records should provide stable IDs and types, while the KG-facing adapter decides how those IDs become subject URIs.
+
+The paired Turtle sample is not just the JSON statement bundle serialized differently. It materializes metadata statements as descriptor resources, such as `LiteralField` instances with descriptor predicates, and links them to concrete subject instances such as `Nodemap2D`, `ZeissCorrelateConfiguration`, `AramisExporter`, `DigitalImageCorrelationProcess`, and `MicroscopeImage`. That reinforces two boundaries:
+
+- JSON grouping or `related_to` values are not enough to define durable subject identity.
+- The KG exporter profile must define descriptor-field policy, subject identity policy, URI minting policy, datatype normalization, and unit normalization.
+
+Source-specific ontology names such as `Aramis`, `ZeissCorrelateConfiguration`, `Nodemap2D`, or `MicroscopeImage` may appear in an exporter profile or source adapter. They should not become CrackPy core record types unless a future CrackPy method genuinely owns that concept.
+
+The diagram sketch with `Prefect Orchestrator`, `Flow`, `CrackPy`, `GraphInsertion`, and `MetadataClass` is useful as an integration picture, but it is more ambitious than the first CrackPy boundary. External orchestrators, object stores, graph insertion clients, and RDF namespaces should remain outside the computational core. The code screenshot that directly constructs RDF triples with a hard-coded namespace and a hash of `str(graph_node)` should be treated as exporter-prototype evidence, not as the target core architecture.
 
 For CrackPy, the likely compact target groups are:
 
@@ -825,6 +849,7 @@ The compact exporter should also define an explicit grouping and URI policy:
 - grouping policy: whether statements are grouped by top-level subject keys, by `related_to`, or by a formal `grouped_by` field expected by the KG importer;
 - subject identity policy: whether the compact bundle carries only local IDs such as `result_id` and `input_id`, or also a KG-facing `subject_uri`;
 - URI minting policy: whether URIs are generated by the KG importer from subject type plus local ID, or by a CrackPy exporter profile configured with the KG namespace.
+- descriptor-field policy: whether scalar facts are exported as plain statements, KG descriptor resources such as `LiteralField`, or both.
 
 The computational core should not hard-code URI namespaces. It should provide stable IDs, subject types, and semantic roles so the exporter can produce conformal KG metadata.
 
@@ -1037,12 +1062,18 @@ class AnalysisExecutionMetadata:
 - Hashing inputs and outputs improves traceability but may be expensive for large nodemaps or result artifacts.
 - Backward compatibility with existing text/JSON tags must be handled carefully.
 - Choosing JSON as the main scalar result output keeps the first design simple, but large field arrays or dense intermediate data may need optional HDF5, netCDF, Zarr, or similar storage profiles later.
+- Copying the KG's resource-per-field `LiteralField` pattern into CrackPy internals would couple the computational core to one RDF export representation.
+- Treating `GraphInsertion`, RDF clients, hard-coded namespaces, or Prefect flow nodes as core provenance objects would mix adapter/orchestrator concerns into result records.
+- Hashing stringified Python objects for URI construction is unstable; content-addressed IDs should be based on canonical normalized payloads with explicit inclusion and exclusion rules.
+- Making external descriptor categories such as `IdentityMetadata`, `StateMetadata`, and `ContextMetadata` mandatory internal classes too early would couple CrackPy to the current KG ontology.
+- Locale-sensitive numeric formatting and non-standard RDF datatype names must be normalized by exporters rather than leaking into the canonical result model.
 
 ## Next Steps
 
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
 - Prototype a metadata record for `WilliamsFit` on paper before touching production code.
-- Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint, including grouping, subject identity, and URI minting policy.
+- Define a minimal first result/provenance envelope and one compact KG projection for a Williams-fit or crack-tip-estimate vertical slice before designing the full C-010 model.
+- Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint, including grouping, subject identity, URI minting, descriptor-field, datatype, and unit normalization policy.
 - Sketch the first YAML/JSON method-reference registry entries for Williams fitting, Bueckner-Chen, line integrals, and crack-tip detection.
 - Keep this note in planning state until the refactor specification is approved.
 

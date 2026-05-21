@@ -34,6 +34,10 @@ Planning direction:
 
 Treat the explicit result model, result tag/schema cleanup, and provenance metadata model as one roadmap spine. The first specification should define the canonical result/provenance graph boundary before designing adapters for legacy text, current JSON sections, flattened CSV, plots, compact KG statement bundles, or optional detailed provenance artifacts.
 
+Recent KG artifact and prototype review calibrates the first target: keep the adapter-first direction, but shrink the first specification. The first approved slice should define a minimal result/provenance envelope plus one compact KG projection for one real workflow, such as Williams fitting or crack-tip estimation. It should not attempt to land the full method registry, implementation fingerprinting, input identity model, crack-tip frame model, compact KG exporter, and optional PROV artifact in one step.
+
+That first slice still needs enough export policy to avoid later rework: grouping policy, subject identity policy, URI minting policy, descriptor-field policy, datatype normalization, unit normalization, and compatibility aliases for current result tags. The external JSON/Turtle artifacts show that grouped metadata statements and RDF descriptor resources are KG export representations, not CrackPy core record types.
+
 Approval gate:
 
 Do not implement result writers or readers until a field-level result/provenance specification is approved, including node types, edge roles, schema-version policy, quantity fields, artifact references, and compatibility aliases for current result tags.
@@ -158,12 +162,13 @@ Do not perform broad renames until compatibility aliases, public documentation i
 ## Suggested Specification Order
 
 1. Approve or revise this roadmap grouping.
-2. Specify the result/provenance spine, including canonical result graph nodes and legacy adapter aliases.
-3. Specify input identity and ordering, including `InputRecord`, `input_id`, `sequence_index`, and mapping policies.
-4. Specify crack-tip estimate and `CrackTipFrame` records.
-5. Specify normalized configuration, method registry, method references, model metadata, and fingerprint validation.
-6. Specify one vertical runner/adapter pilot and its compatibility facade.
-7. Only then consider package-code refactoring.
+2. Specify one minimal result/provenance envelope and one compact KG projection for a Williams-fit or crack-tip-estimate vertical slice.
+3. Expand the result/provenance spine, including canonical result graph nodes, output artifact roles, provenance edge roles, and legacy adapter aliases.
+4. Specify input identity and ordering, including `InputRecord`, `input_id`, `sequence_index`, and mapping policies.
+5. Specify crack-tip estimate and `CrackTipFrame` records.
+6. Specify normalized configuration, method registry, method references, model metadata, and fingerprint validation.
+7. Specify one vertical runner/adapter pilot and its compatibility facade.
+8. Only then consider package-code refactoring.
 
 ## Candidate Grouping Summary
 
@@ -182,5 +187,6 @@ The resolved `OQ-*` set is sufficient to draft this roadmap. New open questions 
 
 - which vertical slice should be the first approved paper design;
 - whether the result/provenance spine is one specification or split into result schema, provenance records, and KG exporter specifications;
+- how the first compact KG profile defines grouping, subject identity, URI minting, descriptor-field export, datatype normalization, and unit normalization;
 - which current public files and APIs require long-lived compatibility aliases;
 - how strict the first method-registry validation should be during development versus release builds.

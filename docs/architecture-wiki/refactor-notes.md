@@ -20,7 +20,7 @@ For higher-level sequencing across candidates, use [[refactor-roadmap]].
 | C-007 | [[refactor-candidates/007-defaults-and-options-cleanup]] | proposed | [[fracture-analysis]], [[data-model-input]], [[coupling-map]] | None | Explicit defaults boundary accepted; implementation not approved |
 | C-008 | [[refactor-candidates/008-result-tag-schema]] | proposed | [[results-io-workflows]], [[terminology-report]], [[coupling-map]] | None | Canonical result graph boundary accepted; symbols plus descriptions accepted for scalar quantities |
 | C-009 | [[refactor-candidates/009-sequence-index-vocabulary]] | proposed | [[glossary]], [[terminology-report]], [[crack-detection]], [[data-model-input]] | None | Planning vocabulary accepted |
-| C-010 | [[refactor-candidates/010-provenance-metadata-architecture]] | proposed | [[data-model-input]], [[results-io-workflows]], [[coupling-map]], provided metadata statement-bundle datapoint JSON | None | Planning vocabulary accepted; implementation not approved |
+| C-010 | [[refactor-candidates/010-provenance-metadata-architecture]] | proposed | [[data-model-input]], [[results-io-workflows]], [[coupling-map]], provided metadata statement-bundle datapoint JSON and Turtle export | None | Planning vocabulary accepted; implementation not approved |
 
 ## How To Use This Index
 

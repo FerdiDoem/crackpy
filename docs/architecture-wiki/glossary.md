@@ -569,6 +569,15 @@ Compact export shape where metadata statements are grouped by subject-like categ
 #### Metadata statement
 One key-value metadata record in a [[glossary#Grouped metadata statement bundle]]. Expected fields include `key`, `value`, `data_type`, `unit`, `metadata_type`, `source`, and `related_to`.
 
+#### Descriptor field
+External KG/exporter vocabulary for a metadata statement materialized as a descriptor resource, such as the `LiteralField` resources seen in the provided Turtle sample. This is useful for RDF export, but it is not a proposed CrackPy core result container.
+
+#### Subject identity policy
+KG exporter policy that defines how grouped statements refer to concrete subject instances. It decides whether a compact bundle carries only local IDs such as `result_id` and `input_id`, KG-facing `subject_uri` values, or enough typed identity information for the KG importer to mint subject URIs.
+
+#### URI minting policy
+KG exporter or importer policy that defines how stable CrackPy IDs, subject types, configuration hashes, and namespaces become RDF subject URIs. CrackPy core should expose stable IDs and canonical hashes; exporter profiles or KG import policy should own namespace-specific URI construction.
+
 #### Detailed provenance artifact
 Optional richer provenance document, potentially PROV-O-like or JSON-LD/RDF-based, that records the relevant CrackPy process chain outside the compact main graph. Relevant steps are scientifically or computationally meaningful activities such as loading, transformations, preprocessing, crack-tip detection, correction, fitting, line integrals, optimization, aggregation, and export, not every private helper call.
 
