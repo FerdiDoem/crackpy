@@ -4,8 +4,9 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from crackpy.fracture_analysis.methods.williams_fit.spec_loader import load_williams_fit_spec
+from crackpy.results.provenance.spec import ProvenanceSliceSpec
 from crackpy.results.result_data import (
-    WILLIAMS_FIT_KG_BUNDLE_SCHEMA,
     KGStatement,
     KGStatementBundle,
     ResultEnvelope,
@@ -60,8 +61,13 @@ def _statement(
     )
 
 
-def envelope_to_kg_statement_bundle(envelope: ResultEnvelope) -> KGStatementBundle:
+def envelope_to_kg_statement_bundle(
+    envelope: ResultEnvelope,
+    *,
+    spec: ProvenanceSliceSpec | None = None,
+) -> KGStatementBundle:
     """Project a canonical envelope into compact grouped KG statements."""
+    spec = spec or load_williams_fit_spec()
     statements: list[KGStatement] = []
 
     for method in envelope.methods:
@@ -199,7 +205,7 @@ def envelope_to_kg_statement_bundle(envelope: ResultEnvelope) -> KGStatementBund
         groups[statement.related_to].append(statement)
 
     return KGStatementBundle(
-        bundle_schema_version=WILLIAMS_FIT_KG_BUNDLE_SCHEMA,
+        bundle_schema_version=spec.schemas.kg_statement_bundle,
         uri_policy="local IDs only; URI minting belongs to exporter or KG importer policy",
         descriptor_field_policy="plain statements only; RDF descriptor resources are downstream rendering choices",
         statements=statements,

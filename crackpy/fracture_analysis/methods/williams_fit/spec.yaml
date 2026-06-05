@@ -1,0 +1,94 @@
+schemas:
+  envelope: crackpy.result_envelope.williams_fit.v1
+  result: crackpy.result_record.williams_fit.v1
+  configuration: crackpy.configuration.williams_fit.v1
+  kg_statement_bundle: crackpy.kg_statement_bundle.williams_fit.v1
+
+methods:
+  analysis:
+    method_id: crackpy.fracture.williams_fit
+    display_name: Williams Fit
+    kind: analysis
+    method_revision: "1"
+    implementation_ref: crackpy.fracture_analysis.methods.williams_fit.runner.run_williams_fit
+    aliases:
+      - Williams_fit_results
+    references: []
+  crack_tip_import:
+    method_id: crackpy.crack_tip.manual_import
+    display_name: Manual Crack-Tip Import
+    kind: crack_tip_estimate
+    method_revision: "1"
+    implementation_ref: crackpy.input.crack_tip_info.CrackTipInfo
+    aliases:
+      - crack_info_by_nodemap.txt
+    references: []
+
+adapter_policy:
+  legacy_alias_scope: Williams_fit_results
+
+dependencies:
+  crack_tip_estimate:
+    dependency_name: crack_tip_estimate
+    role: used_crack_tip_estimate
+    target_type: CrackTipEstimateResult
+  crack_tip_frame:
+    dependency_name: crack_tip_frame
+    role: used_crack_tip_frame
+    target_type: CrackTipFrame
+
+quantities:
+  error_xy:
+    quantity_name: error_xy
+    symbol: error_xy
+    description: Williams fit residual for in-plane displacement components.
+    unit: "1"
+    legacy_aliases:
+      - Williams_fit_results.error_xy
+      - Error_xy
+  error_z:
+    quantity_name: error_z
+    symbol: error_z
+    description: Williams fit residual for out-of-plane displacement component.
+    unit: "1"
+    legacy_aliases:
+      - Williams_fit_results.error_z
+      - Error_z
+  K_I:
+    quantity_name: K_I
+    symbol: K_I
+    description: Mode I stress intensity factor derived from Williams coefficient a_1.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - Williams_fit_results.K_I
+  K_II:
+    quantity_name: K_II
+    symbol: K_II
+    description: Mode II stress intensity factor derived from Williams coefficient b_1.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - Williams_fit_results.K_II
+  K_III:
+    quantity_name: K_III
+    symbol: K_III
+    description: Mode III stress intensity factor derived from Williams coefficient c_1.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - Williams_fit_results.K_III
+  T:
+    quantity_name: T
+    symbol: T
+    description: T-stress derived from Williams coefficient a_2.
+    unit: MPa
+    legacy_aliases:
+      - Williams_fit_results.T
+
+coefficient_quantity:
+  quantity_name: williams_coefficient
+  symbol_template: "{coefficient_series}_{term_order}"
+  description_template: "Williams coefficient {symbol}."
+  legacy_alias_template: Williams_fit_results.{symbol}
+  allowed_coefficient_series:
+    - a
+    - b
+    - c

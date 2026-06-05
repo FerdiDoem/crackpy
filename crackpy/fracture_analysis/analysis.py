@@ -6,6 +6,7 @@ import numpy as np
 import rich.progress as progress_rich
 
 from crackpy.fracture_analysis import line_integration
+from crackpy.fracture_analysis.methods.williams_fit.runner import run_williams_fit
 from crackpy.fracture_analysis.line_integration import (IntegralProperties,
                                                         LineIntegral)
 from crackpy.fracture_analysis.optimization import Optimization, OptimizationProperties
@@ -216,77 +217,19 @@ class FractureAnalysis:
     def _run_williams_optimization(self) -> None:
         """Run Williams optimization if optimization properties are provided."""
 
-        n_terms = len(self.optimization.terms)
-        skip_disp_z_optimization = self.data.disp_z is None or not np.any(
-            self.data.disp_z)  # -> both None or all zeros mean no sensible z-displacements are provided
-
-        try:
-            # calculate Williams coefficients with fitting method in 2D (xy-plane)
-            williams_results_xy = self.optimization.optimize_williams_displacements_xy()
-            williams_coeffs_xy = williams_results_xy.x
-
-            a_n = williams_coeffs_xy[:n_terms]
-            b_n = williams_coeffs_xy[n_terms:]
-            self.williams_fit_a_n = self._coeff_map(a_n)
-            self.williams_fit_b_n = self._coeff_map(b_n)
-
-            # derive stress intensity factors and T-stress [Kuna formula 3.45]
-            K_I = np.sqrt(2 * np.pi) * self.williams_fit_a_n[1] / np.sqrt(1000)
-            K_II = -np.sqrt(2 * np.pi) * self.williams_fit_b_n[1] / np.sqrt(1000)
-            T = 4 * self.williams_fit_a_n[2]
-
-            # store intermediate results
-            self.williams_coeffs = williams_coeffs_xy
-            self.williams_fit_res = {'Error_xy': williams_results_xy.cost, 'K_I': K_I, 'K_II': K_II, 'T': T}
-
-            logger.debug(
-                "Williams optimization results in xy-plane: Error_xy=%s, K_I=%.2f, K_II=%.2f, T=%.2f",
-                williams_results_xy.cost, K_I, K_II, T,
-            )
-        except Exception:
-            logger.exception(
-                'Williams optimization for xy failed. Corresponding Williams optimization results set to NaN.')
-
-            self.williams_coeffs = np.array([np.nan] * (2 * n_terms))
-            self.williams_fit_a_n = self._coeff_map([np.nan] * n_terms)
-            self.williams_fit_b_n = self._coeff_map([np.nan] * n_terms)
-            self.williams_fit_res = {'Error_xy': np.nan, 'K_I': np.nan, 'K_II': np.nan, 'T': np.nan}
-
-        if skip_disp_z_optimization:
-            logging.info(
-                'No sensible z-displacements provided; skipping z-direction optimization. Corresponding Williams optimization results set to NaN. ')
-
-            self.williams_coeffs = np.r_[self.williams_coeffs, np.array([np.nan] * n_terms)]
-            self.williams_fit_c_n = self._coeff_map([np.nan] * n_terms)
-            self.williams_fit_res.update({'Error_z': np.nan, 'K_III': np.nan})
-            return
-
-        try:
-            # calculate Williams coefficients with fitting method in z-direction
-            williams_results_z = self.optimization.optimize_williams_displacements_z()
-            williams_coeffs_z = williams_results_z.x
-
-            c_n = williams_coeffs_z
-            self.williams_fit_c_n = self._coeff_map(c_n)
-
-            # derive stress intensity factors for Mode III
-            K_III = np.sqrt(0.5 * np.pi) * self.williams_fit_c_n[1] / np.sqrt(1000)
-
-            # update with final results
-            self.williams_coeffs = np.r_[self.williams_coeffs, williams_coeffs_z]
-            self.williams_fit_res.update({'Error_z': williams_results_z.cost, 'K_III': K_III})
-
-            logger.debug(
-                "Williams optimization results in z-plane: Error_z=%s, K_III=%.2f",
-                williams_results_z.cost, K_III,
-            )
-        except Exception:
-            logger.exception(
-                'Williams optimization for z-displacements failed. Corresponding Williams optimization results set to NaN.')
-
-            self.williams_coeffs = np.r_[self.williams_coeffs, np.array([np.nan] * n_terms)]
-            self.williams_fit_c_n = self._coeff_map([np.nan] * n_terms)
-            self.williams_fit_res.update({'Error_z': np.nan, 'K_III': np.nan})
+        result = run_williams_fit(self.optimization)
+        self.williams_coeffs = np.asarray(result.coefficients_flat)
+        self.williams_fit_a_n = dict(result.coefficients.a)
+        self.williams_fit_b_n = dict(result.coefficients.b)
+        self.williams_fit_c_n = dict(result.coefficients.c)
+        self.williams_fit_res = {
+            'Error_xy': result.error_xy,
+            'Error_z': result.error_z,
+            'K_I': result.K_I,
+            'K_II': result.K_II,
+            'K_III': result.K_III,
+            'T': result.T,
+        }
 
     def _run_line_integrals(self, progress_bar: Optional[MutableMapping[str, Any]] = None, task_id=None) -> None:
         """Run line integrals if integral properties are provided."""

@@ -327,6 +327,105 @@ Visualization concerns remain outside the core record model:
 
 This boundary follows [[decision-log#2026-06-05-graph-visualization-kit-consumes-the-canonical-envelope-first]]. The preserved RDF-stack prototype can guide a later adapter, but it is not the source of truth for core result/provenance fields.
 
+### Definition And Logic Split
+
+The next Williams-fit refactor should make the first slice spec-driven. Stable per-slice definitions belong in a versioned [[glossary#Provenance slice spec]], preferably YAML-backed and loaded through typed Python validation. Runtime extraction from current objects belongs in Python [[glossary#Source adapter]] code. Envelope construction, hashing, canonical JSON normalization, and file writing remain Python logic.
+
+The Williams-fit provenance slice spec should define:
+
+- method IDs, method revisions, display names, implementation references, and reference IDs;
+- schema-version strings for the envelope, result record, normalized configuration, compact KG bundle, and graph visualization profile;
+- result quantity symbols, descriptions, units, Williams coefficient-series rules, and legacy aliases;
+- dependency roles and target record types;
+- compact KG statement keys, descriptions, grouping policy, URI policy, descriptor-field policy, datatype policy, and unit policy;
+- graph node labels, graph node types, graph edge labels, and graph edge roles.
+
+The spec should not define:
+
+- how to read attributes from `FractureAnalysis`;
+- Williams numerical fitting behavior;
+- unit calculation logic such as coefficient units that depend on Williams term order;
+- hash implementation details beyond naming the schema and inclusion policy;
+- output paths, writer side effects, UI layout, RDF namespaces, Turtle serialization, or graph explorer HTML.
+
+This split follows the same-day accepted planning decision in [[decision-log]]. It is intended to make CJP, line-integral, crack-tip-estimate, KG, and graph variants additive rather than forcing edits to a hard-coded Williams builder.
+
+### Source Adapter And Minimal Source Snapshot
+
+The generic builder should not consume `FractureAnalysis` directly. Current CrackPy objects should be translated by Python [[glossary#Source adapter]] code into a minimal immutable [[glossary#MethodResultSource]], then the builder should combine that source with the [[glossary#Provenance slice spec]].
+
+The planned flow is:
+
+```text
+FractureAnalysis -> SourceAdapter -> MethodResultSource -> ProvenanceSliceSpec + builder -> ResultEnvelope
+```
+
+The first `MethodResultSource` shape should keep only these field groups:
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `inputs` | One or more primary data anchors, such as a nodemap, displacement field, simulation field, or imported reference field. Each anchor should carry only the facts needed to create or link an `InputRecord`: `input_id`, `data_ref`, `source_metadata`, `source_label`, and optional `source_hash`. | Lets the builder create `InputRecord` values without depending on `InputData` or `FractureAnalysis`. |
+| `dependencies` | Non-primary-input records or resolved entities the method relied on, such as a crack-tip estimate, crack-tip frame, model artifact, calibration record, or future material record. | Lets each method expose only the dependencies it actually has, without treating them as plain parameters or primary input data. |
+| `parameters` | Resolved result-affecting settings plus parameter-origin labels. | Lets the builder create `NormalizedConfiguration` and hashes without reading mutable options objects. |
+| `quantities` | Extracted scalar or small result values named by spec quantity name, with optional qualifiers. | Lets Williams, CJP, line-integral, and crack-tip-estimate adapters feed the same builder surface. |
+
+`dependencies` includes both prior records and adapter-derived anchors when they deserve typed links. For example, a Williams-fit source can depend on a crack-tip estimate record and on the resolved `CrackTipFrame` used to interpret the local field. The frame should not be buried in `parameters` only because current code resolves it inside `FractureAnalysis`.
+
+The first source dependency shape should stay constrained:
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `dependency_name` | Spec-facing relationship name, such as `crack_tip_frame`, `crack_tip_estimate`, `model_artifact`, or `calibration_record`. It is not just the Python class name. | Lets the spec map the dependency to a final edge role such as `used_crack_tip_frame`, and distinguishes different roles that may use the same record type. |
+| `record` | Full typed dependency record supplied by the adapter, such as a resolved `CrackTipFrame`. Mutually exclusive with `target_id`. | Preserves typed dependency data without forcing the builder to interpret loose dictionaries. |
+| `target_id` | Stable ID of an already-existing dependency record. Mutually exclusive with `record`. | Lets future composed workflows reference records produced upstream, such as a crack-tip estimate result, without duplicating the record in the source snapshot. |
+
+Exactly one of `record` or `target_id` should be present. Do not add generic `payload` or `values` fields to `SourceDependency`; if a dependency has data, it should be represented by a typed record. The `ProvenanceSliceSpec` should validate allowed `dependency_name` values and map them to final dependency edge roles and target record types.
+
+The first source parameter shape should be one resolved snapshot, not one record per parameter:
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `result_parameters` | Mapping of concrete result-affecting values after default resolution, such as material values and Williams optimization settings. | Defines the recomputation-relevant scope without passing mutable `OptimizationProperties` or broad `FractureAnalysis` objects into the builder. |
+| `parameter_origins` | Mapping that explains where each result-affecting value came from, such as caller-provided, model default, derived default, or analysis object. | Makes default-driven result changes auditable and allows hashes to change when origin policy changes. |
+| `adapter_policy` | Optional mapping for output/projection policy that should be recorded but should not by itself force scientific recomputation. | Keeps writer, alias, plotting, and export choices separate from result-affecting parameters. |
+
+Current runtime configuration objects such as `OptimizationProperties` may feed `SourceParameters`, but they are not the canonical provenance shape. The adapter should extract resolved values from those objects, while the builder should create `NormalizedConfiguration` from `SourceParameters` and the `ProvenanceSliceSpec`.
+
+The first source quantity shape should avoid separate top-level containers for Williams coefficient series, paths, or statistics:
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `quantity_name` | Spec-facing quantity name, such as `K_I`, `error_xy`, `williams_coefficient`, `J`, or `crack_tip_x`. | Gives the spec a stable lookup name without baking legacy result sections into builder logic. |
+| `value` | JSON-compatible scalar or small value. | Carries the result extracted from current objects. |
+| `qualifiers` | Optional mapping for method dimensions such as `coefficient_series=a`, `term_order=-1`, `statistic=mean`, `path_index=0`, or `mode=mixed_mode`. | Supports Williams coefficients, CJP modes, and J-integral/path statistics without growing `MethodResultSource` fields. |
+
+For Williams fitting, the source adapter should emit `williams_coefficient` quantities with `coefficient_series` and `term_order` qualifiers rather than separate `a_n`, `b_n`, and `c_n` containers. Literature and CrackPy's own theory notes usually describe in-plane Williams coefficients as `A_n` for the Mode I contribution and `B_n` for the Mode II contribution. Canonical source qualifiers should still use compact lower-case labels `a`, `b`, and `c`, matching current CrackPy result symbols and keeping legacy aliases direct. The provenance spec should map lower-case coefficient-series labels to display notation and aliases such as `Williams_fit_results.a_{n}`, `Williams_fit_results.b_{n}`, and `Williams_fit_results.c_{n}`.
+
+For J-integral and path-based results, the source adapter should emit quantities with `statistic` and/or `path_index` qualifiers rather than separate `statistics` or `paths` containers.
+
+The `ProvenanceSliceSpec` should validate which quantity names and qualifier names are allowed for a slice. If future methods need additional dimensions, extend the spec's allowed qualifiers before adding new top-level source fields.
+
+### Williams Method Module Refactor Notes
+
+The Williams-fit refactor keeps generic source/spec concepts under `crackpy.results.provenance` and moves Williams-specific parameters, result types, numerical runner, provenance construction, builder, and spec files under `crackpy.fracture_analysis.methods.williams_fit`.
+
+The retained seams are:
+
+- `run_williams_fit()`: current Williams numerical fitting method to typed `WilliamsFitResult`;
+- `source_from_result()`: typed `WilliamsFitResult` plus `WilliamsFitResultParameters` to `MethodResultSource`;
+- `build_williams_fit_envelope_from_source()`: `MethodResultSource` plus `ProvenanceSliceSpec` to `ResultEnvelope`;
+- `SourceDependency`: validates dependency-name plus `record`/`target_id` shape;
+- `WilliamsFitResultParameters`: documents and validates Williams-specific result-affecting parameters without growing `MethodResultSource`;
+- `load_williams_fit_spec()`: keeps Williams definitions close to the Williams builder while avoiding package import cycles.
+
+One-time helper functions that do not name a domain operation or validation boundary should be inlined. This intentionally relaxes DRY when duplicated structure would make the vertical slice easier to read and easier to adapt for CJP or J-integral.
+
+Method-specific parameter and result schemas can use Pydantic models with field descriptions. These models should describe the new method interface directly; legacy object traversal or current `FractureAnalysis` attribute mapping belongs only in temporary transition facades, not in the method parameter contract.
+
+The Williams source adapter intentionally leaves optional `source_metadata` empty. Hard-coded extraction of legacy `InputData` attributes such as force, cycles, displacement, potential, crack length, or timestamp would turn unstable report metadata into adapter maintenance burden without improving the first provenance dependency chain.
+
+The actual-data vertical slice uses `test_data/simulations` to verify that a real `FractureAnalysis` run can produce the canonical envelope and compact KG statement bundle, not only a synthetic fake-analysis object.
+
 ### Prototype Details Not Promoted
 
 The preserved prototypes are evidence for the record split, not the target implementation. Do not promote these details into core CrackPy architecture without a separate decision:

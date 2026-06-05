@@ -100,7 +100,12 @@ Integral method used to derive mode I and mode II SIFs and T-stress using auxili
 Path-independent integral used here to recover Williams coefficients and T-stress. `Bueckner-Chen` is the scientific/domain spelling. Current code still uses legacy `buckner_*` identifiers such as `LineIntegral.integrate_buckner_chen()`. Future refactor vocabulary should use ASCII `bueckner_chen_*` identifiers and keep `buckner_*` only as compatibility vocabulary.
 
 #### Williams coefficients
-Crack-tip expansion coefficients `a_n`, `b_n`, and `c_n`. `a_1` and `b_1` map to mode I/II SIFs, `a_2` maps to T-stress, and `c_1` maps to mode III SIF.
+Crack-tip expansion coefficients. Literature and CrackPy theory notes usually write the in-plane Williams coefficient series as `A_n` for the Mode I contribution and `B_n` for the Mode II contribution. Current CrackPy result output uses lower-case compatibility symbols `a_n`, `b_n`, and `c_n`; `a_1` and `b_1` map to mode I/II SIFs, `a_2` maps to T-stress, and `c_1` maps to mode III SIF.
+
+#### Williams coefficient series
+Status: proposed architecture vocabulary
+
+Qualifier for the coefficient series in a Williams expansion source quantity. Use `coefficient_series` rather than `family` for provenance source qualifiers, because the series is tied to Williams notation and fracture-mode contribution rather than a generic family grouping. Pair it with `term_order` for the expansion order. Canonical source qualifier values should stay compact and lower-case, such as `a`, `b`, and `c`, matching current CrackPy result vocabulary. Specs may separately carry display or literature notation such as `A_n`, `B_n`, and `C_n`.
 
 #### HOST / HORT
 Higher order singular terms and higher order regular terms of the Williams expansion.
@@ -555,6 +560,41 @@ Future adapter that projects the canonical result model or main result JSON into
 Status: proposed architecture vocabulary
 
 Downstream adapter or toolkit that renders the canonical result/provenance envelope as an inspectable graph. Its first input should be the envelope records and dependency edges. Compact KG statements, RDF, Turtle, and graph explorer HTML may be secondary inputs or outputs, but visualization layout, UI state, RDF namespaces, and descriptor resources are not core CrackPy result records.
+
+#### Provenance slice spec
+Status: proposed architecture vocabulary
+
+Versioned definition record for one result/provenance slice, such as Williams fitting. A provenance slice spec stores stable definitions such as method IDs, schema versions, quantity symbols, quantity descriptions, legacy aliases, dependency roles, compact KG statement profiles, graph node labels, and graph edge labels. Runtime extraction, numerical logic, hashing, and file-writing behavior stay in Python adapters and builders.
+
+#### MethodResultSource
+Status: proposed architecture vocabulary
+
+Minimal immutable source snapshot consumed by a provenance builder together with a [[glossary#Provenance slice spec]]. It should carry only `inputs`, `dependencies`, `parameters`, and `quantities`. It should not store method definitions, projection definitions, writer behavior, graph layout, or method-specific containers such as separate Williams coefficient series or integral path collections.
+
+#### SourceDependency
+Status: proposed architecture vocabulary
+
+Minimal dependency entry inside `MethodResultSource.dependencies`. A source dependency should carry a `dependency_name` plus exactly one of `record` or `target_id`. `record` is a full typed dependency record supplied by the adapter, while `target_id` references an already-existing dependency record. It should not carry generic `payload` or `values` fields.
+
+#### SourceParameters
+Status: proposed architecture vocabulary
+
+Resolved parameter snapshot inside `MethodResultSource.parameters`. It carries `result_parameters`, `parameter_origins`, and optional `adapter_policy`. Existing runtime configuration objects such as `OptimizationProperties` may feed this snapshot, but should not be stored directly because they can be mutable, unresolved, method-specific, and not canonical for hashing.
+
+#### Source quantity
+Status: proposed architecture vocabulary
+
+Minimal extracted scalar or small value carried by a [[glossary#MethodResultSource]]. A source quantity should use `quantity_name`, `value`, and optional `qualifiers`. `quantity_name` is the spec-facing name for the extracted kind of value, while display symbols, aliases, units, graph labels, and legacy result-section names belong in the [[glossary#Provenance slice spec]].
+
+#### Source adapter
+Status: proposed architecture vocabulary
+
+Python adapter that translates a current CrackPy object or workflow output into a [[glossary#MethodResultSource]]. For the Williams-fit slice, the first source adapter should translate `FractureAnalysis` attributes into the source snapshot without making the generic builder depend on the full `FractureAnalysis` interface.
+
+#### Method module
+Status: proposed architecture vocabulary
+
+Deep module that owns one scientific or computational method's typed parameters, typed result object, numerical runner, provenance source construction, and method-specific spec. Shared utilities such as generic `MethodResultSource`, provenance spec loading, hashing, and export projections may be imported, but method-specific definitions should stay with the method. `crackpy.fracture_analysis.methods.williams_fit` is the first implementation slice for this pattern.
 
 #### Method reference
 Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific registered method. Future method metadata should point to method-reference IDs instead of embedding full bibliography records.

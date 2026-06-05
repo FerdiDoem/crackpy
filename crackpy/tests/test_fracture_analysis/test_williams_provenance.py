@@ -21,6 +21,32 @@ from crackpy.results.result_data import (
     to_jsonable,
     write_json_file,
 )
+from crackpy.results.provenance import SourceDependency
+from crackpy.fracture_analysis.methods.williams_fit.parameters import (
+    RESOLVED_OPTIMIZATION_ORIGIN,
+    WilliamsFitResultParameters,
+    WilliamsMaterialParameters,
+    WilliamsOptimizationParameters,
+)
+from crackpy.fracture_analysis.methods.williams_fit import load_williams_fit_spec
+
+
+def test_generic_provenance_types_are_available_from_deeper_module():
+    from crackpy.results.provenance import MethodResultSource, SourceDependency, SourceParameters, SourceQuantity
+
+    assert MethodResultSource.__name__ == "MethodResultSource"
+    assert SourceDependency.__name__ == "SourceDependency"
+    assert SourceParameters.__name__ == "SourceParameters"
+    assert SourceQuantity.__name__ == "SourceQuantity"
+
+
+def test_williams_fit_spec_loads_from_method_module():
+    from crackpy.fracture_analysis.methods.williams_fit import load_williams_fit_spec
+
+    spec = load_williams_fit_spec()
+
+    assert spec.schemas.envelope == "crackpy.result_envelope.williams_fit.v1"
+    assert spec.dependencies["crack_tip_frame"].role == "used_crack_tip_frame"
 
 
 def test_canonical_json_hash_is_stable_for_key_order():
@@ -139,7 +165,7 @@ def test_result_envelope_to_dict_contains_schema_and_nested_records(tmp_path):
     assert target.read_text(encoding="utf-8").startswith("{")
 
 
-from crackpy.results.williams_provenance import build_williams_fit_envelope
+from crackpy.results.williams_provenance import build_williams_fit_envelope, williams_fit_source_from_analysis
 
 
 def _fake_analysis():
@@ -210,6 +236,74 @@ def test_build_williams_fit_envelope_maps_current_result_section():
     assert quantities["error_xy"]["legacy_aliases"] == ["Williams_fit_results.error_xy", "Error_xy"]
     assert quantities["a_-1"]["legacy_aliases"] == ["Williams_fit_results.a_-1"]
     assert quantities["c_1"]["value"] is None
+
+
+def test_source_dependency_requires_record_or_target_id_exclusively():
+    with pytest.raises(ValueError, match="exactly one"):
+        SourceDependency(dependency_name="crack_tip_frame")
+
+    frame = CrackTipFrame(
+        frame_id="frame:demo",
+        tip_id="tip:demo",
+        origin_mm={"x": 1.0, "y": 2.0},
+        angle_deg=3.0,
+    )
+
+    with pytest.raises(ValueError, match="exactly one"):
+        SourceDependency(dependency_name="crack_tip_frame", record=frame, target_id=frame.frame_id)
+
+
+def test_williams_fit_source_snapshot_uses_dependencies_parameters_and_quantities():
+    source = williams_fit_source_from_analysis(_fake_analysis())
+
+    assert source.inputs[0].input_id == "input:DemoNodemap"
+    assert "crack_tip_frame" not in source.parameters.result_parameters
+    assert source.parameters.result_parameters["optimization"]["terms"] == [-1, 1, 2]
+
+    frame_dependencies = [dependency for dependency in source.dependencies if dependency.dependency_name == "crack_tip_frame"]
+    assert len(frame_dependencies) == 1
+    assert isinstance(frame_dependencies[0].record, CrackTipFrame)
+    assert frame_dependencies[0].target_id is None
+
+    coefficient_quantities = [
+        quantity
+        for quantity in source.quantities
+        if quantity.quantity_name == "williams_coefficient" and quantity.qualifiers["term_order"] == -1
+    ]
+    assert {quantity.qualifiers["coefficient_series"] for quantity in coefficient_quantities} == {"a", "b", "c"}
+
+
+def test_williams_fit_parameter_model_documents_explicit_method_fields():
+    parameters = WilliamsFitResultParameters(
+        material=WilliamsMaterialParameters(E_MPa=72000, nu_xy=0.33),
+        optimization=WilliamsOptimizationParameters(angle_gap_deg=20, terms=(-1, 1, 2)),
+    )
+
+    assert parameters.result_parameters()["material"]["E_MPa"] == 72000
+    assert parameters.result_parameters()["optimization"]["angle_gap_deg"] == 20
+    assert parameters.result_parameters()["optimization"]["terms"] == [-1, 1, 2]
+    assert parameters.parameter_origins()["angle_gap_deg"] == RESOLVED_OPTIMIZATION_ORIGIN
+    assert WilliamsMaterialParameters.model_fields["E_MPa"].description
+    assert WilliamsOptimizationParameters.model_fields["angle_gap_deg"].description
+
+
+def test_williams_fit_spec_defines_quantities_dependencies_and_lower_case_series():
+    spec = load_williams_fit_spec()
+
+    assert spec.schemas.configuration == "crackpy.configuration.williams_fit.v1"
+    assert spec.dependencies["crack_tip_frame"].role == "used_crack_tip_frame"
+    assert spec.quantities["K_I"].legacy_aliases == ("Williams_fit_results.K_I",)
+    assert spec.coefficient_quantity.quantity_name == "williams_coefficient"
+    assert spec.coefficient_quantity.allowed_coefficient_series == ("a", "b", "c")
+
+
+def test_build_williams_fit_envelope_uses_normalized_source_parameters():
+    envelope = build_williams_fit_envelope(_fake_analysis(), crackpy_version="test-version")
+    configuration = envelope.configurations[0]
+
+    assert "crack_tip_frame" not in configuration.result_parameters
+    assert configuration.result_parameters["material"]["name"] == "AA2024-T3"
+    assert configuration.result_parameters["optimization"]["angle_gap_deg"] == 20
 
 
 def test_build_williams_fit_envelope_rejects_missing_williams_results():

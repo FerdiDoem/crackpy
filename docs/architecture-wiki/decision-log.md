@@ -746,3 +746,84 @@ Consequences:
 - The visualization kit should render record and dependency graphs from stable IDs and semantic edge roles.
 - RDF/KG rendering can be added as a secondary view or exporter without changing core records.
 - Core result/provenance code must not depend on UI layout, graph explorer HTML, RDF namespaces, or KG-specific descriptor resources.
+
+## 2026-06-05: Provenance Slice Definitions Use A Hybrid YAML/Python Spec
+
+Status: accepted for planning
+
+Decision:
+
+Future Williams-fit result/provenance refactoring should make the slice spec-driven. Stable definitions belong in a versioned YAML-backed provenance slice spec, loaded through Pydantic validation. Runtime extraction, invariants, hashing, and envelope construction remain Python logic.
+
+The YAML-backed spec should cover stable definitions such as method IDs, method revisions, schema-version strings, quantity symbols, quantity descriptions, legacy aliases, dependency roles, compact KG statement profiles, graph node labels, and graph edge labels. It should not contain extraction logic, numerical logic, Python attribute traversal, or file-writing behavior.
+
+Rationale:
+
+The first production slice currently proves the envelope shape, but its Williams quantity definitions and projection definitions are embedded in builder logic. That is acceptable for proving the slice, but not for extension. A hybrid spec separates definitions from logic without turning YAML into a programming language.
+
+CrackPy already depends on `pyyaml` and Pydantic, so YAML loading and typed validation are available without adding new runtime dependencies. Pydantic should validate external specs and report schema errors clearly. Runtime records and source snapshots should remain lightweight immutable dataclasses unless heavier validation becomes necessary.
+
+Consequences:
+
+- A `ProvenanceSliceSpec` should become the source of truth for stable per-slice definitions.
+- `FractureAnalysis` extraction should move behind a narrow Python source adapter rather than being encoded in YAML.
+- Adding CJP, line-integral, crack-tip-estimate, or graph/KG variants should primarily add or compose specs and adapters, not edit generic envelope-building logic.
+- The first refactor should validate the Williams spec before adding a second result family, otherwise the current hard-coded builder will become the accidental pattern.
+
+## 2026-06-05: MethodResultSource Is A Minimal Immutable Snapshot
+
+Status: accepted for planning
+
+Decision:
+
+The generic provenance builder should consume a minimal immutable `MethodResultSource` plus a `ProvenanceSliceSpec`. Current CrackPy objects such as `FractureAnalysis` should be translated into that source snapshot by source adapters. Source adapters should satisfy a small protocol-like seam, but the source itself should remain a value object rather than an abstract base class with behavior.
+
+`MethodResultSource` should stay minimal. Its first planned field groups are:
+
+- `inputs`: one or more primary data anchors, such as the nodemap or displacement field, carrying only the facts needed to create or link `InputRecord` values;
+- `dependencies`: non-primary-input records or resolved entities the method relied on, such as a crack-tip estimate, crack-tip frame, model artifact, calibration record, or future material record;
+- `parameters`: resolved result-affecting settings and parameter origins that feed normalized configuration identity and hashing;
+- `quantities`: extracted scalar or small result values, each with a `quantity_name`, value, and optional qualifiers.
+
+Each dependency should be a `SourceDependency` with `dependency_name` plus exactly one of `record` or `target_id`. `record` is for a full typed dependency record supplied by the adapter, such as a resolved `CrackTipFrame`. `target_id` is for an already-existing upstream record. The source dependency shape should reject generic `payload` or `values` fields.
+
+`parameters` should be one resolved `SourceParameters` snapshot with `result_parameters`, `parameter_origins`, and optional `adapter_policy`, not individual `SourceParameter` records and not raw runtime option objects. Current objects such as `OptimizationProperties` are extraction sources; the provenance builder should consume the normalized snapshot that feeds `NormalizedConfiguration`.
+
+It should not grow separate top-level fields for Williams coefficient series, CJP coefficient sets, line-integral paths, statistics, graph profiles, KG groups, file paths, writer behavior, method definitions, schema versions, or projection definitions. Method-specific dimensions such as Williams coefficient series, Williams term order, statistic name, path index, or CJP mode should be represented as quantity qualifiers only when present.
+
+Rationale:
+
+A narrow source snapshot decouples generic provenance construction from the broad mutable `FractureAnalysis` interface. It also keeps the source shape generic enough for Williams fitting, CJP fitting, J-integral/path results, and crack-tip estimates without adding a new field every time another method family is supported.
+
+Putting behavior on the source object would blur extraction and building responsibilities. An abstract base class would also invite subclass-specific behavior into the builder seam. A protocol-like adapter seam keeps dependency inversion at the extraction edge while preserving source snapshots as simple data.
+
+Consequences:
+
+- The Williams refactor should replace fake analysis objects in tests with direct `MethodResultSource` fixtures where the builder is under test.
+- Source adapters remain method-specific and can know `FractureAnalysis`; generic builders must not.
+- J-integral support should prove the qualifier approach by using `statistic` and `path_index` qualifiers rather than adding source-level `statistics` or `paths` containers.
+- `dependencies` should include both prior result/entity records and derived anchors such as `CrackTipFrame` when the method relied on them and they deserve a typed relationship.
+- Source quantities should use `quantity_name`, not `key`, to avoid ambiguity with compact KG metadata statements.
+- Williams coefficient-series qualifiers should use compact lower-case values `a`, `b`, and `c`; display or literature notation belongs in the spec.
+- If qualifiers become too unstructured, the next design step should validate allowed qualifier keys per spec rather than expanding `MethodResultSource`.
+
+## 2026-06-05: Method-Specific Code Lives With The Method Module
+
+Status: accepted for implementation
+
+Decision:
+
+Williams-specific parameters, typed result records, numerical runner code, provenance source construction, envelope builder, and slice spec should live under `crackpy.fracture_analysis.methods.williams_fit`. Generic provenance source/spec helpers remain under `crackpy.results.provenance`.
+
+Rationale:
+
+The prior `crackpy.results.provenance.williams_fit` layout kept result/provenance concerns decoupled from the generic builder, but it still made Williams-specific method knowledge look like result-infrastructure code. A deeper method module improves locality: Williams changes can be found under one package, while shared provenance utilities remain imported dependencies.
+
+This also sets the intended pattern for CJP and J-integral work. Each method should own its parameters, typed result object, runner, provenance source construction, and spec. Shared builders, source snapshots, hashing, and export projections can remain generic where they genuinely serve multiple methods.
+
+Consequences:
+
+- `crackpy.fracture_analysis.methods.williams_fit` is the canonical Williams method module.
+- `crackpy.results.provenance` is not a home for method-specific adapter packages.
+- `FractureAnalysis` may delegate to method modules during migration, but it should not remain the long-term owner of method result logic.
+- CJP and J-integral refactors should follow the same vertical-slice pattern before introducing a broad method registry or universal method package.

@@ -181,8 +181,30 @@ No findings closed yet.
   - Pydantic project, "JSON Schema", accessed 2026-06-05, `https://docs.pydantic.dev/usage/schema/`; basis: Pydantic can generate JSON Schema from models, supporting future schema-builder tooling without forcing Pydantic naming into domain terminology.
 - Result: no new source-backed terminology inconsistency was found. The checked sources support the wiki boundary that `Descriptor field`, `LiteralField`, subject identity policy, URI minting policy, datatype/unit normalization, Jena/RDF objects, and JSON-LD/RO-Crate forms are exporter/profile concerns, not mandatory CrackPy core record types. Existing FINDING-20260514-001 remains the only open source-backed conflict. Future specification work should cite additional sources only if KG descriptor-resource conventions, FAIR Digital Object vocabulary, FORCE11 software-citation principles, PROV-N syntax, or source-specific Turtle ontology classes become formal CrackPy claims.
 
+### 2026-06-05T22:39:07+02:00
+
+- Checked range: `e9ac1fff8d5a427ac58a8ec6e948ccbb278d4829..68d58f92b2164662f4ddba44d6106735b56d4b6b`; uncommitted wiki hunks were also present in `docs/architecture-wiki/decision-log.md`, `docs/architecture-wiki/glossary.md`, and `docs/architecture-wiki/refactor-candidates/010-provenance-metadata-architecture.md`.
+- Changed terminology focus: Williams-fit result/provenance implementation vocabulary, first-slice schema-version strings, canonical angle unit, `Williams_fit_results` aliases, `ResultQuantity`, compact KG statement bundle, graph visualization kit, SHA-256 canonical JSON hashes, provenance slice spec, `MethodResultSource`, `SourceDependency`, source quantity, source adapter, Williams coefficient-series qualifiers, `coefficient_series`, `term_order`, `statistic`, `path_index`, and standing `Bueckner-Chen` / `buckner_*` compatibility cleanup.
+- Read-only subagent checks:
+  - Diff extraction found the main source-check risk in the Williams notation split: literature-facing `A_n`/`B_n` notation versus current CrackPy lower-case `a_n`/`b_n`/`c_n` result symbols.
+  - Glossary comparison found no new source-backed conflict, but flagged that `williams_coefficient` plus qualifiers must remain the canonical source-quantity shape while `Williams_fit_results.a_n`, `Williams_fit_results.b_n`, and `Williams_fit_results.c_n` remain compatibility aliases.
+  - Literature scoping found no new hard conflict if canonical JSON, SHA-256, RDF/KG, and provenance terms stay separated by role rather than being treated as synonyms.
+- Sources consulted:
+  - M. L. Williams, "On the Stress Distribution at the Base of a Stationary Crack", 1957, Journal of Applied Mechanics 24, 109-114; basis: origin reference for Williams crack-tip series terminology.
+  - David Melching and Eric Breitbarth, "Advanced crack tip field characterization using conjugate work integrals", 2023, DOI `10.1016/j.ijfatigue.2023.107501`; basis: Williams coefficient notation, higher-order terms, SIF/T-stress context, and Bueckner-Chen coefficient recovery.
+  - R. K. L. Su and W. J. Feng, "Accurate determination of mode I and II leading coefficients of the Williams expansion by finite element analysis", 2005, DOI `10.1016/j.finel.2004.11.006`; basis: lower-case `a_1`/`b_1` coefficient notation for SIF-related leading terms and `a_2` relation to T-stress in one common formulation.
+  - Bureau International des Poids et Mesures, "The International System of Units (SI)", 9th edition, updated 2026, DOI `10.59161/AUEZ1291`; and NIST, "Guide for the Use of the International System of Units (SI)", SP 811, DOI `10.6028/NIST.SP.811e2008`; basis: radian as coherent SI plane-angle unit and degree as accepted non-SI plane-angle unit, supporting `degree` as explicit canonical display/storage vocabulary over ambiguous legacy `grad`.
+  - Anders Rundgren, Bret Jordan, and Samuel Erdtman, "JSON Canonicalization Scheme (JCS)", RFC 8785, 2020, DOI `10.17487/RFC8785`; basis: deterministic JSON canonicalization as the serialization step before hashing.
+  - National Institute of Standards and Technology, "Secure Hash Standard (SHS)", FIPS 180-4, 2015, DOI `10.6028/NIST.FIPS.180-4`; basis: SHA-256 as a secure hash algorithm distinct from JSON canonicalization.
+  - Richard Cyganiak, David Wood, and Markus Lanthaler, "RDF 1.1 Concepts and Abstract Syntax", 2014 W3C Recommendation, `https://www.w3.org/TR/rdf11-concepts/`; basis: RDF graph, triple, IRI, literal, datatype, namespace, and graph vocabulary as exporter/profile concepts.
+  - Timothy Lebo, Satya Sahoo, and Deborah McGuinness, "PROV-O: The PROV Ontology", 2013 W3C Recommendation, `https://www.w3.org/TR/prov-o/`; basis: provenance vocabulary around entities, activities, agents, usage, generation, and association.
+  - W3C JSON-LD Working Group, "JSON-LD 1.1", 2020 W3C Recommendation, `https://www.w3.org/TR/json-ld/`; basis: JSON-based linked-data serialization and RDF compatibility.
+  - RO-Crate contributors, "RO-Crate 1.1 Specification", DOI `10.5281/zenodo.7867028`, `https://www.researchobject.org/ro-crate/specification/1.1/introduction.html`; basis: JSON-LD research-object packaging as an optional export/package profile.
+  - Pydantic project, "JSON Schema", accessed 2026-06-05, `https://docs.pydantic.dev/latest/concepts/json_schema/`; basis: Pydantic model-to-JSON-Schema generation for future spec validation tooling.
+- Result: no new source-backed terminology inconsistency was found. Existing FINDING-20260514-001 remains the only open conflict. The current edits are source-compatible if the regular implementation agent keeps lower-case Williams `a`/`b`/`c` values and `Williams_fit_results.*` names framed as CrackPy compatibility aliases, treats `A_n`/`B_n`/`C_n` as display or literature notation in specs, keeps `degree` explicit for canonical angle records while `grad` remains legacy output vocabulary, and keeps canonical JSON, SHA-256, RDF/KG, PROV-O, JSON-LD, and RO-Crate terms in exporter/provenance roles rather than core fracture-mechanics terminology.
+
 ## Automation State
 
-- Last checked commit: `e9ac1fff8d5a427ac58a8ec6e948ccbb278d4829`
-- Last checked range: `cb6b3694b2650f084ca6c1dd33bb127c5173cdd0..e9ac1fff8d5a427ac58a8ec6e948ccbb278d4829`; no uncommitted wiki hunks were present
-- Last run: `2026-06-05T19:37:29+02:00`
+- Last checked commit: `68d58f92b2164662f4ddba44d6106735b56d4b6b`
+- Last checked range: `e9ac1fff8d5a427ac58a8ec6e948ccbb278d4829..68d58f92b2164662f4ddba44d6106735b56d4b6b`; uncommitted wiki hunks were present in `docs/architecture-wiki/decision-log.md`, `docs/architecture-wiki/glossary.md`, and `docs/architecture-wiki/refactor-candidates/010-provenance-metadata-architecture.md`
+- Last run: `2026-06-05T22:39:07+02:00`
