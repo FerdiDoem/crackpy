@@ -2,27 +2,41 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from collections.abc import Iterable
+from typing import Protocol
 
 import numpy as np
+import numpy.typing as npt
+from scipy.optimize import OptimizeResult
 
 from crackpy.fracture_analysis.methods.williams_fit.result import WilliamsCoefficientSet, WilliamsFitResult
 
 logger = logging.getLogger(__name__)
 
 
-def _coefficient_map(terms: Any, values: Any) -> dict[int, float]:
-    return {int(term): values[index] for index, term in enumerate(terms)}
+class WilliamsFitOptimizer(Protocol):
+    terms: Iterable[int]
+    data: object
+
+    def optimize_williams_displacements_xy(self) -> OptimizeResult: ...
+
+    def optimize_williams_displacements_z(self) -> OptimizeResult: ...
 
 
-def run_williams_fit(optimization: Any) -> WilliamsFitResult:
+def _coefficient_map(terms: list[int], values: npt.ArrayLike) -> dict[int, float]:
+    coefficient_values = np.asarray(values, dtype=float)
+    return {term: float(coefficient_values[index]) for index, term in enumerate(terms)}
+
+
+def run_williams_fit(optimizer: WilliamsFitOptimizer) -> WilliamsFitResult:
     """Run Williams displacement fitting and return a typed result."""
-    terms = [int(term) for term in optimization.terms]
+    terms = [int(term) for term in optimizer.terms]
     n_terms = len(terms)
-    skip_disp_z_optimization = optimization.data.disp_z is None or not np.any(optimization.data.disp_z)
+    disp_z = getattr(optimizer.data, "disp_z", None)
+    skip_disp_z_optimization = disp_z is None or not np.any(disp_z)
 
     try:
-        williams_results_xy = optimization.optimize_williams_displacements_xy()
+        williams_results_xy = optimizer.optimize_williams_displacements_xy()
         williams_coeffs_xy = williams_results_xy.x
 
         a_n = _coefficient_map(terms, williams_coeffs_xy[:n_terms])
@@ -71,7 +85,7 @@ def run_williams_fit(optimization: Any) -> WilliamsFitResult:
         )
 
     try:
-        williams_results_z = optimization.optimize_williams_displacements_z()
+        williams_results_z = optimizer.optimize_williams_displacements_z()
         williams_coeffs_z = williams_results_z.x
         c_n = _coefficient_map(terms, williams_coeffs_z)
         K_III = np.sqrt(0.5 * np.pi) * c_n[1] / np.sqrt(1000)

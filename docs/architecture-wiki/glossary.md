@@ -566,6 +566,8 @@ Status: proposed architecture vocabulary
 
 Versioned definition record for one result/provenance slice, such as Williams fitting. A provenance slice spec stores stable definitions such as method IDs, schema versions, quantity symbols, quantity descriptions, legacy aliases, dependency roles, compact KG statement profiles, graph node labels, and graph edge labels. Runtime extraction, numerical logic, hashing, and file-writing behavior stay in Python adapters and builders.
 
+Coefficient quantity definitions are optional. They belong in a slice spec only when the method emits repeated coefficient-like quantities that share a symbol, alias, and qualifier pattern, such as Williams `a`, `b`, and `c` series.
+
 #### MethodResultSource
 Status: proposed architecture vocabulary
 
@@ -591,10 +593,15 @@ Status: proposed architecture vocabulary
 
 Python adapter that translates a current CrackPy object or workflow output into a [[glossary#MethodResultSource]]. For the Williams-fit slice, the first source adapter should translate `FractureAnalysis` attributes into the source snapshot without making the generic builder depend on the full `FractureAnalysis` interface.
 
+#### MethodResultEnvelopeBuilder
+Status: proposed architecture vocabulary
+
+Shared provenance builder that projects a [[glossary#MethodResultSource]] and [[glossary#Provenance slice spec]] into common result/provenance records. It owns generic operations such as input-record projection, method metadata projection, normalized configuration construction, source dependency edge construction, and source quantity projection. Method-specific wrappers still own method IDs, run/result ID policy, method-created dependency records, and method-specific unit logic such as Williams coefficient units by term order.
+
 #### Method module
 Status: proposed architecture vocabulary
 
-Deep module that owns one scientific or computational method's typed parameters, typed result object, numerical runner, provenance source construction, and method-specific spec. Shared utilities such as generic `MethodResultSource`, provenance spec loading, hashing, and export projections may be imported, but method-specific definitions should stay with the method. `crackpy.fracture_analysis.methods.williams_fit` is the first implementation slice for this pattern.
+Deep module that owns one scientific or computational method's typed parameters, typed result object, numerical runner, provenance source construction, method-specific envelope wrapper, and method-specific spec. Shared utilities such as generic `MethodResultSource`, `MethodResultEnvelopeBuilder`, provenance spec loading, hashing, and export projections may be imported, but method-specific definitions should stay with the method. `crackpy.fracture_analysis.methods.williams_fit` is the first implementation slice for this pattern.
 
 #### Method reference
 Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific registered method. Future method metadata should point to method-reference IDs instead of embedding full bibliography records.

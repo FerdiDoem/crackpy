@@ -827,3 +827,35 @@ Consequences:
 - `crackpy.results.provenance` is not a home for method-specific adapter packages.
 - `FractureAnalysis` may delegate to method modules during migration, but it should not remain the long-term owner of method result logic.
 - CJP and J-integral refactors should follow the same vertical-slice pattern before introducing a broad method registry or universal method package.
+
+## 2026-06-06: Shared Provenance Builder Owns Generic Projection
+
+Status: accepted for implementation
+
+Decision:
+
+The common provenance module should expose a `MethodResultEnvelopeBuilder` for generic record projection from `MethodResultSource` plus `ProvenanceSliceSpec`. Method modules should keep method-specific wrappers, not one-off private builder helpers for generic projection.
+
+The shared builder owns:
+
+- `source` (`MethodResultSource`): the immutable inputs, dependencies, resolved parameters, and quantities extracted by a source adapter;
+- `spec` (`ProvenanceSliceSpec`): the stable schema, method, dependency, quantity, and alias definitions for the slice;
+- input-record projection from `SourceInput`;
+- method metadata projection from method specs;
+- normalized configuration construction from `SourceParameters`;
+- dependency edge construction from `SourceDependency` names and spec roles;
+- source quantity projection into `ResultQuantity` records.
+
+Method-specific wrappers still own run/result ID policy, method-created dependency records such as the first Williams-fit crack-tip estimate record, and method-specific unit logic such as Williams coefficient units by term order.
+
+Coefficient quantity definitions are optional in `ProvenanceSliceSpec`. Scalar-only methods such as an initial J-integral slice should not be forced to define Williams-style coefficient-series metadata.
+
+Rationale:
+
+The first Williams-fit implementation placed generic helper functions inside `crackpy.fracture_analysis.methods.williams_fit.builder`. That improved locality for the initial slice but made reusable provenance projection look Williams-specific. Moving generic projection into `crackpy.results.provenance` keeps the common module explicit while preserving method locality for extraction, numerical results, spec loading, and method-specific orchestration.
+
+Consequences:
+
+- CJP and J-integral slices should reuse `MethodResultEnvelopeBuilder` for shared projection rather than copying Williams helper functions.
+- Method wrappers may remain small and explicit where they encode method-specific identity, dependency-record creation, or scientific unit rules.
+- `crackpy.results.provenance` remains a shared provenance module, not a package for method-specific adapters.

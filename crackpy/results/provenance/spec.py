@@ -65,7 +65,7 @@ class ProvenanceSliceSpec(BaseModel):
     adapter_policy: dict[str, Any] = Field(default_factory=dict)
     dependencies: dict[str, DependencySpec]
     quantities: dict[str, QuantitySpec]
-    coefficient_quantity: CoefficientQuantitySpec
+    coefficient_quantity: CoefficientQuantitySpec | None = None
 
 
 def load_provenance_slice_spec(path: str | Path) -> ProvenanceSliceSpec:

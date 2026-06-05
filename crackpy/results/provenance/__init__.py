@@ -1,4 +1,5 @@
 """Provenance source snapshots and spec models for result adapters."""
+from crackpy.results.provenance.builder import MethodResultEnvelopeBuilder
 from crackpy.results.provenance.source import (
     MethodResultSource,
     SourceDependency,
@@ -19,6 +20,7 @@ from crackpy.results.provenance.spec import (
 __all__ = [
     "CoefficientQuantitySpec",
     "DependencySpec",
+    "MethodResultEnvelopeBuilder",
     "MethodResultSource",
     "MethodSpec",
     "ProvenanceSliceSpec",

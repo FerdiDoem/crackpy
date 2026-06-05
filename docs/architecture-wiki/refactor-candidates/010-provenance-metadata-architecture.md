@@ -350,6 +350,8 @@ The spec should not define:
 
 This split follows the same-day accepted planning decision in [[decision-log]]. It is intended to make CJP, line-integral, crack-tip-estimate, KG, and graph variants additive rather than forcing edits to a hard-coded Williams builder.
 
+Coefficient quantity definitions are optional. Williams fitting uses them for repeated `a`, `b`, and `c` coefficient series; scalar-only methods should rely on ordinary quantity definitions.
+
 ### Source Adapter And Minimal Source Snapshot
 
 The generic builder should not consume `FractureAnalysis` directly. Current CrackPy objects should be translated by Python [[glossary#Source adapter]] code into a minimal immutable [[glossary#MethodResultSource]], then the builder should combine that source with the [[glossary#Provenance slice spec]].
@@ -407,13 +409,14 @@ The `ProvenanceSliceSpec` should validate which quantity names and qualifier nam
 
 ### Williams Method Module Refactor Notes
 
-The Williams-fit refactor keeps generic source/spec concepts under `crackpy.results.provenance` and moves Williams-specific parameters, result types, numerical runner, provenance construction, builder, and spec files under `crackpy.fracture_analysis.methods.williams_fit`.
+The Williams-fit refactor keeps generic source/spec/builder concepts under `crackpy.results.provenance` and moves Williams-specific parameters, result types, numerical runner, provenance construction, envelope wrapper, and spec files under `crackpy.fracture_analysis.methods.williams_fit`.
 
 The retained seams are:
 
 - `run_williams_fit()`: current Williams numerical fitting method to typed `WilliamsFitResult`;
 - `source_from_result()`: typed `WilliamsFitResult` plus `WilliamsFitResultParameters` to `MethodResultSource`;
-- `build_williams_fit_envelope_from_source()`: `MethodResultSource` plus `ProvenanceSliceSpec` to `ResultEnvelope`;
+- `MethodResultEnvelopeBuilder`: shared provenance builder for input records, method metadata, normalized configurations, dependency edges, and source quantity projection;
+- `build_williams_fit_envelope_from_source()`: Williams-specific wrapper that combines `MethodResultSource`, `ProvenanceSliceSpec`, Williams ID policy, the crack-tip estimate record, and Williams coefficient unit logic into a `ResultEnvelope`;
 - `SourceDependency`: validates dependency-name plus `record`/`target_id` shape;
 - `WilliamsFitResultParameters`: documents and validates Williams-specific result-affecting parameters without growing `MethodResultSource`;
 - `load_williams_fit_spec()`: keeps Williams definitions close to the Williams builder while avoiding package import cycles.
@@ -425,6 +428,14 @@ Method-specific parameter and result schemas can use Pydantic models with field 
 The Williams source adapter intentionally leaves optional `source_metadata` empty. Hard-coded extraction of legacy `InputData` attributes such as force, cycles, displacement, potential, crack length, or timestamp would turn unstable report metadata into adapter maintenance burden without improving the first provenance dependency chain.
 
 The actual-data vertical slice uses `test_data/simulations` to verify that a real `FractureAnalysis` run can produce the canonical envelope and compact KG statement bundle, not only a synthetic fake-analysis object.
+
+### Field Interpolation Workspace Candidate
+
+Performance reuse should be handled by a method-execution workspace, not by provenance records. The current `Optimization` class already precomputes Williams/CJP interpolation grids once per analysis object, and `ReusableLinearInterpolator` already caches triangulation and barycentric weights for fixed evaluation points. Those are observed implementation facts, not yet a stable method interface.
+
+A future `PreparedFieldData` or `FieldInterpolationWorkspace` module should own reusable interpolated field data across Williams fitting, CJP fitting, and J-integral/path methods. Its cache identity should be derived from input identity, crack-tip frame, transformed coordinate state, grid geometry, mask policy, and result-affecting method parameters. Provenance records may reference the resulting workspace/configuration identity or hash, but they should not own cache lifetime, eviction, interpolation arrays, or mutable numerical state.
+
+This keeps `MethodResultSource` focused on result traceability while leaving room for performance work such as sharing Delaunay triangulation, interpolation weights, transformed displacement fields, and regular-grid samples between methods.
 
 ### Prototype Details Not Promoted
 
