@@ -574,3 +574,175 @@ Consequences:
 - OQ-012 is resolved: `buckner` remains legacy spelling; future implementation vocabulary should use `bueckner_chen_*`.
 - OQ-014 is resolved: fixture keys are not domain vocabulary and do not need further terminology planning unless a future preset/configuration system is designed.
 - No production code rename is approved by this decision. This remains documentation and future-refactor planning.
+
+## 2026-06-05: Williams Fit Is The First Result/Provenance Implementation Slice
+
+Status: accepted for planning
+
+Decision:
+
+The first result/provenance implementation slice should be the Williams-fit slice described in [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]], rather than a crack-tip-estimate-only slice.
+
+Rationale:
+
+Williams fitting exercises the useful minimum of the planned result/provenance spine: an `InputRecord`, a `CrackTipEstimateResult`, a `CrackTipFrame`, an `AnalysisRun`, a `ResultRecord`, scalar `ResultQuantity` records, output artifact references, and a compact KG statement-bundle projection. A crack-tip-estimate-only slice would be smaller, but it would not prove the scalar fracture-analysis result model or the compatibility mapping from canonical quantities to current `Williams_fit_results` output vocabulary.
+
+Consequences:
+
+- The first implementation design should target Williams fitting after the remaining first-slice approval-gate questions are resolved.
+- Crack-tip-estimate records remain part of the first slice as explicit dependencies of the Williams-fit run.
+- This decision does not approve production code changes by itself.
+- Remaining planning inputs were narrowed by later same-day decisions on schema-version strings and angle-unit policy.
+
+## 2026-06-05: First Slice Uses Williams-Fit-Specific Schema Versions
+
+Status: accepted for planning
+
+Decision:
+
+The first result/provenance implementation slice should use slice-specific schema-version strings rather than universal CrackPy result/provenance schema names:
+
+- `crackpy.result_envelope.williams_fit.v1`
+- `crackpy.result_record.williams_fit.v1`
+- `crackpy.configuration.williams_fit.v1`
+- `crackpy.kg_statement_bundle.williams_fit.v1`
+
+Rationale:
+
+The first slice is deliberately narrow. It proves the Williams-fit result/provenance envelope and compact KG projection without claiming that CrackPy already has a universal result schema for all fracture-analysis methods, crack-tip estimates, line integrals, plots, or future storage profiles. Slice-specific names make the implementation honest about scope while leaving room to introduce a broader schema later.
+
+Consequences:
+
+- Prototype strings such as `crackpy.prototype.result_record.v1` must not be used in production-facing planning.
+- A later generalized schema can introduce broader names, such as `crackpy.result_envelope.v2`, if multiple methods converge on one shape.
+- Remaining planning inputs include hash/canonicalization policy and compatibility aliases.
+
+## 2026-06-05: First Slice Uses Degree As Canonical Angle Unit
+
+Status: accepted for planning
+
+Decision:
+
+The first Williams-fit result/provenance slice should use `degree` as the canonical angle unit in result/provenance records and compact KG statements. Code-facing field names may keep concise names such as `angle_deg` where that is clearer, but the unit label in canonical records should be `degree`.
+
+Current output vocabulary such as `grad` remains legacy adapter vocabulary when needed for compatibility with existing result files, writer conventions, or tests.
+
+Rationale:
+
+`grad` is ambiguous outside the current writer context. It can be read as German `Grad` for degree, but also resembles gradians or informal shorthand. The canonical result/provenance schema should be explicit enough for KG export, provenance review, and non-German consumers. Keeping `grad` only at compatibility boundaries preserves existing behavior without making the ambiguity part of the new internal model.
+
+Consequences:
+
+- `CrackTipFrame.angle_deg` may remain the field name for the first slice, but its canonical unit is `degree`.
+- Compact KG angle statements should normalize the unit to `degree`.
+- Current JSON/text projections may continue to emit `grad` where compatibility requires it.
+- Remaining planning inputs include hash/canonicalization policy and compatibility aliases.
+
+## 2026-06-05: First Adapter Covers The Current Williams Fit Result Section
+
+Status: accepted for planning
+
+Decision:
+
+The first Williams-fit production adapter should cover the full current `Williams_fit_results` section and no other result sections. The required first-slice quantities are:
+
+- residuals: `error_xy` and `error_z`;
+- derived Williams-fit scalars: `K_I`, `K_II`, `K_III`, and `T`;
+- every available Williams coefficient for the resolved Williams terms: `a_n`, `b_n`, and `c_n`.
+
+The first adapter should not cover `CJP_results`, `CJP_modeI_results`, `SIFs_integral`, `Bueckner_Chen_integral`, `Path_SIFs`, `Path_Williams_a_n`, `Path_Williams_b_n`, or `Path_Properties`.
+
+Rationale:
+
+Current `OutputWriter` emits `Williams_fit_results` as one coherent output section from `FractureAnalysis.williams_fit_res`, `williams_fit_a_n`, `williams_fit_b_n`, and `williams_fit_c_n`. Covering the complete section preserves current Williams-output compatibility while keeping the first slice bounded to Williams fitting. Adding CJP, line-integral, Bueckner-Chen, path, or plot outputs would expand the slice beyond the approved first implementation target.
+
+Consequences:
+
+- The first production adapter should map all current `Williams_fit_results` keys to canonical `ResultQuantity` records with explicit legacy aliases.
+- CJP, integral, path, and plotting outputs remain future adapter work.
+- Remaining planning inputs include hash/canonicalization policy and compatibility aliases.
+
+## 2026-06-05: First Slice Uses SHA-256 Canonical JSON Hashes
+
+Status: accepted for planning
+
+Decision:
+
+The first Williams-fit result/provenance slice should use `sha256:`-prefixed hashes over canonical UTF-8 JSON bytes for configuration-derived hashes. Canonical JSON means sorted keys, deterministic primitive representations, and no volatile whitespace.
+
+`parameter_hash` includes only:
+
+- `schema_version`;
+- `result_parameters`;
+- `parameter_origins`.
+
+`configuration_hash` includes everything in `parameter_hash` plus `adapter_policy`.
+
+The hash payload must exclude volatile values such as timestamps, output paths, generated IDs, run IDs, temporary object IDs, and filesystem-specific path separators. It must include resolved defaults, not only caller-provided parameters.
+
+Output `content_hash` values are optional for the first implementation. When present, they must use `sha256:` over the actual artifact bytes rather than a placeholder or shortened digest.
+
+Rationale:
+
+This split distinguishes scientific recomputation from adapter-output changes. A changed result-affecting parameter or default origin changes `parameter_hash`; a plotting, progress, output-layout, or current-JSON projection policy change can change `configuration_hash` without forcing a Williams-fit recomputation. Full SHA-256 digests avoid the prototype's short placeholder hashes and give provenance/KG tooling stable comparison values.
+
+Consequences:
+
+- Prototype short hashes must not be used in production-facing planning.
+- Normalized configuration builders must canonicalize payloads before hashing.
+- Adapter-only changes may be detected without being treated as scientific result changes.
+- Remaining planning inputs include compatibility aliases.
+
+## 2026-06-05: First Williams Fit Adapter Uses Current Section Aliases
+
+Status: accepted for planning
+
+Decision:
+
+For the first Williams-fit adapter, long-lived compatibility aliases are limited to the current `Williams_fit_results` section in text and JSON outputs. Canonical `ResultQuantity` records should map back to:
+
+- `Williams_fit_results.error_xy` and text row `Error_xy`;
+- `Williams_fit_results.error_z` and text row `Error_z`;
+- `Williams_fit_results.K_I`;
+- `Williams_fit_results.K_II`;
+- `Williams_fit_results.K_III`;
+- `Williams_fit_results.T`;
+- `Williams_fit_results.a_{n}` for every resolved Williams `a_n` coefficient;
+- `Williams_fit_results.b_{n}` for every resolved Williams `b_n` coefficient;
+- `Williams_fit_results.c_{n}` for every resolved Williams `c_n` coefficient.
+
+Current internal attributes such as `williams_fit_res`, `williams_fit_a_n`, `williams_fit_b_n`, and `williams_fit_c_n` are extraction sources for the first adapter, not canonical public schema names.
+
+Rationale:
+
+Code inspection shows that `OutputWriter.write_results()` and `OutputWriter.write_json()` expose Williams-fit output through the `Williams_fit_results` section. The first adapter's job is to preserve that section while introducing canonical result quantities. Broader aliases for CJP, line-integral, Bueckner-Chen, path, plot, or internal attribute names would expand the slice beyond the approved Williams-fit boundary.
+
+Consequences:
+
+- The first adapter should preserve current Williams text/JSON output compatibility.
+- Internal `FractureAnalysis` attribute names should not become canonical result schema.
+- CJP, integral, path, and plot aliases remain future adapter work.
+- The first-slice approval gate is closed for planning; implementation can proceed as a narrow adapter/spec-driven change if production code work is explicitly approved.
+
+## 2026-06-05: Graph Visualization Kit Consumes The Canonical Envelope First
+
+Status: accepted for planning
+
+Decision:
+
+A graph visualization kit should be designed as a downstream adapter or toolkit over the canonical Williams-fit result/provenance envelope. Its first view should consume the envelope records and dependency edges directly. RDF, Turtle, compact KG statements, and graph-explorer HTML views are secondary projections.
+
+Visualization vocabulary, RDF namespaces, layout state, `LiteralField` resources, and KG importer details must not become core result/provenance record fields.
+
+Rationale:
+
+The canonical envelope is the stable result boundary for the first implementation slice. Making visualization consume that envelope first proves that `InputRecord`, `CrackTipEstimateResult`, `CrackTipFrame`, `AnalysisRun`, `ResultRecord`, `ResultQuantity`, `ArtifactRef`, and `DependencyEdge` carry enough structure without forcing RDF or UI concepts into the computational core.
+
+The preserved `result_spine_rdf_stack` prototype is useful evidence for possible downstream rendering, but it should not define the production record model.
+
+Consequences:
+
+- The first implementation plan may include a lightweight visualization adapter after the envelope and compact statement bundle exist.
+- The visualization kit should render record and dependency graphs from stable IDs and semantic edge roles.
+- RDF/KG rendering can be added as a secondary view or exporter without changing core records.
+- Core result/provenance code must not depend on UI layout, graph explorer HTML, RDF namespaces, or KG-specific descriptor resources.

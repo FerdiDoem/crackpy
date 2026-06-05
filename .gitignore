@@ -10,6 +10,8 @@ tom.egg-info
 !/docs/architecture-wiki/**
 !/docs/code-style/
 !/docs/code-style/**
+!/docs/superpowers/
+!/docs/superpowers/**
 /data/
 /venv/
 /plots/

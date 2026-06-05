@@ -82,6 +82,17 @@ The first slice envelope is the smallest self-contained bundle that lets a reade
 | `analysis_runs` | List of `AnalysisRun` values that generated result records. | Links method, inputs, configuration, dependencies, timing, and CrackPy version for one execution. |
 | `results` | List of `ResultRecord` values and their quantities/artifacts. | Anchors scalar scientific outputs and output projections to the run that generated them. |
 
+Approved first-slice schema-version strings:
+
+| Schema target | Schema-version string | Why it exists |
+| --- | --- | --- |
+| Result/provenance envelope | `crackpy.result_envelope.williams_fit.v1` | Versions the whole Williams-fit slice bundle without claiming a universal envelope yet. |
+| Result record | `crackpy.result_record.williams_fit.v1` | Versions the scalar Williams-fit result anchor and its quantity/artifact structure. |
+| Normalized configuration | `crackpy.configuration.williams_fit.v1` | Versions the Williams-fit result-affecting parameter shape and default-origin policy. |
+| Compact KG statement bundle | `crackpy.kg_statement_bundle.williams_fit.v1` | Versions the compact export projection for this slice. |
+
+This naming follows [[decision-log#2026-06-05-first-slice-uses-williams-fit-specific-schema-versions]]. Prototype strings such as `crackpy.prototype.result_record.v1` are not production-facing planning vocabulary.
+
 ### InputRecord
 
 An `InputRecord` is the stable source anchor for a nodemap-like displacement-field input. It does not replace current `InputData` loading in this phase.
@@ -119,10 +130,18 @@ An `InputRecord` is the stable source anchor for a nodemap-like displacement-fie
 | `result_parameters` | Resolved values that can change numerical results, result shape, units, or interpretation. | Defines the recomputation-relevant configuration scope. |
 | `parameter_origins` | Origin of each result-affecting parameter, such as caller-provided, model default, or derived default. | Makes default-driven result changes visible and auditable. |
 | `adapter_policy` | Output, cache, progress, plotting, and projection choices that should not by themselves force scientific recomputation. | Keeps side-effect policy out of the scientific parameter hash while still recording it when useful. |
-| `parameter_hash` | Stable hash over `schema_version`, `result_parameters`, and `parameter_origins`. | Lets stale-result checks detect result-affecting configuration changes without comparing raw objects. |
-| `configuration_hash` | Stable hash over the full normalized configuration, including adapter policy. | Lets tooling detect any configuration change while distinguishing adapter-only changes from scientific recomputation triggers. |
+| `parameter_hash` | `sha256:` hash over canonical JSON containing `schema_version`, `result_parameters`, and `parameter_origins`. | Lets stale-result checks detect result-affecting configuration changes without comparing raw objects. |
+| `configuration_hash` | `sha256:` hash over canonical JSON containing the full normalized configuration, including `adapter_policy`. | Lets tooling detect any configuration change while distinguishing adapter-only changes from scientific recomputation triggers. |
 
 For a Williams fit, first-slice `result_parameters` should include material values, fit radii, angle gap, selected Williams terms, coordinate-transform inputs that affect the fit, and any other resolved options that change the fitted coefficients or derived quantities. Output folders, plots, progress behavior, and current JSON projection choices belong in `adapter_policy`.
+
+Hash policy follows [[decision-log#2026-06-05-first-slice-uses-sha-256-canonical-json-hashes]]:
+
+- configuration-derived hashes use full `sha256:`-prefixed digests over canonical UTF-8 JSON bytes with sorted keys and deterministic primitive representations;
+- `parameter_hash` excludes adapter policy and all volatile run or filesystem state;
+- `configuration_hash` includes adapter policy but still excludes timestamps, output paths, generated IDs, run IDs, temporary object IDs, and filesystem-specific path separators;
+- resolved defaults are included in the hashed parameter payload through `result_parameters` and `parameter_origins`;
+- output `content_hash` values are optional for the first implementation, but must use `sha256:` over actual artifact bytes when present.
 
 ### CrackTipFrame
 
@@ -133,10 +152,10 @@ For a Williams fit, first-slice `result_parameters` should include material valu
 | `frame_id` | Stable identity for the local crack-tip frame. | Lets analysis runs and estimates reference the exact frame used for coordinate interpretation. |
 | `tip_id` | Crack-tip identity independent of legacy labels. | Separates the physical or logical crack tip from `left` and `right` compatibility vocabulary. |
 | `origin_mm` | Crack-tip origin in millimeters in the input coordinate system. | Defines the point used for crack-tip-centered fitting and downstream result interpretation. |
-| `angle_deg` | Crack extension angle in degrees. | Records the orientation used by transforms and makes angle semantics explicit. |
+| `angle_deg` | Crack extension angle whose canonical unit is `degree`. | Records the orientation used by transforms and makes angle semantics explicit. |
 | `compatibility_side` | Optional legacy `left` or `right` label. | Preserves current file/API/report compatibility without making `side` the internal orientation model. |
 
-The first slice should use `degree` or another explicitly selected angle unit in future schema text. Current writer vocabulary such as `grad` may remain adapter vocabulary if needed for compatibility.
+The canonical unit policy follows [[decision-log#2026-06-05-first-slice-uses-degree-as-canonical-angle-unit]]. Current writer vocabulary such as `grad` may remain adapter vocabulary if needed for compatibility.
 
 ### CrackTipEstimateResult
 
@@ -205,6 +224,14 @@ Required first-slice dependency roles:
 | `method_id` | Method that produced the quantity. | Lets quantities be compared by symbol while preserving estimator identity. |
 | `legacy_aliases` | Current text or JSON paths such as `Williams_fit_results.K_I`. | Gives compatibility adapters a deterministic mapping from canonical quantities to existing outputs. |
 
+The first adapter quantity boundary follows [[decision-log#2026-06-05-first-adapter-covers-the-current-williams-fit-result-section]]. Required quantities are the full current `Williams_fit_results` section:
+
+- residuals: `error_xy` and `error_z`;
+- derived Williams-fit scalars: `K_I`, `K_II`, `K_III`, and `T`;
+- every available Williams coefficient for the resolved Williams terms: `a_n`, `b_n`, and `c_n`.
+
+The first adapter does not cover `CJP_results`, `CJP_modeI_results`, `SIFs_integral`, `Bueckner_Chen_integral`, `Path_SIFs`, `Path_Williams_a_n`, `Path_Williams_b_n`, or `Path_Properties`.
+
 `ArtifactRef` fields:
 
 | Field | Meaning | Why it exists |
@@ -212,7 +239,7 @@ Required first-slice dependency roles:
 | `artifact_id` | Stable identity for an output artifact. | Lets result records link to files or projections without embedding them. |
 | `role` | Artifact role such as `canonical_result_bundle_json`, `current_json_projection`, or `compact_kg_statement_bundle`. | Distinguishes source-of-truth output from compatibility and export projections. |
 | `media_type` | Media type or explicit artifact format label. | Helps consumers choose readers without inspecting file contents. |
-| `content_hash` | Hash of artifact content where practical. | Supports artifact integrity checks and stale-output review. |
+| `content_hash` | Optional `sha256:` hash of artifact bytes where practical. | Supports artifact integrity checks and stale-output review without forcing every first-slice projection to materialize a file. |
 
 ### Current Output Compatibility
 
@@ -222,6 +249,18 @@ The first Williams-fit slice should project canonical quantities into current ou
 - Current `Williams_fit_results` keys can be projected from `ResultQuantity.legacy_aliases`.
 - Legacy text and current JSON sections are compatibility artifacts, not canonical schema.
 - Adapter aliases must remain explicit enough that old tests, scripts, and readers can be supported during migration.
+
+Long-lived first-adapter aliases follow [[decision-log#2026-06-05-first-williams-fit-adapter-uses-current-section-aliases]]. They are limited to current text and JSON `Williams_fit_results` output:
+
+- `error_xy` / text row `Error_xy`;
+- `error_z` / text row `Error_z`;
+- `K_I`;
+- `K_II`;
+- `K_III`;
+- `T`;
+- `a_{n}`, `b_{n}`, and `c_{n}` for every resolved Williams coefficient term.
+
+Current internal attributes such as `williams_fit_res`, `williams_fit_a_n`, `williams_fit_b_n`, and `williams_fit_c_n` are adapter extraction sources, not canonical public schema names.
 
 ### Compact KG Statement-Bundle Projection
 
@@ -260,7 +299,33 @@ Projection policy:
 - Descriptor-field policy: the first compact JSON projection should use statements. RDF resources such as `LiteralField`, `IdentityMetadata`, `ContextMetadata`, and `StateMetadata` may be downstream RDF rendering choices only.
 - Datatype normalization policy: normalize JSON-like values to parseable categories such as `null`, `boolean`, `integer`, `float`, `string`, `list`, and `object`; RDF/XSD mapping belongs to the RDF exporter.
 - Unit normalization policy: use explicit physical units where known and `1` for unitless values; current compatibility unit labels may be adapted at writer boundaries.
+- Angle-unit policy: compact KG angle statements should use `degree`; current `grad` output remains an adapter concern.
 - Content policy: export query, audit, and re-analysis facts. Keep detailed process provenance, RDF graph expansion, and debug-level traces in optional projections.
+
+### Graph Visualization Kit Boundary
+
+The graph visualization kit is a downstream adapter over the first-slice envelope. It should consume the canonical records and dependency edges first, then optionally consume compact KG statements, RDF, Turtle, or graph explorer artifacts as secondary views.
+
+Primary visualization input:
+
+- `InputRecord`;
+- `CrackTipEstimateResult`;
+- `CrackTipFrame`;
+- `AnalysisRun`;
+- `ResultRecord`;
+- `ResultQuantity`;
+- `ArtifactRef`;
+- `DependencyEdge`.
+
+The first useful graph view should show stable IDs, node types, result quantities, artifact references, and dependency roles such as `used_input`, `used_configuration`, `used_crack_tip_estimate`, `used_crack_tip_frame`, `was_generated_by`, and `has_quantity`.
+
+Visualization concerns remain outside the core record model:
+
+- layout coordinates, colors, expanded or collapsed UI state, and graph explorer HTML;
+- RDF namespaces, URI expansion, Turtle serialization, and KG importer policy;
+- descriptor resources such as `LiteralField`, `IdentityMetadata`, `ContextMetadata`, or `StateMetadata`.
+
+This boundary follows [[decision-log#2026-06-05-graph-visualization-kit-consumes-the-canonical-envelope-first]]. The preserved RDF-stack prototype can guide a later adapter, but it is not the source of truth for core result/provenance fields.
 
 ### Prototype Details Not Promoted
 
@@ -278,12 +343,9 @@ The preserved prototypes are evidence for the record split, not the target imple
 
 Before implementation, maintainers should approve or revise this first-slice specification and answer at least these points:
 
-- whether Williams fitting is the first vertical slice, rather than crack-tip estimate only;
-- exact public schema-version strings for the envelope, result record, configuration, and compact KG bundle;
-- angle-unit vocabulary for canonical records versus current adapter output;
-- minimum required Williams-fit quantities for the first production adapter;
-- hash algorithm, canonicalization rules, and inclusion/exclusion policy;
-- which current output files and JSON sections require long-lived compatibility aliases.
+- confirm that the Williams-fit first-slice decision in [[decision-log#2026-06-05-williams-fit-is-the-first-result-provenance-implementation-slice]] still holds if new evidence appears during implementation.
+
+The schema-version, angle-unit, quantity-boundary, hash-policy, and compatibility-alias questions are resolved for planning by same-day decisions in [[decision-log]].
 
 ## Current Knowledge Graph Assumptions
 
@@ -1317,7 +1379,7 @@ class AnalysisExecutionMetadata:
 
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
 - Review and approve or revise [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]] before touching production code.
-- Decide whether the first approved slice remains Williams fitting or narrows to a crack-tip-estimate-only slice.
+- Use the Williams-fit first-slice decision in [[decision-log#2026-06-05-williams-fit-is-the-first-result-provenance-implementation-slice]] as the implementation target unless maintainers explicitly reverse it.
 - Use the first-slice compact target export profile as the starting point for a future KG adapter specification, including grouping, subject identity, URI minting, descriptor-field, datatype, and unit normalization policy.
 - Sketch the first YAML/JSON method-reference registry entries for Williams fitting, Bueckner-Chen, line integrals, and crack-tip detection.
 - Keep this note in planning state until the refactor specification is approved.

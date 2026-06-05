@@ -40,6 +40,12 @@ That first slice still needs enough export policy to avoid later rework: groupin
 
 The draft field-level Williams-fit slice now lives in [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]]. It folds the preserved `result_spine_package` prototype conclusions into planning notes and should be reviewed or revised before any production result-writer, reader, or KG-export work starts.
 
+The first-slice choice is accepted for planning in [[decision-log#2026-06-05-williams-fit-is-the-first-result-provenance-implementation-slice]]: Williams fitting is the first implementation target, with crack-tip estimates included as explicit dependencies.
+
+The first-slice schema-version, angle-unit, required-quantity, hash, and compatibility-alias policies are now captured in [[decision-log]]. Production implementation should stay inside those boundaries unless new evidence forces another planning decision.
+
+The graph visualization kit is accepted as a downstream adapter over the canonical envelope. It should consume envelope records and dependency edges first, with RDF/KG rendering as a secondary projection. Visualization layout and KG descriptor resources must not become core result/provenance fields.
+
 Approval gate:
 
 Do not implement result writers or readers until a field-level result/provenance specification is approved, including node types, edge roles, schema-version policy, quantity fields, artifact references, and compatibility aliases for current result tags.
@@ -185,10 +191,7 @@ Do not perform broad renames until compatibility aliases, public documentation i
 
 ## Follow-Up Planning Questions
 
-The resolved `OQ-*` set is sufficient to draft this roadmap. New open questions may be useful before implementation planning, but they should be added only after reviewing this grouping and the first-slice specification with maintainers. Likely areas are:
+The resolved `OQ-*` set is sufficient to draft this roadmap. New open questions may be useful during implementation planning, but they should be added only when code inspection reveals a real architecture decision not covered by the first-slice specification. Likely areas are:
 
-- whether the Williams-fit slice should be the first approved paper design, or whether a crack-tip-estimate-only slice should precede it;
 - whether the result/provenance spine is one specification or split into result schema, provenance records, and KG exporter specifications;
-- exact schema-version strings, hash policy, angle-unit policy, and required Williams-fit quantities for the first production adapter;
-- which current public files and APIs require long-lived compatibility aliases;
 - how strict the first method-registry validation should be during development versus release builds.

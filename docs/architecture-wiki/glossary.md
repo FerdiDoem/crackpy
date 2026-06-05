@@ -35,6 +35,11 @@ Status: proposed internal architecture term
 
 Canonical proposed internal model for crack-tip orientation and position. A `CrackTipFrame` carries a `tip_id`, an origin, local axes, a [[glossary#Geometry profile]], and optional compatibility labels such as current `side`. Local x is the crack-extension direction, local y is the crack-opening direction or method-specific crack-plane normal direction, and local z is profile-specific: for current planar DIC workflows it is usually the assumed surface normal or out-of-plane direction; for true 3D crack-front workflows it would need an explicit crack-front or surface-frame definition. This term does not imply that current CrackPy algorithms support general 3D fracture mechanics.
 
+#### Canonical angle unit
+Status: proposed architecture vocabulary
+
+The first result/provenance slice uses `degree` as the canonical angle unit for crack-tip and crack-extension angles. Current output vocabulary such as `grad` remains legacy adapter vocabulary where existing writers or readers require it.
+
 #### Crack-tip correction
 Post-detection refinement of the crack-tip estimate. In current CrackPy code, correction methods generally compute x/y shifts by re-evaluating Williams fitting after moving the candidate crack tip. Future result vocabulary distinguishes the absolute [[glossary#Corrected crack-tip estimate]] from the relative [[glossary#Correction delta]].
 
@@ -545,6 +550,11 @@ Future explicit relationship between result/provenance nodes. Examples include a
 
 #### Result artifact adapter
 Future adapter that projects the canonical result model or main result JSON into another artifact form, such as legacy text, flattened CSV, compact KG statement bundles, Parquet-style tables, plots, detailed provenance files, or research-object bundles.
+
+#### Graph visualization kit
+Status: proposed architecture vocabulary
+
+Downstream adapter or toolkit that renders the canonical result/provenance envelope as an inspectable graph. Its first input should be the envelope records and dependency edges. Compact KG statements, RDF, Turtle, and graph explorer HTML may be secondary inputs or outputs, but visualization layout, UI state, RDF namespaces, and descriptor resources are not core CrackPy result records.
 
 #### Method reference
 Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific registered method. Future method metadata should point to method-reference IDs instead of embedding full bibliography records.
