@@ -350,7 +350,9 @@ The spec should not define:
 
 This split follows the same-day accepted planning decision in [[decision-log]]. It is intended to make CJP, line-integral, crack-tip-estimate, KG, and graph variants additive rather than forcing edits to a hard-coded Williams builder.
 
-Coefficient quantity definitions are optional. Williams fitting uses them for repeated `a`, `b`, and `c` coefficient series; scalar-only methods should rely on ordinary quantity definitions.
+The generic `ProvenanceSliceSpec` should stay scalar-only. Williams fitting extends it with a method-local `WilliamsFitSliceSpec` for repeated `a`, `b`, and `c` coefficient-series definitions; scalar-only methods should rely on ordinary quantity definitions without seeing Williams vocabulary.
+
+Concrete Williams slice definitions should have one source of truth. The Williams YAML spec owns schema-version strings, method metadata, dependency roles, quantity definitions, aliases, and coefficient-series definitions. Python owns Pydantic validation models, source extraction, invariant checks, hashing, and envelope construction logic; generic result/provenance dataclasses and generic provenance spec models should not define Williams schema-version constants, coefficient fields, or Williams-specific defaults.
 
 ### Source Adapter And Minimal Source Snapshot
 
@@ -409,14 +411,14 @@ The `ProvenanceSliceSpec` should validate which quantity names and qualifier nam
 
 ### Williams Method Module Refactor Notes
 
-The Williams-fit refactor keeps generic source/spec/builder concepts under `crackpy.results.provenance` and moves Williams-specific parameters, result types, numerical runner, provenance construction, envelope wrapper, and spec files under `crackpy.fracture_analysis.methods.williams_fit`.
+The Williams-fit refactor keeps generic source/spec/builder concepts under `crackpy.provenance` and moves Williams-specific parameters, result types, numerical runner, source adapter, envelope wrapper, and spec files under `crackpy.fracture_analysis.methods.williams_fit`.
 
 The retained seams are:
 
 - `run_williams_fit()`: current Williams numerical fitting method to typed `WilliamsFitResult`;
-- `source_from_result()`: typed `WilliamsFitResult` plus `WilliamsFitResultParameters` to `MethodResultSource`;
+- `source_adapter.source_from_result()`: typed `WilliamsFitResult` plus `WilliamsFitResultParameters` to `MethodResultSource`;
 - `MethodResultEnvelopeBuilder`: shared provenance builder for input records, method metadata, normalized configurations, dependency edges, and source quantity projection;
-- `build_williams_fit_envelope_from_source()`: Williams-specific wrapper that combines `MethodResultSource`, `ProvenanceSliceSpec`, Williams ID policy, the crack-tip estimate record, and Williams coefficient unit logic into a `ResultEnvelope`;
+- `build_williams_fit_envelope_from_source()`: Williams-specific wrapper that combines `MethodResultSource`, `WilliamsFitSliceSpec`, Williams ID policy, the crack-tip estimate record, and Williams coefficient unit logic into a `ResultEnvelope`;
 - `SourceDependency`: validates dependency-name plus `record`/`target_id` shape;
 - `WilliamsFitResultParameters`: documents and validates Williams-specific result-affecting parameters without growing `MethodResultSource`;
 - `load_williams_fit_spec()`: keeps Williams definitions close to the Williams builder while avoiding package import cycles.
@@ -426,6 +428,8 @@ One-time helper functions that do not name a domain operation or validation boun
 Method-specific parameter and result schemas can use Pydantic models with field descriptions. These models should describe the new method interface directly; legacy object traversal or current `FractureAnalysis` attribute mapping belongs only in temporary transition facades, not in the method parameter contract.
 
 The Williams source adapter intentionally leaves optional `source_metadata` empty. Hard-coded extraction of legacy `InputData` attributes such as force, cycles, displacement, potential, crack length, or timestamp would turn unstable report metadata into adapter maintenance burden without improving the first provenance dependency chain.
+
+The Williams runner and source adapter follow the fail-fast policy from [[decision-log]]. Optimizer failures should propagate instead of being converted into fabricated `NaN` results, and method-local adapters should require the identities and result fields they consume instead of manufacturing `unknown_*` values. Explicit invariant checks remain useful when they reject malformed sources or specs.
 
 The actual-data vertical slice uses `test_data/simulations` to verify that a real `FractureAnalysis` run can produce the canonical envelope and compact KG statement bundle, not only a synthetic fake-analysis object.
 

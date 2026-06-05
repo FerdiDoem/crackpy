@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Any
 
 from crackpy.fracture_analysis.methods.williams_fit.spec_loader import load_williams_fit_spec
-from crackpy.results.provenance.spec import ProvenanceSliceSpec
+from crackpy.provenance.spec import ProvenanceSliceSpec
 from crackpy.results.result_data import (
     KGStatement,
     KGStatementBundle,

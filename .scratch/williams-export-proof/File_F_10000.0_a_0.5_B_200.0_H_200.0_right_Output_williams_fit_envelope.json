@@ -1,0 +1,574 @@
+{
+    "analysis_runs": [
+        {
+            "completed_at": null,
+            "configuration_id": "configuration:williams_fit:7f2ea3bd2c2d",
+            "crackpy_version": "1.3.0",
+            "dependencies": [
+                {
+                    "role": "used_input",
+                    "source_id": "run:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "target_id": "input:File_F_10000.0_a_0.5_B_200.0_H_200.0",
+                    "target_type": "InputRecord"
+                },
+                {
+                    "role": "used_configuration",
+                    "source_id": "run:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "target_id": "configuration:williams_fit:7f2ea3bd2c2d",
+                    "target_type": "NormalizedConfiguration"
+                },
+                {
+                    "role": "used_crack_tip_frame",
+                    "source_id": "run:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "target_id": "crack_tip_frame:File_F_10000.0_a_0.5_B_200.0_H_200.0:right",
+                    "target_type": "CrackTipFrame"
+                },
+                {
+                    "role": "used_crack_tip_estimate",
+                    "source_id": "run:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "target_id": "crack_tip_estimate:File_F_10000.0_a_0.5_B_200.0_H_200.0:right",
+                    "target_type": "CrackTipEstimateResult"
+                }
+            ],
+            "input_ids": [
+                "input:File_F_10000.0_a_0.5_B_200.0_H_200.0"
+            ],
+            "method_id": "crackpy.fracture.williams_fit",
+            "method_revision": "1",
+            "parameter_hash": "sha256:7f2ea3bd2c2d590edadbea539a55c366518fd3359d2958126ab822477016acda",
+            "run_id": "run:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+            "started_at": null
+        }
+    ],
+    "configurations": [
+        {
+            "adapter_policy": {
+                "legacy_alias_scope": "Williams_fit_results"
+            },
+            "configuration_hash": "sha256:f9b5b76332d0021e38a7b27384ddb2c99f3e1f4568d7e547c6be8e059f3a1c55",
+            "configuration_id": "configuration:williams_fit:7f2ea3bd2c2d",
+            "parameter_hash": "sha256:7f2ea3bd2c2d590edadbea539a55c366518fd3359d2958126ab822477016acda",
+            "parameter_origins": {
+                "angle_gap_deg": "resolved optimization property",
+                "material": "analysis object",
+                "max_radius_mm": "resolved optimization property",
+                "min_radius_mm": "resolved optimization property",
+                "terms": "resolved optimization property",
+                "tick_size_mm": "resolved optimization property"
+            },
+            "result_parameters": {
+                "material": {
+                    "E_MPa": 72000.0,
+                    "G_MPa": 27067.66917293233,
+                    "kappa": 2.007518796992481,
+                    "name": "not defined material",
+                    "nu_xy": 0.33,
+                    "plane_strain": false,
+                    "sig_yield_MPa": 350.0
+                },
+                "optimization": {
+                    "angle_gap_deg": 10.0,
+                    "max_radius_mm": 10.0,
+                    "min_radius_mm": 5.0,
+                    "terms": [
+                        -1,
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "tick_size_mm": 0.01
+                }
+            },
+            "schema_version": "crackpy.configuration.williams_fit.v1"
+        }
+    ],
+    "crack_tip_estimates": [
+        {
+            "configuration_id": "configuration:williams_fit:7f2ea3bd2c2d",
+            "corrected_mm": {
+                "x": 50,
+                "y": 0
+            },
+            "correction_delta_mm": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "estimate_id": "crack_tip_estimate:File_F_10000.0_a_0.5_B_200.0_H_200.0:right",
+            "frame_id": "crack_tip_frame:File_F_10000.0_a_0.5_B_200.0_H_200.0:right",
+            "input_id": "input:File_F_10000.0_a_0.5_B_200.0_H_200.0",
+            "method_id": "crackpy.crack_tip.manual_import",
+            "observed_mm": {
+                "x": 50,
+                "y": 0
+            },
+            "source": "manual import",
+            "source_estimate_id": null
+        }
+    ],
+    "crack_tip_frames": [
+        {
+            "angle_deg": 0,
+            "compatibility_side": "right",
+            "frame_id": "crack_tip_frame:File_F_10000.0_a_0.5_B_200.0_H_200.0:right",
+            "origin_mm": {
+                "x": 50,
+                "y": 0
+            },
+            "tip_id": "crack_tip:File_F_10000.0_a_0.5_B_200.0_H_200.0:right"
+        }
+    ],
+    "envelope_schema_version": "crackpy.result_envelope.williams_fit.v1",
+    "input_records": [
+        {
+            "data_ref": "File_F_10000.0_a_0.5_B_200.0_H_200.0.txt",
+            "input_id": "input:File_F_10000.0_a_0.5_B_200.0_H_200.0",
+            "source_hash": null,
+            "source_label": "File_F_10000.0_a_0.5_B_200.0_H_200.0",
+            "source_metadata": {}
+        }
+    ],
+    "methods": [
+        {
+            "aliases": [
+                "Williams_fit_results"
+            ],
+            "display_name": "Williams Fit",
+            "implementation_ref": "crackpy.fracture_analysis.methods.williams_fit.runner.run_williams_fit",
+            "kind": "analysis",
+            "method_id": "crackpy.fracture.williams_fit",
+            "method_revision": "1",
+            "references": []
+        },
+        {
+            "aliases": [
+                "crack_info_by_nodemap.txt"
+            ],
+            "display_name": "Manual Crack-Tip Import",
+            "implementation_ref": "crackpy.input.crack_tip_info.CrackTipInfo",
+            "kind": "crack_tip_estimate",
+            "method_id": "crackpy.crack_tip.manual_import",
+            "method_revision": "1",
+            "references": []
+        }
+    ],
+    "results": [
+        {
+            "artifacts": [],
+            "quantities": [
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams fit residual for in-plane displacement components.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.error_xy",
+                        "Error_xy"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:error_xy",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "error_xy",
+                    "unit": "1",
+                    "value": 7.382994364115482e-06
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams fit residual for out-of-plane displacement component.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.error_z",
+                        "Error_z"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:error_z",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "error_z",
+                    "unit": "1",
+                    "value": null
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode I stress intensity factor derived from Williams coefficient a_1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.K_I"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:K_I",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "K_I",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 11.619530570347031
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode II stress intensity factor derived from Williams coefficient b_1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.K_II"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:K_II",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "K_II",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.007636211153347724
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode III stress intensity factor derived from Williams coefficient c_1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.K_III"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:K_III",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "K_III",
+                    "unit": "MPa*m^{1/2}",
+                    "value": null
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "T-stress derived from Williams coefficient a_2.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.T"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:T",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "T",
+                    "unit": "MPa",
+                    "value": -30.6421615534353
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient a_-1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.a_-1"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_-1",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "a_-1",
+                    "unit": "MPa*mm^{3/2}",
+                    "value": 11.727741677003353
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient a_0.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.a_0"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_0",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "a_0",
+                    "unit": "MPa*mm^{1}",
+                    "value": -18.76077029984649
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient a_1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.a_1"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_1",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "a_1",
+                    "unit": "MPa*mm^{1/2}",
+                    "value": 146.58807736325028
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient a_2.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.a_2"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_2",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "a_2",
+                    "unit": "MPa",
+                    "value": -7.660540388358825
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient a_3.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.a_3"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_3",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "a_3",
+                    "unit": "MPa*mm^{-1/2}",
+                    "value": 0.807485073405987
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient a_4.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.a_4"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_4",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "a_4",
+                    "unit": "MPa*mm^{-1}",
+                    "value": -0.013619609842727538
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient a_5.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.a_5"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_5",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "a_5",
+                    "unit": "MPa*mm^{-3/2}",
+                    "value": -0.0018575745695169584
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient b_-1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.b_-1"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_-1",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "b_-1",
+                    "unit": "MPa*mm^{3/2}",
+                    "value": 0.05452544961848505
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient b_0.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.b_0"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_0",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "b_0",
+                    "unit": "MPa*mm^{1}",
+                    "value": -0.02526992297909154
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient b_1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.b_1"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_1",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "b_1",
+                    "unit": "MPa*mm^{1/2}",
+                    "value": -0.09633586353012359
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient b_2.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.b_2"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_2",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "b_2",
+                    "unit": "MPa",
+                    "value": -0.052952272399706984
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient b_3.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.b_3"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_3",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "b_3",
+                    "unit": "MPa*mm^{-1/2}",
+                    "value": 0.0020903500571001297
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient b_4.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.b_4"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_4",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "b_4",
+                    "unit": "MPa*mm^{-1}",
+                    "value": -0.0013153615431611794
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient b_5.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.b_5"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_5",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "b_5",
+                    "unit": "MPa*mm^{-3/2}",
+                    "value": 0.00010562766682693808
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient c_-1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.c_-1"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:c_-1",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "c_-1",
+                    "unit": "MPa*mm^{3/2}",
+                    "value": null
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient c_0.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.c_0"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:c_0",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "c_0",
+                    "unit": "MPa*mm^{1}",
+                    "value": null
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient c_1.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.c_1"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:c_1",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "c_1",
+                    "unit": "MPa*mm^{1/2}",
+                    "value": null
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient c_2.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.c_2"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:c_2",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "c_2",
+                    "unit": "MPa",
+                    "value": null
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient c_3.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.c_3"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:c_3",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "c_3",
+                    "unit": "MPa*mm^{-1/2}",
+                    "value": null
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient c_4.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.c_4"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:c_4",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "c_4",
+                    "unit": "MPa*mm^{-1}",
+                    "value": null
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Williams coefficient c_5.",
+                    "legacy_aliases": [
+                        "Williams_fit_results.c_5"
+                    ],
+                    "method_id": "crackpy.fracture.williams_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:c_5",
+                    "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+                    "statistic": null,
+                    "symbol": "c_5",
+                    "unit": "MPa*mm^{-3/2}",
+                    "value": null
+                }
+            ],
+            "result_id": "result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+            "result_schema_version": "crackpy.result_record.williams_fit.v1",
+            "run_id": "run:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d"
+        }
+    ]
+}

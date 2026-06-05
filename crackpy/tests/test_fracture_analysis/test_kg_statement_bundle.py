@@ -1,10 +1,10 @@
 from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
-from crackpy.results.williams_provenance import build_williams_fit_envelope
+from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_analysis
 from crackpy.tests.test_fracture_analysis.test_williams_provenance import _fake_analysis
 
 
 def test_envelope_to_kg_statement_bundle_exports_result_and_quantity_statements():
-    envelope = build_williams_fit_envelope(_fake_analysis(), crackpy_version="test-version")
+    envelope = build_williams_fit_envelope_from_analysis(_fake_analysis(), crackpy_version="test-version")
     bundle = envelope_to_kg_statement_bundle(envelope)
     payload = bundle.to_dict()
 

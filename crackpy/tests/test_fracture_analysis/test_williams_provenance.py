@@ -1,10 +1,11 @@
 from pathlib import Path
+from inspect import signature
 from types import SimpleNamespace
 
 import pytest
 
+from crackpy.results import result_data
 from crackpy.results.result_data import (
-    WILLIAMS_FIT_ENVELOPE_SCHEMA,
     AnalysisRun,
     ArtifactRef,
     CrackTipEstimateResult,
@@ -21,7 +22,7 @@ from crackpy.results.result_data import (
     to_jsonable,
     write_json_file,
 )
-from crackpy.results.provenance import SourceDependency
+from crackpy.provenance import SourceDependency
 from crackpy.fracture_analysis.methods.williams_fit.parameters import (
     RESOLVED_OPTIMIZATION_ORIGIN,
     WilliamsFitResultParameters,
@@ -32,7 +33,7 @@ from crackpy.fracture_analysis.methods.williams_fit import load_williams_fit_spe
 
 
 def test_generic_provenance_types_are_available_from_deeper_module():
-    from crackpy.results.provenance import MethodResultSource, SourceDependency, SourceParameters, SourceQuantity
+    from crackpy.provenance import MethodResultSource, SourceDependency, SourceParameters, SourceQuantity
 
     assert MethodResultSource.__name__ == "MethodResultSource"
     assert SourceDependency.__name__ == "SourceDependency"
@@ -47,6 +48,13 @@ def test_williams_fit_spec_loads_from_method_module():
 
     assert spec.schemas.envelope == "crackpy.result_envelope.williams_fit.v1"
     assert spec.dependencies["crack_tip_frame"].role == "used_crack_tip_frame"
+
+
+def test_generic_result_records_do_not_define_williams_schema_versions():
+    assert not hasattr(result_data, "WILLIAMS_FIT_ENVELOPE_SCHEMA")
+    assert not hasattr(result_data, "WILLIAMS_FIT_RESULT_SCHEMA")
+    assert not hasattr(result_data, "WILLIAMS_FIT_CONFIGURATION_SCHEMA")
+    assert not hasattr(result_data, "WILLIAMS_FIT_KG_BUNDLE_SCHEMA")
 
 
 def test_canonical_json_hash_is_stable_for_key_order():
@@ -154,10 +162,11 @@ def test_result_envelope_to_dict_contains_schema_and_nested_records(tmp_path):
         crack_tip_estimates=[estimate],
         analysis_runs=[run],
         results=[result],
+        envelope_schema_version=load_williams_fit_spec().schemas.envelope,
     )
 
     payload = envelope.to_dict()
-    assert payload["envelope_schema_version"] == WILLIAMS_FIT_ENVELOPE_SCHEMA
+    assert payload["envelope_schema_version"] == load_williams_fit_spec().schemas.envelope
     assert payload["results"][0]["quantities"][0]["legacy_aliases"] == ["Williams_fit_results.K_I"]
 
     target = tmp_path / "envelope.json"
@@ -165,7 +174,86 @@ def test_result_envelope_to_dict_contains_schema_and_nested_records(tmp_path):
     assert target.read_text(encoding="utf-8").startswith("{")
 
 
-from crackpy.results.williams_provenance import build_williams_fit_envelope, williams_fit_source_from_analysis
+def test_provenance_records_expose_explicit_identity_properties():
+    input_record = InputRecord(input_id="input:demo", data_ref="demo.txt")
+    frame = CrackTipFrame(
+        frame_id="frame:demo",
+        tip_id="tip:demo",
+        origin_mm={"x": 1.0, "y": 2.0},
+        angle_deg=3.0,
+    )
+    estimate = CrackTipEstimateResult(
+        estimate_id="estimate:demo",
+        input_id=input_record.input_id,
+        method_id="crackpy.crack_tip.manual_import",
+        configuration_id="configuration:demo",
+        frame_id=frame.frame_id,
+        source="manual import",
+        observed_mm={"x": 1.0, "y": 2.0},
+        corrected_mm={"x": 1.0, "y": 2.0},
+    )
+
+    assert input_record.provenance_id == "input:demo"
+    assert frame.provenance_id == "frame:demo"
+    assert estimate.provenance_id == "estimate:demo"
+
+
+def test_provenance_spec_models_document_all_fields():
+    from crackpy.provenance import spec as spec_models
+    from crackpy.fracture_analysis.methods.williams_fit import spec_loader as williams_spec_models
+
+    for model in (
+        spec_models.SchemaVersions,
+        spec_models.MethodSpec,
+        spec_models.DependencySpec,
+        spec_models.QuantitySpec,
+        spec_models.ProvenanceSliceSpec,
+        williams_spec_models.WilliamsCoefficientQuantitySpec,
+        williams_spec_models.WilliamsFitSliceSpec,
+    ):
+        missing_descriptions = [
+            field_name
+            for field_name, model_field in model.model_fields.items()
+            if not model_field.description
+        ]
+        assert missing_descriptions == []
+
+
+def test_generic_provenance_contains_no_coefficient_specific_schema_or_builder_api():
+    from crackpy.provenance import MethodResultEnvelopeBuilder
+    from crackpy.provenance import spec as spec_models
+
+    assert not hasattr(spec_models, "CoefficientQuantitySpec")
+    assert "coefficient_quantity" not in spec_models.ProvenanceSliceSpec.model_fields
+    assert "coefficient_unit" not in signature(MethodResultEnvelopeBuilder.result_quantity_from_source).parameters
+
+
+def test_generic_provenance_contains_no_method_specific_vocabulary():
+    from crackpy import provenance
+
+    forbidden_terms = ("williams", "coefficient")
+    offenders = []
+    for path in Path(provenance.__file__).parent.glob("*.py"):
+        text = path.read_text(encoding="utf-8").lower()
+        for term in forbidden_terms:
+            if term in text:
+                offenders.append(f"{path.name}:{term}")
+
+    assert offenders == []
+
+
+def test_source_dependency_record_requires_explicit_provenance_identity():
+    class UnidentifiedRecord:
+        frame_id = "frame:legacy-shape"
+
+    with pytest.raises(TypeError, match="provenance_id"):
+        SourceDependency(dependency_name="crack_tip_frame", record=UnidentifiedRecord())
+
+
+from crackpy.fracture_analysis.methods.williams_fit import (
+    build_williams_fit_envelope_from_analysis,
+    source_from_analysis,
+)
 
 
 def _fake_analysis():
@@ -220,7 +308,7 @@ def _fake_analysis():
 
 
 def test_build_williams_fit_envelope_maps_current_result_section():
-    envelope = build_williams_fit_envelope(_fake_analysis(), crackpy_version="test-version")
+    envelope = build_williams_fit_envelope_from_analysis(_fake_analysis(), crackpy_version="test-version")
     payload = envelope.to_dict()
 
     assert payload["envelope_schema_version"] == "crackpy.result_envelope.williams_fit.v1"
@@ -254,7 +342,7 @@ def test_source_dependency_requires_record_or_target_id_exclusively():
 
 
 def test_williams_fit_source_snapshot_uses_dependencies_parameters_and_quantities():
-    source = williams_fit_source_from_analysis(_fake_analysis())
+    source = source_from_analysis(_fake_analysis())
 
     assert source.inputs[0].input_id == "input:DemoNodemap"
     assert "crack_tip_frame" not in source.parameters.result_parameters
@@ -271,6 +359,14 @@ def test_williams_fit_source_snapshot_uses_dependencies_parameters_and_quantitie
         if quantity.quantity_name == "williams_coefficient" and quantity.qualifiers["term_order"] == -1
     ]
     assert {quantity.qualifiers["coefficient_series"] for quantity in coefficient_quantities} == {"a", "b", "c"}
+
+
+def test_williams_fit_source_from_analysis_requires_input_identity():
+    analysis = _fake_analysis()
+    del analysis.nodemap_file
+
+    with pytest.raises(AttributeError, match="nodemap_file"):
+        source_from_analysis(analysis)
 
 
 def test_williams_fit_parameter_model_documents_explicit_method_fields():
@@ -298,7 +394,7 @@ def test_williams_fit_spec_defines_quantities_dependencies_and_lower_case_series
 
 
 def test_build_williams_fit_envelope_uses_normalized_source_parameters():
-    envelope = build_williams_fit_envelope(_fake_analysis(), crackpy_version="test-version")
+    envelope = build_williams_fit_envelope_from_analysis(_fake_analysis(), crackpy_version="test-version")
     configuration = envelope.configurations[0]
 
     assert "crack_tip_frame" not in configuration.result_parameters
@@ -311,7 +407,7 @@ def test_build_williams_fit_envelope_rejects_missing_williams_results():
     analysis.williams_fit_res = None
 
     with pytest.raises(ValueError, match="Williams fit results"):
-        build_williams_fit_envelope(analysis, crackpy_version="test-version")
+        build_williams_fit_envelope_from_analysis(analysis, crackpy_version="test-version")
 
 
 from crackpy.results.write import OutputWriter

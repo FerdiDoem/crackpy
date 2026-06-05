@@ -8,12 +8,6 @@ import math
 from pathlib import Path
 from typing import Any, Mapping
 
-WILLIAMS_FIT_ENVELOPE_SCHEMA = "crackpy.result_envelope.williams_fit.v1"
-WILLIAMS_FIT_RESULT_SCHEMA = "crackpy.result_record.williams_fit.v1"
-WILLIAMS_FIT_CONFIGURATION_SCHEMA = "crackpy.configuration.williams_fit.v1"
-WILLIAMS_FIT_KG_BUNDLE_SCHEMA = "crackpy.kg_statement_bundle.williams_fit.v1"
-
-
 def to_jsonable(value: Any) -> Any:
     """Convert dataclasses and common scientific values to strict JSON values."""
     if is_dataclass(value):
@@ -63,15 +57,35 @@ def write_json_file(payload: Any, path: str | Path) -> Path:
 
 @dataclass(frozen=True)
 class InputRecord:
+    """Canonical provenance record for one primary input.
+
+    `input_id` is the stable identity used in dependency edges. `data_ref`
+    points to the input data. `source_metadata` carries optional source-system
+    facts. `source_label` is a human/workflow label. `source_hash` identifies
+    input content when available.
+    """
+
     input_id: str
     data_ref: str
     source_metadata: Mapping[str, Any] = field(default_factory=dict)
     source_label: str | None = None
     source_hash: str | None = None
 
+    @property
+    def provenance_id(self) -> str:
+        return self.input_id
+
 
 @dataclass(frozen=True)
 class MethodMetadata:
+    """Metadata for a registered method used by a result envelope.
+
+    `method_id` is the stable method identity. `display_name` is report-facing.
+    `kind` classifies the method. `method_revision` tracks semantic method
+    changes. `implementation_ref` points to the current code. `aliases` and
+    `references` connect legacy names and scientific sources.
+    """
+
     method_id: str
     display_name: str
     kind: str
@@ -80,9 +94,22 @@ class MethodMetadata:
     aliases: list[str] = field(default_factory=list)
     references: list[str] = field(default_factory=list)
 
+    @property
+    def provenance_id(self) -> str:
+        return self.method_id
+
 
 @dataclass(frozen=True)
 class NormalizedConfiguration:
+    """Resolved configuration and hashes for one method run.
+
+    `configuration_id` is the stable envelope identity. `schema_version`
+    identifies the configuration shape. `result_parameters` and
+    `parameter_origins` define the recomputation-relevant payload.
+    `adapter_policy` records projection policy. `parameter_hash` and
+    `configuration_hash` are deterministic SHA-256 hashes over those scopes.
+    """
+
     configuration_id: str
     schema_version: str
     result_parameters: Mapping[str, Any]
@@ -120,18 +147,43 @@ class NormalizedConfiguration:
             configuration_hash=sha256_canonical_json(configuration_payload),
         )
 
+    @property
+    def provenance_id(self) -> str:
+        return self.configuration_id
+
 
 @dataclass(frozen=True)
 class CrackTipFrame:
+    """Resolved crack-tip coordinate frame used by a method.
+
+    `frame_id` is the provenance identity. `tip_id` names the crack-tip entity.
+    `origin_mm` stores the frame origin in millimetres. `angle_deg` stores the
+    in-plane orientation in degrees. `compatibility_side` preserves legacy
+    left/right vocabulary when available.
+    """
+
     frame_id: str
     tip_id: str
     origin_mm: Mapping[str, float | None]
     angle_deg: float | None
     compatibility_side: str | None = None
 
+    @property
+    def provenance_id(self) -> str:
+        return self.frame_id
+
 
 @dataclass(frozen=True)
 class CrackTipEstimateResult:
+    """Crack-tip estimate record linked into an analysis run.
+
+    `estimate_id` is the provenance identity. `input_id`, `method_id`,
+    `configuration_id`, and `frame_id` link the estimate to its producing
+    context. `source` describes where the estimate came from. `observed_mm`,
+    `corrected_mm`, and optional `correction_delta_mm` carry the positions.
+    `source_estimate_id` links to an upstream estimate when one exists.
+    """
+
     estimate_id: str
     input_id: str
     method_id: str
@@ -143,9 +195,20 @@ class CrackTipEstimateResult:
     correction_delta_mm: Mapping[str, float | None] | None = None
     source_estimate_id: str | None = None
 
+    @property
+    def provenance_id(self) -> str:
+        return self.estimate_id
+
 
 @dataclass(frozen=True)
 class DependencyEdge:
+    """Directed dependency edge inside an analysis run.
+
+    `source_id` is the run or record using another record. `target_id` is the
+    depended-on provenance identity. `role` describes the relationship.
+    `target_type` records the expected target record class for projections.
+    """
+
     source_id: str
     target_id: str
     role: str
@@ -154,6 +217,14 @@ class DependencyEdge:
 
 @dataclass(frozen=True)
 class AnalysisRun:
+    """One execution of a registered method over input records.
+
+    `run_id` is the run identity. `method_id` and `method_revision` identify the
+    method semantics. `input_ids`, `configuration_id`, and `dependencies` link
+    the run context. `parameter_hash` supports stale-result checks.
+    `crackpy_version`, `started_at`, and `completed_at` record execution facts.
+    """
+
     run_id: str
     method_id: str
     method_revision: str
@@ -165,9 +236,21 @@ class AnalysisRun:
     started_at: str | None = None
     completed_at: str | None = None
 
+    @property
+    def provenance_id(self) -> str:
+        return self.run_id
+
 
 @dataclass(frozen=True)
 class ResultQuantity:
+    """Canonical scalar or small result quantity.
+
+    `quantity_id` is the quantity identity. `result_id` links to the containing
+    result record. `symbol`, `description`, `value`, and `unit` define the
+    scientific output. Optional relationship, statistic, path, and legacy alias
+    fields support derived quantities and compatibility projections.
+    """
+
     quantity_id: str
     result_id: str
     symbol: str
@@ -180,27 +263,60 @@ class ResultQuantity:
     path_index: int | None = None
     legacy_aliases: list[str] = field(default_factory=list)
 
+    @property
+    def provenance_id(self) -> str:
+        return self.quantity_id
+
 
 @dataclass(frozen=True)
 class ArtifactRef:
+    """Reference to a produced artifact.
+
+    `artifact_id` is the artifact identity. `role` describes its purpose.
+    `path` points to the artifact. Optional `schema_version` and `content_hash`
+    identify the artifact shape and bytes when available.
+    """
+
     artifact_id: str
     role: str
     path: str
     schema_version: str | None = None
     content_hash: str | None = None
 
+    @property
+    def provenance_id(self) -> str:
+        return self.artifact_id
+
 
 @dataclass(frozen=True)
 class ResultRecord:
+    """Record for one method result.
+
+    `result_id` is the result identity. `run_id` links to the producing run.
+    `result_schema_version` identifies the quantity/artifact shape.
+    `quantities` carries canonical values. `artifacts` links optional outputs.
+    """
+
     result_id: str
     run_id: str
     result_schema_version: str
     quantities: list[ResultQuantity]
     artifacts: list[ArtifactRef] = field(default_factory=list)
 
+    @property
+    def provenance_id(self) -> str:
+        return self.result_id
+
 
 @dataclass(frozen=True)
 class ResultEnvelope:
+    """Top-level result/provenance envelope.
+
+    Lists group the input, method, configuration, crack-tip, run, and result
+    records that belong together. `envelope_schema_version` names the envelope
+    shape for serialization and downstream projections.
+    """
+
     input_records: list[InputRecord]
     methods: list[MethodMetadata]
     configurations: list[NormalizedConfiguration]
@@ -208,7 +324,7 @@ class ResultEnvelope:
     crack_tip_estimates: list[CrackTipEstimateResult]
     analysis_runs: list[AnalysisRun]
     results: list[ResultRecord]
-    envelope_schema_version: str = WILLIAMS_FIT_ENVELOPE_SCHEMA
+    envelope_schema_version: str
 
     def to_dict(self) -> dict[str, Any]:
         return to_jsonable(self)
@@ -216,6 +332,13 @@ class ResultEnvelope:
 
 @dataclass(frozen=True)
 class KGStatement:
+    """Compact knowledge-graph statement derived from an envelope.
+
+    `subject_id`, `key`, and `value` form the statement. `data_type`, `unit`,
+    `description`, `metadata_type`, `source`, and `related_to` make the compact
+    projection queryable. `subject_uri` is optional URI materialization.
+    """
+
     subject_id: str
     key: str
     value: Any
@@ -230,6 +353,13 @@ class KGStatement:
 
 @dataclass(frozen=True)
 class KGStatementBundle:
+    """Compact KG statement collection.
+
+    `bundle_schema_version` identifies the bundle shape. URI and descriptor
+    policies document projection choices. `statements` is the flat statement
+    list, while `groups` provides grouped views over the same statements.
+    """
+
     bundle_schema_version: str
     uri_policy: str
     descriptor_field_policy: str
@@ -242,6 +372,12 @@ class KGStatementBundle:
 
 @dataclass(frozen=True)
 class VisualizationNode:
+    """Graph visualization node.
+
+    `id` is the rendered node identity. `type` classifies the node. `label` is
+    the visible graph label. `data` carries optional node details for the UI.
+    """
+
     id: str
     type: str
     label: str
@@ -250,6 +386,12 @@ class VisualizationNode:
 
 @dataclass(frozen=True)
 class VisualizationEdge:
+    """Graph visualization edge.
+
+    `source` and `target` identify connected nodes. `role` is the semantic edge
+    role from provenance. `label` is the visible graph edge label.
+    """
+
     source: str
     target: str
     role: str
@@ -258,6 +400,12 @@ class VisualizationEdge:
 
 @dataclass(frozen=True)
 class VisualizationGraph:
+    """Graph visualization payload.
+
+    `nodes` and `edges` are the renderable graph projection derived from a
+    result/provenance envelope.
+    """
+
     nodes: list[VisualizationNode]
     edges: list[VisualizationEdge]
 

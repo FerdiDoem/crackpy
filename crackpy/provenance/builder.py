@@ -1,12 +1,12 @@
 """Shared builders for result/provenance envelopes."""
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
-from crackpy.results.provenance.source import MethodResultSource, SourceQuantity
-from crackpy.results.provenance.spec import DependencySpec, ProvenanceSliceSpec
+from crackpy.provenance.source import MethodResultSource, ProvenanceIdentified, SourceQuantity
+from crackpy.provenance.spec import DependencySpec, ProvenanceSliceSpec
 from crackpy.results.result_data import (
     DependencyEdge,
     InputRecord,
@@ -21,25 +21,19 @@ RecordT = TypeVar("RecordT")
 
 @dataclass(frozen=True)
 class MethodResultEnvelopeBuilder:
-    """Project a method source snapshot and slice spec into shared result records."""
+    """Project a method source snapshot and slice spec into shared result records.
+
+    `source` carries runtime facts extracted by a method-local source adapter.
+    `spec` carries stable schema, method, dependency, quantity, and alias
+    definitions. Keeping both explicit prevents the builder from reading mutable
+    analysis objects or method modules directly.
+    """
 
     source: MethodResultSource
     spec: ProvenanceSliceSpec
 
-    def record_id(self, record: Any) -> str:
-        for attr in (
-            "frame_id",
-            "estimate_id",
-            "input_id",
-            "configuration_id",
-            "result_id",
-            "artifact_id",
-            "method_id",
-        ):
-            value = getattr(record, attr, None)
-            if value is not None:
-                return str(value)
-        raise ValueError(f"Dependency record of type {type(record).__name__} has no supported ID field.")
+    def record_id(self, record: ProvenanceIdentified) -> str:
+        return record.provenance_id
 
     def dependency_record(self, dependency_name: str, record_type: type[RecordT]) -> RecordT:
         for dependency in self.source.dependencies:
@@ -137,30 +131,7 @@ class MethodResultEnvelopeBuilder:
         result_id: str,
         method_id: str,
         source_quantity: SourceQuantity,
-        coefficient_unit: Callable[[Any], str] | None = None,
     ) -> ResultQuantity:
-        coefficient_quantity = self.spec.coefficient_quantity
-        if coefficient_quantity is not None and source_quantity.quantity_name == coefficient_quantity.quantity_name:
-            coefficient_series = str(source_quantity.qualifiers["coefficient_series"])
-            if coefficient_series not in coefficient_quantity.allowed_coefficient_series:
-                raise ValueError(f"Unsupported coefficient series: {coefficient_series!r}")
-            if coefficient_unit is None:
-                raise ValueError("Coefficient quantities require a coefficient_unit callback.")
-            term_order = source_quantity.qualifiers["term_order"]
-            symbol = coefficient_quantity.symbol_template.format(
-                coefficient_series=coefficient_series,
-                term_order=term_order,
-            )
-            return self.result_quantity(
-                result_id=result_id,
-                method_id=method_id,
-                symbol=symbol,
-                description=coefficient_quantity.description_template.format(symbol=symbol),
-                value=source_quantity.value,
-                unit=coefficient_unit(term_order),
-                aliases=[coefficient_quantity.legacy_alias_template.format(symbol=symbol)],
-            )
-
         quantity_spec = self.spec.quantities.get(source_quantity.quantity_name)
         if quantity_spec is None:
             raise ValueError(f"Unsupported quantity: {source_quantity.quantity_name!r}")

@@ -49,8 +49,11 @@ def test_williams_method_module_builds_source_from_typed_result():
         load_williams_fit_spec,
         source_from_result,
     )
+    from crackpy.fracture_analysis.methods.williams_fit.source_adapter import source_from_result as adapter_source_from_result
 
     frame, parameters, result = _demo_source_inputs()
+
+    assert source_from_result is adapter_source_from_result
 
     source = source_from_result(
         input_id="input:demo",
@@ -140,9 +143,9 @@ def test_run_williams_fit_protocol_uses_actual_optimizer_result_type():
     assert get_type_hints(WilliamsFitOptimizer.optimize_williams_displacements_z)["return"] is OptimizeResult
 
 
-def test_common_provenance_builder_projects_source_quantities_from_spec():
+def test_common_provenance_builder_projects_scalar_source_quantities_from_spec():
     from crackpy.fracture_analysis.methods.williams_fit import load_williams_fit_spec, source_from_result
-    from crackpy.results.provenance import MethodResultEnvelopeBuilder
+    from crackpy.provenance import MethodResultEnvelopeBuilder
 
     frame, parameters, result = _demo_source_inputs()
     spec = load_williams_fit_spec()
@@ -155,38 +158,34 @@ def test_common_provenance_builder_projects_source_quantities_from_spec():
         result=result,
     )
     builder = MethodResultEnvelopeBuilder(source, spec)
-    coefficient_quantity = next(
+    scalar_quantity = next(
         quantity
         for quantity in source.quantities
-        if quantity.quantity_name == "williams_coefficient"
-        and quantity.qualifiers["coefficient_series"] == "a"
-        and quantity.qualifiers["term_order"] == 1
+        if quantity.quantity_name == "K_I"
     )
 
     assert builder.dependency_record("crack_tip_frame", CrackTipFrame) is frame
     projected = builder.result_quantity_from_source(
         result_id="result:demo",
         method_id=spec.methods["analysis"].method_id,
-        source_quantity=coefficient_quantity,
-        coefficient_unit=lambda term_order: f"unit:{term_order}",
+        source_quantity=scalar_quantity,
     )
 
-    assert projected.symbol == "a_1"
-    assert projected.description == "Williams coefficient a_1."
-    assert projected.unit == "unit:1"
-    assert projected.legacy_aliases == ["Williams_fit_results.a_1"]
+    assert projected.symbol == "K_I"
+    assert projected.unit == "MPa*m^{1/2}"
+    assert projected.legacy_aliases == ["Williams_fit_results.K_I"]
 
 
 def test_provenance_slice_spec_allows_scalar_only_methods_without_coefficients():
     from crackpy.fracture_analysis.methods.williams_fit import load_williams_fit_spec
-    from crackpy.results.provenance import (
+    from crackpy.provenance import (
         MethodResultEnvelopeBuilder,
         MethodResultSource,
         SourceInput,
         SourceParameters,
         SourceQuantity,
     )
-    from crackpy.results.provenance.spec import ProvenanceSliceSpec
+    from crackpy.provenance.spec import ProvenanceSliceSpec
 
     spec_payload = load_williams_fit_spec().model_dump()
     spec_payload["quantities"] = {
@@ -217,6 +216,22 @@ def test_provenance_slice_spec_allows_scalar_only_methods_without_coefficients()
     assert projected.unit == "N/mm"
 
 
+def test_williams_envelope_builder_requires_stable_input_identity():
+    from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_result
+
+    frame, parameters, result = _demo_source_inputs()
+
+    with pytest.raises(ValueError, match="source_label or data_ref"):
+        build_williams_fit_envelope_from_result(
+            input_id="input:demo",
+            data_ref="",
+            source_label=None,
+            crack_tip_frame=frame,
+            parameters=parameters,
+            result=result,
+        )
+
+
 def test_run_williams_fit_returns_typed_result_from_optimization_object():
     from crackpy.fracture_analysis.methods.williams_fit import run_williams_fit
 
@@ -239,3 +254,33 @@ def test_run_williams_fit_returns_typed_result_from_optimization_object():
     assert result.coefficients.a == {-1: 0.01, 1: 2.0, 2: 1.0}
     assert result.coefficients.b == {-1: 0.02, 1: -0.5, 2: 0.3}
     assert tuple(result.coefficients.c) == (-1, 1, 2)
+
+
+def test_run_williams_fit_propagates_xy_optimization_failures():
+    from crackpy.fracture_analysis.methods.williams_fit import run_williams_fit
+
+    optimization = SimpleNamespace(
+        terms=np.asarray([-1, 1, 2]),
+        data=SimpleNamespace(disp_z=None),
+        optimize_williams_displacements_xy=lambda: (_ for _ in ()).throw(RuntimeError("xy failed")),
+    )
+
+    with pytest.raises(RuntimeError, match="xy failed"):
+        run_williams_fit(optimization)
+
+
+def test_run_williams_fit_propagates_z_optimization_failures_when_z_is_present():
+    from crackpy.fracture_analysis.methods.williams_fit import run_williams_fit
+
+    optimization = SimpleNamespace(
+        terms=np.asarray([-1, 1, 2]),
+        data=SimpleNamespace(disp_z=np.asarray([0.0, 1.0])),
+        optimize_williams_displacements_xy=lambda: SimpleNamespace(
+            x=np.asarray([0.01, 2.0, 1.0, 0.02, -0.5, 0.3]),
+            cost=0.1,
+        ),
+        optimize_williams_displacements_z=lambda: (_ for _ in ()).throw(RuntimeError("z failed")),
+    )
+
+    with pytest.raises(RuntimeError, match="z failed"):
+        run_williams_fit(optimization)

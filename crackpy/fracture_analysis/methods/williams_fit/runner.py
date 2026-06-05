@@ -32,40 +32,28 @@ def run_williams_fit(optimizer: WilliamsFitOptimizer) -> WilliamsFitResult:
     """Run Williams displacement fitting and return a typed result."""
     terms = [int(term) for term in optimizer.terms]
     n_terms = len(terms)
-    disp_z = getattr(optimizer.data, "disp_z", None)
+    disp_z = optimizer.data.disp_z
     skip_disp_z_optimization = disp_z is None or not np.any(disp_z)
 
-    try:
-        williams_results_xy = optimizer.optimize_williams_displacements_xy()
-        williams_coeffs_xy = williams_results_xy.x
+    williams_results_xy = optimizer.optimize_williams_displacements_xy()
+    williams_coeffs_xy = williams_results_xy.x
 
-        a_n = _coefficient_map(terms, williams_coeffs_xy[:n_terms])
-        b_n = _coefficient_map(terms, williams_coeffs_xy[n_terms:])
+    a_n = _coefficient_map(terms, williams_coeffs_xy[:n_terms])
+    b_n = _coefficient_map(terms, williams_coeffs_xy[n_terms:])
 
-        K_I = np.sqrt(2 * np.pi) * a_n[1] / np.sqrt(1000)
-        K_II = -np.sqrt(2 * np.pi) * b_n[1] / np.sqrt(1000)
-        T = 4 * a_n[2]
-        error_xy = williams_results_xy.cost
-        coefficients_flat = tuple(williams_coeffs_xy)
+    K_I = np.sqrt(2 * np.pi) * a_n[1] / np.sqrt(1000)
+    K_II = -np.sqrt(2 * np.pi) * b_n[1] / np.sqrt(1000)
+    T = 4 * a_n[2]
+    error_xy = williams_results_xy.cost
+    coefficients_flat = tuple(williams_coeffs_xy)
 
-        logger.debug(
-            "Williams optimization results in xy-plane: Error_xy=%s, K_I=%.2f, K_II=%.2f, T=%.2f",
-            error_xy,
-            K_I,
-            K_II,
-            T,
-        )
-    except Exception:
-        logger.exception(
-            "Williams optimization for xy failed. Corresponding Williams optimization results set to NaN."
-        )
-        coefficients_flat = tuple(np.array([np.nan] * (2 * n_terms)))
-        a_n = _coefficient_map(terms, [np.nan] * n_terms)
-        b_n = _coefficient_map(terms, [np.nan] * n_terms)
-        error_xy = np.nan
-        K_I = np.nan
-        K_II = np.nan
-        T = np.nan
+    logger.debug(
+        "Williams optimization results in xy-plane: Error_xy=%s, K_I=%.2f, K_II=%.2f, T=%.2f",
+        error_xy,
+        K_I,
+        K_II,
+        T,
+    )
 
     if skip_disp_z_optimization:
         logger.info(
@@ -84,26 +72,17 @@ def run_williams_fit(optimizer: WilliamsFitOptimizer) -> WilliamsFitResult:
             coefficients_flat=(*coefficients_flat, *tuple(np.array([np.nan] * n_terms))),
         )
 
-    try:
-        williams_results_z = optimizer.optimize_williams_displacements_z()
-        williams_coeffs_z = williams_results_z.x
-        c_n = _coefficient_map(terms, williams_coeffs_z)
-        K_III = np.sqrt(0.5 * np.pi) * c_n[1] / np.sqrt(1000)
-        error_z = williams_results_z.cost
+    williams_results_z = optimizer.optimize_williams_displacements_z()
+    williams_coeffs_z = williams_results_z.x
+    c_n = _coefficient_map(terms, williams_coeffs_z)
+    K_III = np.sqrt(0.5 * np.pi) * c_n[1] / np.sqrt(1000)
+    error_z = williams_results_z.cost
 
-        logger.debug(
-            "Williams optimization results in z-plane: Error_z=%s, K_III=%.2f",
-            error_z,
-            K_III,
-        )
-    except Exception:
-        logger.exception(
-            "Williams optimization for z-displacements failed. Corresponding Williams optimization results set to NaN."
-        )
-        williams_coeffs_z = np.array([np.nan] * n_terms)
-        c_n = _coefficient_map(terms, [np.nan] * n_terms)
-        error_z = np.nan
-        K_III = np.nan
+    logger.debug(
+        "Williams optimization results in z-plane: Error_z=%s, K_III=%.2f",
+        error_z,
+        K_III,
+    )
 
     return WilliamsFitResult(
         error_xy=error_xy,

@@ -5,7 +5,7 @@ from crackpy.fracture_analysis.optimization import OptimizationProperties
 from crackpy.input.crack_tip_info import CrackTipInfo
 from crackpy.input.input_data import InputData
 from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
-from crackpy.results.williams_provenance import build_williams_fit_envelope
+from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_analysis
 from crackpy.structure_elements.data_files import Nodemap
 from crackpy.structure_elements.material import Material
 
@@ -38,7 +38,7 @@ def test_williams_provenance_vertical_slice_on_simulation_fixture():
     )
     analysis.run()
 
-    envelope = build_williams_fit_envelope(analysis, crackpy_version="test-version")
+    envelope = build_williams_fit_envelope_from_analysis(analysis, crackpy_version="test-version")
     payload = envelope.to_dict()
     bundle = envelope_to_kg_statement_bundle(envelope).to_dict()
 

@@ -28,6 +28,10 @@ Do not mix proposed architecture into observed-system notes. If a design decisio
 
 When proposing future containers, dataclasses, configuration objects, protocols, or complex functions/classes in architecture notes, document the fields or parameters at the point of introduction. Explain both what each field means and why it exists; names and type hints alone are not sufficient for planning documents.
 
+## Inline Documentation Discipline
+
+When coding, preserve architectural intent close to the implementation. Add concise docstrings or inline comments where a design decision, dependency direction, import choice, validation rule, or naming choice would not be obvious from the code alone. Dataclasses that do not have field-level `Field(description=...)` metadata need class docstrings or nearby comments that explain what each field means and why it exists. Pydantic models should use `Field(description=...)` for every field unless the model has an explicit, documented reason not to. Keep comments decision-focused; do not narrate simple statements. When a code change reflects an architecture decision, update the relevant architecture-wiki note in the same pass.
+
 ## Subagent Discipline
 
 Use subagents to inspect the architecture wiki when the task touches architecture planning, terminology, refactor candidates, or documentation consolidation. Prefer multiple narrow, read-only subagents over one broad scan when the work spans distinct areas such as observed-system notes, glossary/terminology, and refactor planning.

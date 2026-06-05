@@ -9,7 +9,7 @@ from crackpy.fracture_analysis.crack_tip import unit_of_williams_coefficients
 from crackpy.results.graph_visualization import envelope_to_visualization_graph
 from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
 from crackpy.results.result_data import write_json_file
-from crackpy.results.williams_provenance import build_williams_fit_envelope
+from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_analysis
 
 logger = logging.getLogger(__name__)
 
@@ -659,7 +659,7 @@ class OutputWriter:
         output_path = self._make_path(path if path is not None else self.path)
         stem = Path(self.filename).stem
 
-        envelope = build_williams_fit_envelope(self.analysis)
+        envelope = build_williams_fit_envelope_from_analysis(self.analysis)
         kg_statement_bundle = envelope_to_kg_statement_bundle(envelope)
         visualization_graph = envelope_to_visualization_graph(envelope)
 

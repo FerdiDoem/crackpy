@@ -813,7 +813,7 @@ Status: accepted for implementation
 
 Decision:
 
-Williams-specific parameters, typed result records, numerical runner code, provenance source construction, envelope builder, and slice spec should live under `crackpy.fracture_analysis.methods.williams_fit`. Generic provenance source/spec helpers remain under `crackpy.results.provenance`.
+Williams-specific parameters, typed result records, numerical runner code, source adapter construction, envelope builder, and slice spec should live under `crackpy.fracture_analysis.methods.williams_fit`. Generic provenance source/spec helpers initially lived under `crackpy.results.provenance`; that location is superseded by the 2026-06-06 first-class provenance package decision.
 
 Rationale:
 
@@ -824,7 +824,7 @@ This also sets the intended pattern for CJP and J-integral work. Each method sho
 Consequences:
 
 - `crackpy.fracture_analysis.methods.williams_fit` is the canonical Williams method module.
-- `crackpy.results.provenance` is not a home for method-specific adapter packages.
+- `crackpy.provenance` is not a home for method-specific adapter packages.
 - `FractureAnalysis` may delegate to method modules during migration, but it should not remain the long-term owner of method result logic.
 - CJP and J-integral refactors should follow the same vertical-slice pattern before introducing a broad method registry or universal method package.
 
@@ -848,14 +848,93 @@ The shared builder owns:
 
 Method-specific wrappers still own run/result ID policy, method-created dependency records such as the first Williams-fit crack-tip estimate record, and method-specific unit logic such as Williams coefficient units by term order.
 
-Coefficient quantity definitions are optional in `ProvenanceSliceSpec`. Scalar-only methods such as an initial J-integral slice should not be forced to define Williams-style coefficient-series metadata.
+The generic `ProvenanceSliceSpec` stays scalar-only. Repeated method-specific result patterns, such as Williams coefficient-series metadata, belong in a method-local spec extension such as `WilliamsFitSliceSpec`, not in `crackpy.provenance`.
 
 Rationale:
 
-The first Williams-fit implementation placed generic helper functions inside `crackpy.fracture_analysis.methods.williams_fit.builder`. That improved locality for the initial slice but made reusable provenance projection look Williams-specific. Moving generic projection into `crackpy.results.provenance` keeps the common module explicit while preserving method locality for extraction, numerical results, spec loading, and method-specific orchestration.
+The first Williams-fit implementation placed generic helper functions inside `crackpy.fracture_analysis.methods.williams_fit.builder`. That improved locality for the initial slice but made reusable provenance projection look Williams-specific. Moving generic projection into `crackpy.provenance` keeps the common module explicit while preserving method locality for extraction, numerical results, spec loading, and method-specific orchestration.
 
 Consequences:
 
 - CJP and J-integral slices should reuse `MethodResultEnvelopeBuilder` for shared projection rather than copying Williams helper functions.
 - Method wrappers may remain small and explicit where they encode method-specific identity, dependency-record creation, or scientific unit rules.
-- `crackpy.results.provenance` remains a shared provenance module, not a package for method-specific adapters.
+- `crackpy.provenance` remains a shared provenance module, not a package for method-specific adapters.
+- Method-specific repeated quantity definitions should be introduced by extending the method's spec loader/model, not by adding fields to the generic provenance spec or builder.
+
+## 2026-06-06: Provenance Is A First-Class Package
+
+Status: accepted for implementation
+
+Decision:
+
+Generic provenance code should live under `crackpy.provenance`, not under `crackpy.results.provenance` and not under `crackpy.fracture_analysis`. Williams-specific extraction code should be named as a source adapter, currently `crackpy.fracture_analysis.methods.williams_fit.source_adapter`.
+
+Rationale:
+
+Provenance is not just result I/O and not just fracture-analysis implementation detail. It describes traceability records, source snapshots, slice specs, and envelope projection that future detection, fracture-analysis, graph, KG, and export workflows can share. A first-class package makes that seam visible while keeping method-specific knowledge method-local.
+
+Consequences:
+
+- `crackpy.provenance` owns `MethodResultSource`, source snapshot records, `ProvenanceSliceSpec`, and `MethodResultEnvelopeBuilder`.
+- Method modules own source adapters and method-specific envelope wrappers.
+- Result plotting and writing must not be imported eagerly by `crackpy.results.__init__`, because first-class provenance imports lightweight result records and should not trigger fracture-analysis plotting/import cycles.
+- Empty transitional provenance directories should be removed rather than left as misleading structure.
+
+## 2026-06-06: Scientific Method Code Fails Fast
+
+Status: accepted for implementation
+
+Decision:
+
+Scientific method runners and method-local source adapters should fail early and visibly when unexpected data, missing identities, failed optimizations, or inconsistent method outputs are encountered. They should not catch broad exceptions and continue with fabricated `NaN`, empty dictionaries, or `unknown_*` identifiers.
+
+Explicit invariant checks remain appropriate when they make a boundary clearer, for example rejecting a missing dependency name, a missing Williams coefficient definition, a source without inputs, or a source dependency with both `record` and `target_id`. These checks should raise clear exceptions rather than silently repairing the input.
+
+Rationale:
+
+Silent recovery makes scientific results hard to trust and hard to test. A Williams optimization failure, missing nodemap identity, missing coefficient series, or malformed provenance source should stop the run at the point of failure so the cause is inspectable. Expected absence of a measured quantity can still be represented explicitly, such as unavailable z-displacement producing unavailable Mode III quantities, but unexpected computation failure must not be converted into a valid-looking result.
+
+Consequences:
+
+- Williams runner optimization exceptions propagate to callers.
+- Williams source adapters require the current analysis object to expose the identities and result fields they consume.
+- Builders should prefer required IDs, frame IDs, or explicit exceptions over `unknown_input`, `unknown_side`, or similar fallback identifiers.
+- Tests should cover failure propagation and boundary validation directly.
+
+## 2026-06-06: Provenance Records Expose Explicit Identity
+
+Status: accepted for implementation
+
+Decision:
+
+Typed records that can appear as provenance dependency targets should expose a `provenance_id` property. Generic builders should use that property instead of scanning for possible ID field names such as `frame_id`, `estimate_id`, `input_id`, `result_id`, or `method_id`.
+
+Rationale:
+
+Dynamic ID discovery hides the contract between source dependencies and dependency edges. It also invites broad `Any` types and string coercion in generic code. A `provenance_id` property keeps the type-specific field name local to the record and gives generic provenance code one explicit interface.
+
+Consequences:
+
+- `SourceDependency.record` should require records that expose `provenance_id`; otherwise adapters should pass `target_id`.
+- Result/provenance record dataclasses should document their fields and expose `provenance_id` where they can be dependency targets.
+- Builders should not maintain hard-coded lists of possible ID field names.
+
+## 2026-06-06: Slice Definitions Have One Source Of Truth
+
+Status: accepted for implementation
+
+Decision:
+
+Concrete per-method and per-slice definitions should live in exactly one place. For the Williams-fit provenance slice, YAML owns schema-version strings, method metadata, dependency roles, quantity definitions, aliases, and coefficient-series definitions. Python owns typed validation models, runtime extraction, invariant checks, hashing, and envelope construction logic.
+
+Pydantic `Field(description=...)` metadata describes the validation contract; it is not a second source for concrete Williams values. Generic Python records must not define Williams schema-version constants or Williams-specific defaults.
+
+Rationale:
+
+Duplicating concrete definitions across YAML and Python makes changes ambiguous and lets tests pass against stale values. Keeping slice definitions in YAML while keeping executable behavior in Python preserves a clear boundary without turning YAML into a programming language.
+
+Consequences:
+
+- Generic result/provenance dataclasses do not carry Williams schema-version defaults.
+- Method-specific builders read schema versions and method metadata from the loaded slice spec.
+- Future CJP, J-integral, and graph/KG slices should add or compose specs instead of editing generic record constants.
