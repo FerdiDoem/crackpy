@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Williams Method Refactor Inspection</title>
+  <style>
+    :root {
+      --bg: #f7f6f1;
+      --surface: #ffffff;
+      --surface-muted: #ece8dc;
+      --ink: #20201d;
+      --muted: #69675f;
+      --line: #d8d1bf;
+      --teal: #14756f;
+      --teal-soft: #dcefeb;
+      --rust: #a84925;
+      --rust-soft: #f5dfd3;
+      --moss: #58702e;
+      --moss-soft: #e4ecd7;
+      --gold: #8a6617;
+      --gold-soft: #f2e7c7;
+      --shadow: 0 14px 34px rgba(32, 32, 29, 0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.7rem);
+      line-height: 0.98;
+      max-width: 12ch;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      font-size: 0.92rem;
+      letter-spacing: 0;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .intro {
+      min-height: 320px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(300px, 0.58fr);
+      gap: 22px;
+      padding: 28px;
+      overflow: hidden;
+    }
+
+    .intro-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 264px;
+      gap: 28px;
+    }
+
+    .eyebrow {
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .lede {
+      max-width: 60ch;
+      color: var(--muted);
+      font-size: 1rem;
+      margin-top: 14px;
+    }
+
+    .commit-card {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .commit-hash {
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: clamp(1.5rem, 6vw, 3.2rem);
+      color: var(--rust);
+      overflow-wrap: anywhere;
+      line-height: 1.05;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .meta {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fbfaf7;
+      min-width: 0;
+    }
+
+    .label {
+      color: var(--muted);
+      display: block;
+      font-size: 0.76rem;
+      margin-bottom: 3px;
+    }
+
+    code,
+    .mono {
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 0.84em;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfaf7;
+      padding: 12px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.45rem;
+      line-height: 1.1;
+    }
+
+    .section {
+      margin-top: 18px;
+      padding: 20px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .section-head p {
+      color: var(--muted);
+      max-width: 72ch;
+      font-size: 0.94rem;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .flow-lane {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfaf7;
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .flow-lane h3 {
+      margin-bottom: 10px;
+    }
+
+    .flow-steps {
+      display: grid;
+      gap: 8px;
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px;
+      background: var(--surface);
+    }
+
+    .node {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 800;
+      font-size: 0.78rem;
+      flex: 0 0 auto;
+    }
+
+    .node.teal {
+      background: var(--teal);
+    }
+
+    .node.rust {
+      background: var(--rust);
+    }
+
+    .node.moss {
+      background: var(--moss);
+    }
+
+    .node.gold {
+      background: var(--gold);
+    }
+
+    .flow-title {
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .flow-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      overflow-wrap: anywhere;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fbfaf7;
+      color: var(--ink);
+      border-radius: 7px;
+      min-height: 38px;
+      padding: 8px 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button[aria-pressed="true"] {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+      color: #073d3a;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .file-card {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfaf7;
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .file-card[hidden] {
+      display: none;
+    }
+
+    .file-path {
+      overflow-wrap: anywhere;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 0.78rem;
+      color: #2f4f4b;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 750;
+      background: var(--surface-muted);
+      color: #3c3a34;
+    }
+
+    .tag.method {
+      background: var(--teal-soft);
+    }
+
+    .tag.shared {
+      background: var(--moss-soft);
+    }
+
+    .tag.facade {
+      background: var(--rust-soft);
+    }
+
+    .tag.test {
+      background: var(--gold-soft);
+    }
+
+    .tag.doc {
+      background: #e5e2f0;
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .note-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfaf7;
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .note-card p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+
+    .command-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .command {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fbfaf7;
+      padding: 10px;
+    }
+
+    .command code {
+      overflow-wrap: anywhere;
+    }
+
+    .status {
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: var(--moss-soft);
+      color: #31430f;
+      font-size: 0.75rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .mini-graph {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfaf7;
+      padding: 10px;
+      min-height: 264px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .graph-node {
+      fill: #ffffff;
+      stroke: #b9ae98;
+      stroke-width: 1.4;
+    }
+
+    .graph-node.method {
+      fill: var(--teal-soft);
+      stroke: var(--teal);
+    }
+
+    .graph-node.shared {
+      fill: var(--moss-soft);
+      stroke: var(--moss);
+    }
+
+    .graph-node.facade {
+      fill: var(--rust-soft);
+      stroke: var(--rust);
+    }
+
+    .graph-node.output {
+      fill: var(--gold-soft);
+      stroke: var(--gold);
+    }
+
+    .graph-label {
+      font-size: 12px;
+      fill: var(--ink);
+      font-weight: 700;
+    }
+
+    .graph-sub {
+      font-size: 10px;
+      fill: var(--muted);
+    }
+
+    .edge {
+      stroke: #8e8777;
+      stroke-width: 1.5;
+      fill: none;
+      marker-end: url(#arrow);
+    }
+
+    @media (max-width: 900px) {
+      header,
+      .intro,
+      .flow,
+      .columns,
+      .file-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .intro-copy {
+        min-height: 0;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(100% - 18px, 1180px);
+        padding-top: 9px;
+      }
+
+      .intro,
+      .section,
+      .commit-card {
+        padding: 14px;
+      }
+
+      .meta-grid,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .command {
+        grid-template-columns: 1fr;
+      }
+
+      .status {
+        width: max-content;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <section class="panel intro">
+        <div class="intro-copy">
+          <div>
+            <p class="eyebrow">CrackPy inspection dashboard</p>
+            <h1>Williams-fit method refactor</h1>
+            <p class="lede">Review surface for the committed vertical slice that moved Williams fitting toward a method-owned module while keeping result/provenance exports stable.</p>
+          </div>
+          <div class="stats" aria-label="Commit summary">
+            <div class="stat"><span class="label">Files changed</span><strong>24</strong></div>
+            <div class="stat"><span class="label">Insertions</span><strong>2090</strong></div>
+            <div class="stat"><span class="label">Deletions</span><strong>362</strong></div>
+          </div>
+        </div>
+        <div class="mini-graph" aria-label="Refactor graph">
+          <svg viewBox="0 0 520 330" role="img" aria-labelledby="graph-title graph-desc">
+            <title id="graph-title">Williams-fit refactor graph</title>
+            <desc id="graph-desc">FractureAnalysis delegates to the Williams method module, which produces typed results, source snapshots, and canonical result envelopes.</desc>
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#8e8777"></path>
+              </marker>
+            </defs>
+            <path class="edge" d="M95 88 C130 88 142 88 176 88"></path>
+            <path class="edge" d="M272 88 C306 88 318 88 354 88"></path>
+            <path class="edge" d="M423 122 C423 153 423 166 423 193"></path>
+            <path class="edge" d="M354 232 C316 232 304 232 272 232"></path>
+            <path class="edge" d="M176 232 C137 232 123 232 95 232"></path>
+            <rect class="graph-node facade" x="24" y="54" width="96" height="68" rx="8"></rect>
+            <text class="graph-label" x="72" y="84" text-anchor="middle">Fracture</text>
+            <text class="graph-label" x="72" y="101" text-anchor="middle">Analysis</text>
+            <text class="graph-sub" x="72" y="116" text-anchor="middle">delegates</text>
+            <rect class="graph-node method" x="176" y="54" width="112" height="68" rx="8"></rect>
+            <text class="graph-label" x="232" y="84" text-anchor="middle">runner.py</text>
+            <text class="graph-sub" x="232" y="106" text-anchor="middle">fit execution</text>
+            <rect class="graph-node method" x="354" y="54" width="116" height="68" rx="8"></rect>
+            <text class="graph-label" x="412" y="84" text-anchor="middle">result.py</text>
+            <text class="graph-sub" x="412" y="106" text-anchor="middle">typed output</text>
+            <rect class="graph-node method" x="354" y="194" width="116" height="68" rx="8"></rect>
+            <text class="graph-label" x="412" y="224" text-anchor="middle">provenance.py</text>
+            <text class="graph-sub" x="412" y="246" text-anchor="middle">source snapshot</text>
+            <rect class="graph-node shared" x="176" y="194" width="112" height="68" rx="8"></rect>
+            <text class="graph-label" x="232" y="224" text-anchor="middle">source.py</text>
+            <text class="graph-sub" x="232" y="246" text-anchor="middle">generic types</text>
+            <rect class="graph-node output" x="24" y="194" width="96" height="68" rx="8"></rect>
+            <text class="graph-label" x="72" y="224" text-anchor="middle">Envelope</text>
+            <text class="graph-sub" x="72" y="246" text-anchor="middle">KG + graph</text>
+          </svg>
+        </div>
+      </section>
+
+      <aside class="panel commit-card">
+        <div>
+          <span class="label">Committed snapshot</span>
+          <div class="commit-hash">7c822cb</div>
+        </div>
+        <div class="meta-grid">
+          <div class="meta">
+            <span class="label">Branch</span>
+            <span class="mono">codex/williams-provenance-implementation</span>
+          </div>
+          <div class="meta">
+            <span class="label">Message</span>
+            <span>refactor: introduce Williams method provenance module</span>
+          </div>
+          <div class="meta">
+            <span class="label">Phase</span>
+            <span>vertical slice</span>
+          </div>
+          <div class="meta">
+            <span class="label">Site status</span>
+            <span>post-commit inspection artifact</span>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <section class="panel section">
+      <div class="section-head">
+        <div>
+          <h2>Architecture Shift</h2>
+          <p>The important change is locality: Williams-specific fitting, parameters, typed results, provenance source construction, envelope building, and YAML definitions now live with the Williams method module.</p>
+        </div>
+      </div>
+      <div class="flow">
+        <article class="flow-lane">
+          <h3>Before</h3>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <span class="node rust">1</span>
+              <div><div class="flow-title">Mutable FractureAnalysis state</div><div class="flow-note">Williams results and coefficients were extracted from broad analysis attributes.</div></div>
+            </div>
+            <div class="flow-step">
+              <span class="node rust">2</span>
+              <div><div class="flow-title">Result-side Williams adapter</div><div class="flow-note">Method knowledge sat in result/provenance infrastructure.</div></div>
+            </div>
+            <div class="flow-step">
+              <span class="node rust">3</span>
+              <div><div class="flow-title">Harder method extension path</div><div class="flow-note">Future CJP or J-integral slices risked copying Williams details into shared result code.</div></div>
+            </div>
+          </div>
+        </article>
+        <article class="flow-lane">
+          <h3>After</h3>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <span class="node teal">1</span>
+              <div><div class="flow-title"><code>run_williams_fit()</code></div><div class="flow-note">Numerical execution lives in the method module and returns typed results.</div></div>
+            </div>
+            <div class="flow-step">
+              <span class="node teal">2</span>
+              <div><div class="flow-title"><code>source_from_result()</code></div><div class="flow-note">Typed result plus typed parameters become a minimal <code>MethodResultSource</code>.</div></div>
+            </div>
+            <div class="flow-step">
+              <span class="node teal">3</span>
+              <div><div class="flow-title">Canonical envelope and projections</div><div class="flow-note">Existing JSON, compact KG, and graph visualization behavior stay attached to stable records.</div></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel section">
+      <div class="section-head">
+        <div>
+          <h2>File Map</h2>
+          <p>Filter the committed files by responsibility. This separates method ownership, shared provenance infrastructure, compatibility surfaces, tests, and architecture notes.</p>
+        </div>
+      </div>
+      <div class="filter-row" role="toolbar" aria-label="File filters">
+        <button type="button" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" data-filter="method" aria-pressed="false">Method Module</button>
+        <button type="button" data-filter="shared" aria-pressed="false">Shared Provenance</button>
+        <button type="button" data-filter="facade" aria-pressed="false">Compatibility</button>
+        <button type="button" data-filter="test" aria-pressed="false">Tests</button>
+        <button type="button" data-filter="doc" aria-pressed="false">Docs</button>
+      </div>
+      <div class="file-grid" id="fileGrid"></div>
+    </section>
+
+    <section class="panel section">
+      <div class="section-head">
+        <div>
+          <h2>Design Decisions Preserved</h2>
+          <p>The page highlights the decisions that should matter when comparing this slice to later CJP or J-integral work.</p>
+        </div>
+      </div>
+      <div class="columns">
+        <article class="note-card">
+          <h3>Minimal source snapshot</h3>
+          <p><code>MethodResultSource</code> stays a value object with inputs, dependencies, parameters, and quantities. Method-specific concepts remain in method modules or quantity qualifiers.</p>
+        </article>
+        <article class="note-card">
+          <h3>Definitions separate from logic</h3>
+          <p><code>spec.yaml</code> owns stable schema strings, quantity aliases, dependency roles, and method metadata. Python keeps numerical work, extraction, validation, and envelope building.</p>
+        </article>
+        <article class="note-card">
+          <h3>Transition facade</h3>
+          <p><code>crackpy.results.williams_provenance</code> keeps current imports working while Williams-specific implementation moves under <code>fracture_analysis.methods.williams_fit</code>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel section">
+      <div class="section-head">
+        <div>
+          <h2>Verification</h2>
+          <p>These commands were run before the committed snapshot. The inspection page itself is a static artifact added after that commit.</p>
+        </div>
+      </div>
+      <div class="command-list">
+        <div class="command">
+          <code>.venv\Scripts\python.exe -m pytest crackpy\tests\test_fracture_analysis\test_williams_method_module.py crackpy\tests\test_fracture_analysis\test_williams_provenance.py crackpy\tests\test_fracture_analysis\test_williams_provenance_actual_data.py crackpy\tests\test_fracture_analysis\test_kg_statement_bundle.py crackpy\tests\test_fracture_analysis\test_graph_visualization.py -q</code>
+          <span class="status">19 passed</span>
+        </div>
+        <div class="command">
+          <code>.venv\Scripts\python.exe -m pytest crackpy\tests\test_fracture_analysis -q</code>
+          <span class="status">29 passed</span>
+        </div>
+        <div class="command">
+          <code>.venv\Scripts\python.exe -B docs\architecture-wiki\check_wiki.py</code>
+          <span class="status">27 files passed</span>
+        </div>
+        <div class="command">
+          <code>git diff --check -- crackpy pyproject.toml docs/architecture-wiki</code>
+          <span class="status">no errors</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel section">
+      <div class="section-head">
+        <div>
+          <h2>Follow-up Watchpoints</h2>
+          <p>Items worth checking before this pattern is reused for another method family.</p>
+        </div>
+      </div>
+      <div class="columns">
+        <article class="note-card">
+          <h3>Analysis facade shrinkage</h3>
+          <p><code>FractureAnalysis</code> still adapts legacy attributes. The next slices should avoid adding more extraction logic there.</p>
+        </article>
+        <article class="note-card">
+          <h3>Spec validation pressure</h3>
+          <p>If qualifiers grow beyond Williams coefficients, validate allowed qualifier keys through specs before expanding <code>MethodResultSource</code>.</p>
+        </article>
+        <article class="note-card">
+          <h3>Method module pattern</h3>
+          <p>CJP and J-integral should prove the same vertical shape before adding a registry or broader method abstraction.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const files = [
+      {
+        path: "crackpy/fracture_analysis/methods/williams_fit/runner.py",
+        title: "Williams numerical runner",
+        summary: "Owns the current Williams fit execution path and returns typed method output.",
+        tags: ["method"]
+      },
+      {
+        path: "crackpy/fracture_analysis/methods/williams_fit/result.py",
+        title: "Typed Williams result",
+        summary: "Defines the coefficient sets and result values passed into provenance construction.",
+        tags: ["method"]
+      },
+      {
+        path: "crackpy/fracture_analysis/methods/williams_fit/parameters.py",
+        title: "Typed result-affecting parameters",
+        summary: "Captures material and optimization values without growing the generic source object.",
+        tags: ["method"]
+      },
+      {
+        path: "crackpy/fracture_analysis/methods/williams_fit/provenance.py",
+        title: "Method-owned source construction",
+        summary: "Converts typed Williams results and parameters into a minimal MethodResultSource.",
+        tags: ["method", "shared"]
+      },
+      {
+        path: "crackpy/fracture_analysis/methods/williams_fit/builder.py",
+        title: "Williams envelope builder",
+        summary: "Builds canonical envelope records from the method source and slice spec.",
+        tags: ["method"]
+      },
+      {
+        path: "crackpy/fracture_analysis/methods/williams_fit/spec.yaml",
+        title: "Williams slice definitions",
+        summary: "Stores schema versions, method metadata, quantity aliases, and dependency roles.",
+        tags: ["method", "doc"]
+      },
+      {
+        path: "crackpy/results/provenance/source.py",
+        title: "Generic source snapshot",
+        summary: "Defines SourceInput, SourceDependency, SourceParameters, SourceQuantity, and MethodResultSource.",
+        tags: ["shared"]
+      },
+      {
+        path: "crackpy/results/provenance/spec.py",
+        title: "Generic spec loader",
+        summary: "Loads and validates provenance slice specs without knowing Williams semantics.",
+        tags: ["shared"]
+      },
+      {
+        path: "crackpy/results/williams_provenance.py",
+        title: "Compatibility facade",
+        summary: "Preserves existing public imports and maps current FractureAnalysis state into the new method module.",
+        tags: ["facade"]
+      },
+      {
+        path: "crackpy/results/kg_statement_bundle.py",
+        title: "KG projection hook",
+        summary: "Loads the Williams spec from the method module for compact statement generation.",
+        tags: ["facade", "shared"]
+      },
+      {
+        path: "crackpy/tests/test_fracture_analysis/test_williams_method_module.py",
+        title: "Method module tests",
+        summary: "Covers method-owned imports, source construction, and envelope generation.",
+        tags: ["test"]
+      },
+      {
+        path: "crackpy/tests/test_fracture_analysis/test_williams_provenance_actual_data.py",
+        title: "Actual-data smoke slice",
+        summary: "Exercises the real FractureAnalysis path against existing fixtures.",
+        tags: ["test"]
+      },
+      {
+        path: "docs/architecture-wiki/decision-log.md",
+        title: "Accepted architecture decision",
+        summary: "Records the decision that method-specific code belongs with the method module.",
+        tags: ["doc"]
+      },
+      {
+        path: "docs/architecture-wiki/refactor-candidates/010-provenance-metadata-architecture.md",
+        title: "Refactor notes",
+        summary: "Preserves implementation notes and watchpoints for future method slices.",
+        tags: ["doc"]
+      }
+    ];
+
+    const grid = document.getElementById("fileGrid");
+    const buttons = Array.from(document.querySelectorAll("[data-filter]"));
+
+    function renderFiles(filter) {
+      grid.innerHTML = "";
+      files.forEach((file) => {
+        const visible = filter === "all" || file.tags.includes(filter);
+        const article = document.createElement("article");
+        article.className = "file-card";
+        if (!visible) {
+          article.hidden = true;
+        }
+        article.dataset.tags = file.tags.join(" ");
+        article.innerHTML = `
+          <div class="tag-row">${file.tags.map((tag) => `<span class="tag ${tag}">${tag}</span>`).join("")}</div>
+          <h3>${file.title}</h3>
+          <div class="file-path">${file.path}</div>
+          <p>${file.summary}</p>
+        `;
+        grid.append(article);
+      });
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const filter = button.dataset.filter;
+        buttons.forEach((candidate) => candidate.setAttribute("aria-pressed", String(candidate === button)));
+        renderFiles(filter);
+      });
+    });
+
+    renderFiles("all");
+  </script>
+</body>
+</html>
