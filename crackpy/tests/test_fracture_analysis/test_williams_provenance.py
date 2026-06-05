@@ -218,3 +218,21 @@ def test_build_williams_fit_envelope_rejects_missing_williams_results():
 
     with pytest.raises(ValueError, match="Williams fit results"):
         build_williams_fit_envelope(analysis, crackpy_version="test-version")
+
+
+from crackpy.results.write import OutputWriter
+
+
+def test_output_writer_writes_new_provenance_artifacts_without_changing_legacy_json(tmp_path):
+    analysis = _fake_analysis()
+    writer = OutputWriter(path=tmp_path, fracture_analysis=analysis)
+
+    written = writer.write_williams_fit_provenance_json(path=tmp_path)
+
+    assert set(written) == {"envelope", "kg_statement_bundle", "visualization_graph"}
+    assert written["envelope"].name.endswith("_williams_fit_envelope.json")
+    assert written["kg_statement_bundle"].name.endswith("_williams_fit_kg_statement_bundle.json")
+    assert written["visualization_graph"].name.endswith("_williams_fit_graph.json")
+    assert written["envelope"].exists()
+    assert written["kg_statement_bundle"].exists()
+    assert written["visualization_graph"].exists()

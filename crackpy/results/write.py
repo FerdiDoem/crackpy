@@ -6,6 +6,10 @@ import logging
 
 from crackpy.fracture_analysis.analysis import FractureAnalysis
 from crackpy.fracture_analysis.crack_tip import unit_of_williams_coefficients
+from crackpy.results.graph_visualization import envelope_to_visualization_graph
+from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
+from crackpy.results.result_data import write_json_file
+from crackpy.results.williams_provenance import build_williams_fit_envelope
 
 logger = logging.getLogger(__name__)
 
@@ -649,6 +653,28 @@ class OutputWriter:
         json_file = Path(self.json_path) / (Path(self.filename).stem + '.json')
         with open(json_file, 'w') as outfile:
             json.dump(json_dict, outfile, indent=4, default=str)
+
+    def write_williams_fit_provenance_json(self, path=None) -> dict[str, Path]:
+        """Write canonical Williams-fit provenance artifacts without changing legacy outputs."""
+        output_path = self._make_path(path if path is not None else self.path)
+        stem = Path(self.filename).stem
+
+        envelope = build_williams_fit_envelope(self.analysis)
+        kg_statement_bundle = envelope_to_kg_statement_bundle(envelope)
+        visualization_graph = envelope_to_visualization_graph(envelope)
+
+        written = {
+            "envelope": write_json_file(envelope.to_dict(), output_path / f"{stem}_williams_fit_envelope.json"),
+            "kg_statement_bundle": write_json_file(
+                kg_statement_bundle.to_dict(),
+                output_path / f"{stem}_williams_fit_kg_statement_bundle.json",
+            ),
+            "visualization_graph": write_json_file(
+                visualization_graph.to_dict(),
+                output_path / f"{stem}_williams_fit_graph.json",
+            ),
+        }
+        return written
 
     @staticmethod
     def _make_path(output_path) -> Path:
