@@ -137,3 +137,84 @@ def test_result_envelope_to_dict_contains_schema_and_nested_records(tmp_path):
     target = tmp_path / "envelope.json"
     write_json_file(payload, target)
     assert target.read_text(encoding="utf-8").startswith("{")
+
+
+from crackpy.results.williams_provenance import build_williams_fit_envelope
+
+
+def _fake_analysis():
+    data = SimpleNamespace(
+        force=100.0,
+        cycles=200.0,
+        displacement=0.3,
+        potential=None,
+        cracklength=4.5,
+        time=None,
+    )
+    crack_tip = SimpleNamespace(
+        crack_tip_x=1.5,
+        crack_tip_y=2.5,
+        crack_tip_angle=12.0,
+        left_or_right="right",
+    )
+    material = SimpleNamespace(
+        name="AA2024-T3",
+        E=72000,
+        nu_xy=0.33,
+        sig_yield=350,
+        plane_strain=False,
+        G=27067.66917293233,
+        kappa=2.007518796992481,
+    )
+    optimization_properties = SimpleNamespace(
+        angle_gap=20,
+        min_radius=0.2,
+        max_radius=1.0,
+        tick_size=0.01,
+        terms=[-1, 1, 2],
+    )
+    return SimpleNamespace(
+        nodemap_file="DemoNodemap.txt",
+        data=data,
+        crack_tip=crack_tip,
+        material=material,
+        optimization_properties=optimization_properties,
+        williams_fit_res={
+            "Error_xy": 0.1,
+            "Error_z": float("nan"),
+            "K_I": 12.5,
+            "K_II": -2.0,
+            "K_III": float("nan"),
+            "T": 4.0,
+        },
+        williams_fit_a_n={-1: 0.01, 1: 2.0, 2: 1.0},
+        williams_fit_b_n={-1: 0.02, 1: -0.5, 2: 0.3},
+        williams_fit_c_n={-1: float("nan"), 1: float("nan"), 2: float("nan")},
+    )
+
+
+def test_build_williams_fit_envelope_maps_current_result_section():
+    envelope = build_williams_fit_envelope(_fake_analysis(), crackpy_version="test-version")
+    payload = envelope.to_dict()
+
+    assert payload["envelope_schema_version"] == "crackpy.result_envelope.williams_fit.v1"
+    assert payload["input_records"][0]["input_id"] == "input:DemoNodemap"
+    assert payload["crack_tip_frames"][0]["angle_deg"] == 12.0
+    assert payload["crack_tip_frames"][0]["compatibility_side"] == "right"
+    assert payload["analysis_runs"][0]["dependencies"][0]["role"] == "used_input"
+    assert payload["analysis_runs"][0]["crackpy_version"] == "test-version"
+
+    result = payload["results"][0]
+    quantities = {quantity["symbol"]: quantity for quantity in result["quantities"]}
+    assert quantities["K_I"]["legacy_aliases"] == ["Williams_fit_results.K_I"]
+    assert quantities["error_xy"]["legacy_aliases"] == ["Williams_fit_results.error_xy", "Error_xy"]
+    assert quantities["a_-1"]["legacy_aliases"] == ["Williams_fit_results.a_-1"]
+    assert quantities["c_1"]["value"] is None
+
+
+def test_build_williams_fit_envelope_rejects_missing_williams_results():
+    analysis = _fake_analysis()
+    analysis.williams_fit_res = None
+
+    with pytest.raises(ValueError, match="Williams fit results"):
+        build_williams_fit_envelope(analysis, crackpy_version="test-version")
