@@ -164,8 +164,25 @@ No findings closed yet.
   - Software Heritage, "SoftWare Heritage persistent IDentifiers (SWHIDs)", accessed 2026-05-15, `https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html`; basis: intrinsic content-derived identifiers as a source-backed analogy for content-addressed software/configuration traceability.
 - Result: no new source-backed terminology inconsistency was found. The checked standards support treating `Canonical result graph bundle`, `ResultQuantity`, `SoftwareConfiguration`, `Normalized configuration`, `Domain workflow runner`, `Adapter policy`, `Compatibility facade`, and detection-grid terms as local CrackPy planning vocabulary that is compatible with external standards but not dictated by them. The endpoint-inclusive `256` sample / `255` interval wording is supported by NumPy's `linspace` semantics. Existing FINDING-20260514-001 remains the only open source-backed conflict.
 
+### 2026-06-05T19:37:29+02:00
+
+- Checked range: `cb6b3694b2650f084ca6c1dd33bb127c5173cdd0..e9ac1fff8d5a427ac58a8ec6e948ccbb278d4829`; no uncommitted wiki hunks were present.
+- Changed terminology focus: agent/issue-tracker documentation vocabulary, `refactor-roadmap` sequencing, compact KG/exporter policy vocabulary, `Descriptor field`, `LiteralField`, `Subject identity policy`, `URI minting policy`, descriptor-field policy, datatype normalization, unit normalization, source-specific ontology names from an external Turtle sample, Prefect/GraphInsertion/orchestrator boundary vocabulary, content-addressed IDs, and standing `Bueckner-Chen` / `buckner_*` compatibility cleanup.
+- Read-only subagent checks:
+  - Diff extraction found the changed corpus was documentation and architecture-planning vocabulary, with no uncommitted wiki/doc hunks and no new fracture-mechanics method names beyond the standing Bueckner spelling issue.
+  - Glossary comparison found no new glossary, terminology-report, open-question, or decision-log contradiction. The new terms are framed as exporter/profile or future-planning vocabulary, not CrackPy core result containers.
+- Sources consulted:
+  - Richard Cyganiak, David Wood, and Markus Lanthaler, "RDF 1.1 Concepts and Abstract Syntax", 2014 W3C Recommendation, accessed 2026-06-05, `https://www.w3.org/TR/rdf11-concepts/`; basis: RDF graphs as subject-predicate-object triples, RDF terms, literals with datatypes, IRIs, namespaces as syntactic convenience, and RDF documents including Turtle and JSON-LD serializations.
+  - Timothy Lebo, Satya Sahoo, and Deborah McGuinness, "PROV-O: The PROV Ontology", 2013 W3C Recommendation, accessed 2026-06-05, `https://www.w3.org/TR/prov-o/`; basis: provenance vocabulary around entities, activities, agents, usage, generation, and association for optional detailed provenance mapping.
+  - W3C JSON-LD Working Group, "JSON-LD 1.1", 2020 W3C Recommendation, accessed 2026-06-05, `https://www.w3.org/TR/json-ld/`; basis: JSON-based linked-data serialization and RDF graph/dataset serialization support.
+  - Leo Sauermann and Richard Cyganiak, "Cool URIs for the Semantic Web", 2008 W3C Interest Group Note, accessed 2026-06-05, `https://www.w3.org/TR/cooluris/`; basis: stable URI/IRI design as an external web/semantic-web concern, supporting a separate URI minting policy instead of hard-coding namespaces in core records.
+  - RO-Crate contributors, "RO-Crate 1.1 Specification", accessed 2026-06-05, `https://www.researchobject.org/ro-crate/specification/1.1/introduction.html`; basis: JSON-LD research-object packaging remains an optional export/package profile rather than the canonical CrackPy scalar result model.
+  - Apache Jena project, "The core RDF API", accessed 2026-06-05, `https://jena.apache.org/documentation/rdf/`; basis: Jena models, resources, statements, and triples as RDF API/export concepts rather than CrackPy computational-core containers.
+  - Pydantic project, "JSON Schema", accessed 2026-06-05, `https://docs.pydantic.dev/usage/schema/`; basis: Pydantic can generate JSON Schema from models, supporting future schema-builder tooling without forcing Pydantic naming into domain terminology.
+- Result: no new source-backed terminology inconsistency was found. The checked sources support the wiki boundary that `Descriptor field`, `LiteralField`, subject identity policy, URI minting policy, datatype/unit normalization, Jena/RDF objects, and JSON-LD/RO-Crate forms are exporter/profile concerns, not mandatory CrackPy core record types. Existing FINDING-20260514-001 remains the only open source-backed conflict. Future specification work should cite additional sources only if KG descriptor-resource conventions, FAIR Digital Object vocabulary, FORCE11 software-citation principles, PROV-N syntax, or source-specific Turtle ontology classes become formal CrackPy claims.
+
 ## Automation State
 
-- Last checked commit: `cb6b3694b2650f084ca6c1dd33bb127c5173cdd0`
-- Last checked range: `e418d1a961784e04f7c1f0219d33855d0e7fe8eb..cb6b3694b2650f084ca6c1dd33bb127c5173cdd0`; uncommitted wiki hunks were present in `docs/architecture-wiki/README.md`, `docs/architecture-wiki/refactor-notes.md`, and `docs/architecture-wiki/refactor-roadmap.md`
-- Last run: `2026-05-15T01:20:22+02:00`
+- Last checked commit: `e9ac1fff8d5a427ac58a8ec6e948ccbb278d4829`
+- Last checked range: `cb6b3694b2650f084ca6c1dd33bb127c5173cdd0..e9ac1fff8d5a427ac58a8ec6e948ccbb278d4829`; no uncommitted wiki hunks were present
+- Last run: `2026-06-05T19:37:29+02:00`
