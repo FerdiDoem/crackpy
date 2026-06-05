@@ -38,6 +38,8 @@ Recent KG artifact and prototype review calibrates the first target: keep the ad
 
 That first slice still needs enough export policy to avoid later rework: grouping policy, subject identity policy, URI minting policy, descriptor-field policy, datatype normalization, unit normalization, and compatibility aliases for current result tags. The external JSON/Turtle artifacts show that grouped metadata statements and RDF descriptor resources are KG export representations, not CrackPy core record types.
 
+The draft field-level Williams-fit slice now lives in [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]]. It folds the preserved `result_spine_package` prototype conclusions into planning notes and should be reviewed or revised before any production result-writer, reader, or KG-export work starts.
+
 Approval gate:
 
 Do not implement result writers or readers until a field-level result/provenance specification is approved, including node types, edge roles, schema-version policy, quantity fields, artifact references, and compatibility aliases for current result tags.
@@ -162,7 +164,7 @@ Do not perform broad renames until compatibility aliases, public documentation i
 ## Suggested Specification Order
 
 1. Approve or revise this roadmap grouping.
-2. Specify one minimal result/provenance envelope and one compact KG projection for a Williams-fit or crack-tip-estimate vertical slice.
+2. Review and approve or revise the draft [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]].
 3. Expand the result/provenance spine, including canonical result graph nodes, output artifact roles, provenance edge roles, and legacy adapter aliases.
 4. Specify input identity and ordering, including `InputRecord`, `input_id`, `sequence_index`, and mapping policies.
 5. Specify crack-tip estimate and `CrackTipFrame` records.
@@ -183,10 +185,10 @@ Do not perform broad renames until compatibility aliases, public documentation i
 
 ## Follow-Up Planning Questions
 
-The resolved `OQ-*` set is sufficient to draft this roadmap. New open questions may be useful before implementation planning, but they should be added only after reviewing this grouping with maintainers. Likely areas are:
+The resolved `OQ-*` set is sufficient to draft this roadmap. New open questions may be useful before implementation planning, but they should be added only after reviewing this grouping and the first-slice specification with maintainers. Likely areas are:
 
-- which vertical slice should be the first approved paper design;
+- whether the Williams-fit slice should be the first approved paper design, or whether a crack-tip-estimate-only slice should precede it;
 - whether the result/provenance spine is one specification or split into result schema, provenance records, and KG exporter specifications;
-- how the first compact KG profile defines grouping, subject identity, URI minting, descriptor-field export, datatype normalization, and unit normalization;
+- exact schema-version strings, hash policy, angle-unit policy, and required Williams-fit quantities for the first production adapter;
 - which current public files and APIs require long-lived compatibility aliases;
 - how strict the first method-registry validation should be during development versus release builds.

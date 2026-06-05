@@ -40,6 +40,251 @@ The first slice should not attempt to introduce the full registry, fingerprint, 
 
 The `prototypes/result_spine` experiment in the prototype worktree supports the conceptual shape, but it is a clean-room prototype. It is useful evidence that the record split is coherent; it is not migration evidence for the current `InputData`, `FractureAnalysis`, and result-writer implementation.
 
+## First Williams-Fit Slice Specification
+
+Status: draft field-level planning specification
+
+This section folds the useful conclusions from the preserved `prototypes/result_spine_package` worktree prototype into the architecture wiki. It defines one minimal Williams-fit result/provenance slice on paper. It does not approve production `crackpy/` code changes, package restructuring, writer changes, reader changes, or RDF export implementation.
+
+The slice covers one Williams displacement-field fit over one nodemap-like input and one crack-tip estimate. It must be large enough to prove the result/provenance spine, but small enough to avoid landing the full method registry, implementation fingerprinting, generalized input identity model, full crack-tip-frame model, compact KG exporter, and optional detailed PROV artifact in one step.
+
+### Slice Boundary
+
+In scope:
+
+- one `InputRecord` for the displacement-field input;
+- one imported, detected, or corrected `CrackTipEstimateResult` consumed by the Williams fit;
+- one `CrackTipFrame` that records the coordinate context used by the fit;
+- one Williams-fit `AnalysisRun`;
+- one `ResultRecord` with scalar `ResultQuantity` records;
+- one compact KG statement-bundle projection;
+- compatibility aliases for current `Williams_fit_results` fields.
+
+Out of scope:
+
+- line integrals, Bueckner-Chen integrals, CJP fitting, path statistics, plots, multiprocessing, model download/cache policy, VTK export, and full detailed provenance;
+- full method-reference registry implementation;
+- production hash policy beyond the field boundaries described here;
+- RDF/Turtle rendering details, graph explorer UI, and source-specific KG namespace choices.
+
+### Minimal Envelope
+
+The first slice envelope is the smallest self-contained bundle that lets a reader resolve all IDs used by the Williams-fit result. The envelope is a planning record, not a required Python class name.
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `envelope_schema_version` | Version of this minimal envelope shape. | Lets future readers distinguish the first slice from later expanded result/provenance bundles. |
+| `input_records` | List of `InputRecord` values referenced by the run and estimate. | Keeps stable input anchors inside the same payload that carries the result. |
+| `methods` | List of `MethodMetadata` values referenced by the crack-tip estimate and Williams fit. | Separates durable method identity from current Python locations and legacy result tags. |
+| `configurations` | List of `NormalizedConfiguration` values referenced by the estimate and run. | Preserves resolved result-affecting parameters, default origins, and adapter policy boundaries. |
+| `crack_tip_frames` | List of `CrackTipFrame` values used by crack-tip-dependent analysis. | Records the coordinate context needed to interpret the Williams fit without relying only on `side`. |
+| `crack_tip_estimates` | List of `CrackTipEstimateResult` values consumed by analysis runs. | Makes crack-tip estimates first-class result dependencies instead of hidden configuration. |
+| `analysis_runs` | List of `AnalysisRun` values that generated result records. | Links method, inputs, configuration, dependencies, timing, and CrackPy version for one execution. |
+| `results` | List of `ResultRecord` values and their quantities/artifacts. | Anchors scalar scientific outputs and output projections to the run that generated them. |
+
+### InputRecord
+
+An `InputRecord` is the stable source anchor for a nodemap-like displacement-field input. It does not replace current `InputData` loading in this phase.
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `input_id` | Durable identity for the concrete input record. | Gives results and estimates a stable target that is not the DIC `stage` label. |
+| `data_ref` | Locator for the nodemap, displacement field, simulation field, or equivalent payload. | Lets adapters find or report the data source without embedding full data in the scalar result bundle. |
+| `source_metadata` | Source-system metadata such as `stage`, force, cycles, displacement, specimen, timestamp, or load. | Keeps source metadata attached to the input while preserving `stage` as metadata rather than internal ordering. |
+| `source_label` | Optional human or source-system label such as `stage=0042`. | Preserves familiar labels for reports, debugging, and compatibility output. |
+| `source_hash` | Optional content hash or source-payload hash. | Supports change detection and stale-result review when the input payload changes. |
+
+### MethodMetadata
+
+`MethodMetadata` is the first-slice method description carried in the envelope. It is smaller than the future full method registry.
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `method_id` | Stable method identity such as `crackpy.fracture.williams_fit`. | Lets provenance survive Python moves, class renames, and result-writer cleanup. |
+| `display_name` | Human-facing method label. | Supports reports and compact KG statements without making display text the durable identity. |
+| `kind` | Broad role such as `input_adapter`, `crack_tip_estimate`, or `analysis`. | Lets the first envelope distinguish imported crack-tip estimates from Williams analysis without a full registry. |
+| `method_revision` | Maintainer-controlled semantic revision for the method meaning. | Supports stale-result checks when method defaults, assumptions, outputs, units, or interpretation change. |
+| `implementation_ref` | Current Python module, class, function, or source reference. | Lets maintainers trace the run back to code while keeping current paths non-canonical. |
+| `aliases` | Compatibility names such as `Williams_fit_results` or current handoff-file names. | Lets adapters map current output vocabulary to canonical result records. |
+| `references` | Optional method-reference IDs or provisional literature keys. | Keeps the scientific basis attachable without requiring the full reference registry in the first slice. |
+
+### NormalizedConfiguration
+
+`NormalizedConfiguration` captures result-affecting parameters separately from adapter policy. This split is required before a meaningful `parameter_hash` can exist.
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `configuration_id` | Stable identity for the normalized configuration snapshot. | Gives runs and compact KG statements a stable configuration target. |
+| `schema_version` | Version of the configuration record shape. | Allows later configuration models to evolve without invalidating old envelopes silently. |
+| `result_parameters` | Resolved values that can change numerical results, result shape, units, or interpretation. | Defines the recomputation-relevant configuration scope. |
+| `parameter_origins` | Origin of each result-affecting parameter, such as caller-provided, model default, or derived default. | Makes default-driven result changes visible and auditable. |
+| `adapter_policy` | Output, cache, progress, plotting, and projection choices that should not by themselves force scientific recomputation. | Keeps side-effect policy out of the scientific parameter hash while still recording it when useful. |
+| `parameter_hash` | Stable hash over `schema_version`, `result_parameters`, and `parameter_origins`. | Lets stale-result checks detect result-affecting configuration changes without comparing raw objects. |
+| `configuration_hash` | Stable hash over the full normalized configuration, including adapter policy. | Lets tooling detect any configuration change while distinguishing adapter-only changes from scientific recomputation triggers. |
+
+For a Williams fit, first-slice `result_parameters` should include material values, fit radii, angle gap, selected Williams terms, coordinate-transform inputs that affect the fit, and any other resolved options that change the fitted coefficients or derived quantities. Output folders, plots, progress behavior, and current JSON projection choices belong in `adapter_policy`.
+
+### CrackTipFrame
+
+`CrackTipFrame` records the coordinate context used by a crack-tip-dependent method. The first slice stays 2D-compatible while preserving the path toward the broader `CrackTipFrame` concept.
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `frame_id` | Stable identity for the local crack-tip frame. | Lets analysis runs and estimates reference the exact frame used for coordinate interpretation. |
+| `tip_id` | Crack-tip identity independent of legacy labels. | Separates the physical or logical crack tip from `left` and `right` compatibility vocabulary. |
+| `origin_mm` | Crack-tip origin in millimeters in the input coordinate system. | Defines the point used for crack-tip-centered fitting and downstream result interpretation. |
+| `angle_deg` | Crack extension angle in degrees. | Records the orientation used by transforms and makes angle semantics explicit. |
+| `compatibility_side` | Optional legacy `left` or `right` label. | Preserves current file/API/report compatibility without making `side` the internal orientation model. |
+
+The first slice should use `degree` or another explicitly selected angle unit in future schema text. Current writer vocabulary such as `grad` may remain adapter vocabulary if needed for compatibility.
+
+### CrackTipEstimateResult
+
+`CrackTipEstimateResult` is a result dependency. It can represent a manual import, detector output, correction output, or later fused estimate.
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `estimate_id` | Stable identity for the crack-tip estimate result. | Allows Williams analysis to depend on a specific estimate, not on anonymous configuration values. |
+| `input_id` | `InputRecord` identity used to produce or import the estimate. | Connects the estimate back to its source displacement field or handoff record. |
+| `method_id` | Method that produced, imported, or corrected the estimate. | Makes manual import, neural detection, and correction provenance distinguishable. |
+| `configuration_id` | Configuration used by the estimate method or import adapter. | Records estimate-specific settings separately from Williams-fit settings. |
+| `frame_id` | Crack-tip frame associated with the estimate. | Connects coordinate values to the frame consumed by the analysis run. |
+| `source` | Category such as manual import, detector, correction, or fusion. | Gives compact KG queries a simple origin classification without parsing method IDs. |
+| `observed_mm` | Coordinates before correction. | Preserves the original estimate for audit and correction review. |
+| `corrected_mm` | Absolute coordinates consumed by downstream analysis. | Avoids ambiguity between relative shifts and the final crack-tip location. |
+| `correction_delta_mm` | Relative movement from observed coordinates to corrected coordinates. | Keeps correction magnitude explicit for audit and compatibility with existing delta-style methods. |
+| `source_estimate_id` | Prior estimate consumed by this estimate, when applicable. | Represents correction chains without flattening them into one anonymous coordinate pair. |
+
+### AnalysisRun And DependencyEdge
+
+`AnalysisRun` describes one execution of the Williams-fit method. A `DependencyEdge` records why the run used another record.
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `run_id` | Stable identity for one method execution. | Anchors generated results and compact KG run statements. |
+| `method_id` | Durable method identity executed by the run. | Supports method-specific query, stale-result checks, and later registry lookup. |
+| `method_revision` | Semantic method revision used during execution. | Captures the method meaning at the time of the run. |
+| `input_ids` | Input record IDs used as primary data inputs. | Keeps primary input dependencies easy to find. |
+| `configuration_id` | Normalized configuration snapshot used by the run. | Links execution to resolved result-affecting parameters. |
+| `parameter_hash` | Hash copied from the result-affecting configuration scope. | Lets run-level stale checks avoid expanding the full configuration. |
+| `dependencies` | Typed dependency edges to input, configuration, crack-tip estimate, and crack-tip frame records. | Makes non-input dependencies explicit, especially `used_crack_tip_estimate`. |
+| `started_at` | UTC start timestamp. | Supports audit, run ordering, and troubleshooting. |
+| `completed_at` | UTC completion timestamp or null for incomplete runs. | Distinguishes complete, failed, and partial execution records. |
+| `crackpy_version` | CrackPy version or prototype marker used for the run. | Preserves package-level traceability separately from method revision. |
+
+Required first-slice dependency roles:
+
+| Role | Target type | Why it exists |
+| --- | --- | --- |
+| `used_input` | `InputRecord` | States which displacement-field input the run consumed. |
+| `used_configuration` | `NormalizedConfiguration` | States which resolved Williams-fit configuration controlled the run. |
+| `used_crack_tip_estimate` | `CrackTipEstimateResult` | Makes crack-tip estimate changes result-affecting dependencies. |
+| `used_crack_tip_frame` | `CrackTipFrame` | Makes orientation and origin changes visible to stale-result checks. |
+
+### ResultRecord, ResultQuantity, And ArtifactRef
+
+`ResultRecord` is the canonical anchor for scalar Williams-fit outputs from one run. It is not the same shape as current text, current JSON sections, CSV exports, or compact KG statements.
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `result_id` | Stable identity for the result record. | Lets compact KG, adapters, plots, and later provenance artifacts refer to the same result. |
+| `run_id` | `AnalysisRun` that generated the result. | Preserves the generation link without duplicating run metadata inside every quantity. |
+| `result_schema_version` | Version of the canonical result record shape. | Makes public result meaning and migration policy explicit. |
+| `quantities` | Scalar `ResultQuantity` values produced by the run. | Separates scientific outputs from legacy writer section names. |
+| `artifacts` | `ArtifactRef` values for generated or projected outputs. | Lets the canonical result link to JSON, current JSON projection, compact KG bundle, plots, or later packages without embedding every artifact. |
+
+`ResultQuantity` fields:
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `quantity_id` | Stable identity for one scalar output. | Allows multiple methods or estimators to produce comparable symbols without collision. |
+| `symbol` | Domain-facing notation such as `K_I`, `K_II`, `K_III`, `T`, `a_1`, `b_1`, `c_1`, `error_xy`, or `error_z`. | Keeps result JSON readable and close to fracture-mechanics notation. |
+| `value` | Finite scalar result value. | Carries the numeric scientific output. |
+| `unit` | Physical unit string or `1` for unitless values. | Keeps unit interpretation explicit and exportable. |
+| `description` | Plain-language scientific meaning and derivation context. | Avoids forcing early structured descriptors while still explaining what the scalar means. |
+| `method_id` | Method that produced the quantity. | Lets quantities be compared by symbol while preserving estimator identity. |
+| `legacy_aliases` | Current text or JSON paths such as `Williams_fit_results.K_I`. | Gives compatibility adapters a deterministic mapping from canonical quantities to existing outputs. |
+
+`ArtifactRef` fields:
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `artifact_id` | Stable identity for an output artifact. | Lets result records link to files or projections without embedding them. |
+| `role` | Artifact role such as `canonical_result_bundle_json`, `current_json_projection`, or `compact_kg_statement_bundle`. | Distinguishes source-of-truth output from compatibility and export projections. |
+| `media_type` | Media type or explicit artifact format label. | Helps consumers choose readers without inspecting file contents. |
+| `content_hash` | Hash of artifact content where practical. | Supports artifact integrity checks and stale-output review. |
+
+### Current Output Compatibility
+
+The first Williams-fit slice should project canonical quantities into current output vocabulary through adapters:
+
+- `filename` and `experiment_data` can be projected from `InputRecord`, `CrackTipFrame`, and source metadata.
+- Current `Williams_fit_results` keys can be projected from `ResultQuantity.legacy_aliases`.
+- Legacy text and current JSON sections are compatibility artifacts, not canonical schema.
+- Adapter aliases must remain explicit enough that old tests, scripts, and readers can be supported during migration.
+
+### Compact KG Statement-Bundle Projection
+
+The compact KG projection is an adapter over the envelope. It is not the internal result model and does not require CrackPy core records to become RDF resources.
+
+Bundle-level fields:
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `bundle_schema_version` | Version of the compact statement-bundle export shape. | Lets KG importers distinguish export formats. |
+| `uri_policy` | Exporter policy for whether and how subject URIs are included. | Keeps namespace and URI construction outside core records. |
+| `descriptor_field_policy` | Statement of whether scalar facts are plain statements, RDF descriptor resources, or both. | Prevents `LiteralField` and related RDF constructs from leaking into core architecture. |
+| `statements` | Flat list of compact metadata statements. | Gives importers a simple ingestion shape. |
+| `groups` | Statements grouped by `related_to` or equivalent grouping key. | Supports compact query and ingestion without making grouping the core graph model. |
+
+Required statement fields:
+
+| Field | Meaning | Why it exists |
+| --- | --- | --- |
+| `subject_id` | Local subject identity selected by the export profile. | Gives each statement a concrete local subject even when no URI is minted. |
+| `subject_uri` | Optional KG-facing URI for the subject. | Allows RDF import while keeping URI minting out of core records. |
+| `key` | Statement key. | Names the exported property for compact metadata ingestion. |
+| `value` | JSON-like statement value. | Carries the exported fact. |
+| `data_type` | Normalized datatype label. | Avoids non-standard datatype names and supports predictable KG conversion. |
+| `unit` | Normalized unit string, using `1` for unitless values. | Avoids missing or non-standard unit representation for scalar facts. |
+| `description` | Plain-language meaning of the statement. | Keeps compact statements interpretable without consulting code. |
+| `metadata_type` | Export grouping/type name such as `InputRecord`, `SoftwareConfiguration`, `AnalysisRun`, `FractureAnalysisResult`, `ResultQuantity`, or `OutputArtifact`. | Supports compact KG query and display without defining CrackPy core classes from KG ontology names. |
+| `source` | Record or method ID that supplied the statement. | Supports audit and debugging of the export projection. |
+| `related_to` | Owning domain subject used for grouping. | Keeps quantities, artifacts, and run facts linkable to their result or source record in compact form. |
+
+Projection policy:
+
+- Grouping policy: group compact statements by `related_to` for ingestion and query; do not treat group names as durable URI policy by themselves.
+- Subject identity policy: use stable core IDs as `subject_id`; include `subject_uri` only when an exporter or KG importer profile chooses a URI policy.
+- URI minting policy: keep base URI, namespace, escaping, and class/predicate choices in exporter or importer policy, not in core records.
+- Descriptor-field policy: the first compact JSON projection should use statements. RDF resources such as `LiteralField`, `IdentityMetadata`, `ContextMetadata`, and `StateMetadata` may be downstream RDF rendering choices only.
+- Datatype normalization policy: normalize JSON-like values to parseable categories such as `null`, `boolean`, `integer`, `float`, `string`, `list`, and `object`; RDF/XSD mapping belongs to the RDF exporter.
+- Unit normalization policy: use explicit physical units where known and `1` for unitless values; current compatibility unit labels may be adapted at writer boundaries.
+- Content policy: export query, audit, and re-analysis facts. Keep detailed process provenance, RDF graph expansion, and debug-level traces in optional projections.
+
+### Prototype Details Not Promoted
+
+The preserved prototypes are evidence for the record split, not the target implementation. Do not promote these details into core CrackPy architecture without a separate decision:
+
+- fake numerical Williams values, demo material constants, demo `stage-0042` IDs, and example timestamps;
+- the `crackpy_result_spine` package layout, dataclass validation rules, and local namespace-prefix assertions;
+- short prototype hash truncation as the final production hash policy;
+- `https://example.invalid` URIs, FMO/DLR namespace choices, BFO-near class names, Turtle schema output, RDFLib, graph explorer HTML/JSON, and rendered TTL files;
+- RDF descriptor resources such as `LiteralField` or descriptor categories such as `IdentityMetadata`, `ContextMetadata`, and `StateMetadata` as internal CrackPy records;
+- demo RDF predicates as public CrackPy API commitments;
+- production imports in the live-test proof path as evidence that the current package has already migrated.
+
+### First-Slice Approval Gate
+
+Before implementation, maintainers should approve or revise this first-slice specification and answer at least these points:
+
+- whether Williams fitting is the first vertical slice, rather than crack-tip estimate only;
+- exact public schema-version strings for the envelope, result record, configuration, and compact KG bundle;
+- angle-unit vocabulary for canonical records versus current adapter output;
+- minimum required Williams-fit quantities for the first production adapter;
+- hash algorithm, canonicalization rules, and inclusion/exclusion policy;
+- which current output files and JSON sections require long-lived compatibility aliases.
+
 ## Current Knowledge Graph Assumptions
 
 The provided microscope-DIC datapoint JSON is one concrete example of a more generic metadata statement bundle. It should not define CrackPy's internal architecture and should not be treated as an MDIC-only target. A comparable bundle could also describe FEM, synthetic benchmark data, imported reference fields, DVC, or another future source.
@@ -1071,9 +1316,9 @@ class AnalysisExecutionMetadata:
 ## Next Steps
 
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
-- Prototype a metadata record for `WilliamsFit` on paper before touching production code.
-- Define a minimal first result/provenance envelope and one compact KG projection for a Williams-fit or crack-tip-estimate vertical slice before designing the full C-010 model.
-- Define a compact target export profile using the generic metadata statement-bundle pattern observed in the provided microscope-DIC datapoint, including grouping, subject identity, URI minting, descriptor-field, datatype, and unit normalization policy.
+- Review and approve or revise [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]] before touching production code.
+- Decide whether the first approved slice remains Williams fitting or narrows to a crack-tip-estimate-only slice.
+- Use the first-slice compact target export profile as the starting point for a future KG adapter specification, including grouping, subject identity, URI minting, descriptor-field, datatype, and unit normalization policy.
 - Sketch the first YAML/JSON method-reference registry entries for Williams fitting, Bueckner-Chen, line integrals, and crack-tip detection.
 - Keep this note in planning state until the refactor specification is approved.
 
