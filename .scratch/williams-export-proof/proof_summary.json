@@ -7,6 +7,8 @@
     "visualization_graph": "C:\\Users\\Admin\\Documents\\Coding-Projekte\\crackpy\\.scratch\\williams-export-proof\\File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_graph.json"
   },
   "quantity_count": 27,
-  "graph_nodes": 33,
-  "graph_edges": 32
+  "graph_nodes": 35,
+  "graph_edges": 34,
+  "method_node_count": 2,
+  "used_method_edge_count": 2
 }

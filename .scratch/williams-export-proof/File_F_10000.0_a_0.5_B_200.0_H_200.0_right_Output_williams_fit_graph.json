@@ -1,6 +1,18 @@
 {
     "edges": [
         {
+            "label": "used method",
+            "role": "used_method",
+            "source": "crack_tip_estimate:File_F_10000.0_a_0.5_B_200.0_H_200.0:right",
+            "target": "crackpy.crack_tip.manual_import"
+        },
+        {
+            "label": "used method",
+            "role": "used_method",
+            "source": "run:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
+            "target": "crackpy.fracture.williams_fit"
+        },
+        {
             "label": "used_input",
             "role": "used_input",
             "source": "run:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d",
@@ -202,6 +214,26 @@
         },
         {
             "data": {
+                "implementation_ref": "crackpy.fracture_analysis.methods.williams_fit.runner.run_williams_fit",
+                "kind": "analysis",
+                "method_revision": "1"
+            },
+            "id": "crackpy.fracture.williams_fit",
+            "label": "Williams Fit",
+            "type": "MethodMetadata"
+        },
+        {
+            "data": {
+                "implementation_ref": "crackpy.input.crack_tip_info.CrackTipInfo",
+                "kind": "crack_tip_estimate",
+                "method_revision": "1"
+            },
+            "id": "crackpy.crack_tip.manual_import",
+            "label": "Manual Crack-Tip Import",
+            "type": "MethodMetadata"
+        },
+        {
+            "data": {
                 "configuration_hash": "sha256:f9b5b76332d0021e38a7b27384ddb2c99f3e1f4568d7e547c6be8e059f3a1c55",
                 "parameter_hash": "sha256:7f2ea3bd2c2d590edadbea539a55c366518fd3359d2958126ab822477016acda"
             },
@@ -245,7 +277,7 @@
         {
             "data": {
                 "unit": "1",
-                "value": 7.382994364115482e-06
+                "value": 7.3829943641153445e-06
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:error_xy",
             "label": "error_xy",
@@ -263,7 +295,7 @@
         {
             "data": {
                 "unit": "MPa*m^{1/2}",
-                "value": 11.619530570347031
+                "value": 11.619530570044601
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:K_I",
             "label": "K_I",
@@ -272,7 +304,7 @@
         {
             "data": {
                 "unit": "MPa*m^{1/2}",
-                "value": 0.007636211153347724
+                "value": 0.007636217411474606
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:K_II",
             "label": "K_II",
@@ -290,7 +322,7 @@
         {
             "data": {
                 "unit": "MPa",
-                "value": -30.6421615534353
+                "value": -30.642161551836015
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:T",
             "label": "T",
@@ -299,7 +331,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{3/2}",
-                "value": 11.727741677003353
+                "value": 11.727741660335726
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_-1",
             "label": "a_-1",
@@ -308,7 +340,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{1}",
-                "value": -18.76077029984649
+                "value": -18.76077029634933
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_0",
             "label": "a_0",
@@ -317,7 +349,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{1/2}",
-                "value": 146.58807736325028
+                "value": 146.58807735943492
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_1",
             "label": "a_1",
@@ -326,7 +358,7 @@
         {
             "data": {
                 "unit": "MPa",
-                "value": -7.660540388358825
+                "value": -7.660540387959004
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_2",
             "label": "a_2",
@@ -335,7 +367,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{-1/2}",
-                "value": 0.807485073405987
+                "value": 0.8074850732920452
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_3",
             "label": "a_3",
@@ -344,7 +376,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{-1}",
-                "value": -0.013619609842727538
+                "value": -0.013619609851436315
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_4",
             "label": "a_4",
@@ -353,7 +385,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{-3/2}",
-                "value": -0.0018575745695169584
+                "value": -0.0018575745612425768
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:a_5",
             "label": "a_5",
@@ -362,7 +394,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{3/2}",
-                "value": 0.05452544961848505
+                "value": 0.05452496746393121
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_-1",
             "label": "b_-1",
@@ -371,7 +403,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{1}",
-                "value": -0.02526992297909154
+                "value": -0.025269836695479702
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_0",
             "label": "b_0",
@@ -380,7 +412,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{1/2}",
-                "value": -0.09633586353012359
+                "value": -0.0963359424805409
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_1",
             "label": "b_1",
@@ -389,7 +421,7 @@
         {
             "data": {
                 "unit": "MPa",
-                "value": -0.052952272399706984
+                "value": -0.05295226021675895
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_2",
             "label": "b_2",
@@ -398,7 +430,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{-1/2}",
-                "value": 0.0020903500571001297
+                "value": 0.002090350741146333
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_3",
             "label": "b_3",
@@ -407,7 +439,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{-1}",
-                "value": -0.0013153615431611794
+                "value": -0.0013153621598861443
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_4",
             "label": "b_4",
@@ -416,7 +448,7 @@
         {
             "data": {
                 "unit": "MPa*mm^{-3/2}",
-                "value": 0.00010562766682693808
+                "value": 0.00010562766405630883
             },
             "id": "quantity:result:williams_fit:File_F_10000.0_a_0.5_B_200.0_H_200.0:right:7f2ea3bd2c2d:b_5",
             "label": "b_5",

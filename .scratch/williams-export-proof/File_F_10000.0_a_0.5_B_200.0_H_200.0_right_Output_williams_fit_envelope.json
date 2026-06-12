@@ -172,7 +172,7 @@
                     "statistic": null,
                     "symbol": "error_xy",
                     "unit": "1",
-                    "value": 7.382994364115482e-06
+                    "value": 7.3829943641153445e-06
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -203,7 +203,7 @@
                     "statistic": null,
                     "symbol": "K_I",
                     "unit": "MPa*m^{1/2}",
-                    "value": 11.619530570347031
+                    "value": 11.619530570044601
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -218,7 +218,7 @@
                     "statistic": null,
                     "symbol": "K_II",
                     "unit": "MPa*m^{1/2}",
-                    "value": 0.007636211153347724
+                    "value": 0.007636217411474606
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -248,7 +248,7 @@
                     "statistic": null,
                     "symbol": "T",
                     "unit": "MPa",
-                    "value": -30.6421615534353
+                    "value": -30.642161551836015
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -263,7 +263,7 @@
                     "statistic": null,
                     "symbol": "a_-1",
                     "unit": "MPa*mm^{3/2}",
-                    "value": 11.727741677003353
+                    "value": 11.727741660335726
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -278,7 +278,7 @@
                     "statistic": null,
                     "symbol": "a_0",
                     "unit": "MPa*mm^{1}",
-                    "value": -18.76077029984649
+                    "value": -18.76077029634933
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -293,7 +293,7 @@
                     "statistic": null,
                     "symbol": "a_1",
                     "unit": "MPa*mm^{1/2}",
-                    "value": 146.58807736325028
+                    "value": 146.58807735943492
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -308,7 +308,7 @@
                     "statistic": null,
                     "symbol": "a_2",
                     "unit": "MPa",
-                    "value": -7.660540388358825
+                    "value": -7.660540387959004
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -323,7 +323,7 @@
                     "statistic": null,
                     "symbol": "a_3",
                     "unit": "MPa*mm^{-1/2}",
-                    "value": 0.807485073405987
+                    "value": 0.8074850732920452
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -338,7 +338,7 @@
                     "statistic": null,
                     "symbol": "a_4",
                     "unit": "MPa*mm^{-1}",
-                    "value": -0.013619609842727538
+                    "value": -0.013619609851436315
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -353,7 +353,7 @@
                     "statistic": null,
                     "symbol": "a_5",
                     "unit": "MPa*mm^{-3/2}",
-                    "value": -0.0018575745695169584
+                    "value": -0.0018575745612425768
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -368,7 +368,7 @@
                     "statistic": null,
                     "symbol": "b_-1",
                     "unit": "MPa*mm^{3/2}",
-                    "value": 0.05452544961848505
+                    "value": 0.05452496746393121
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -383,7 +383,7 @@
                     "statistic": null,
                     "symbol": "b_0",
                     "unit": "MPa*mm^{1}",
-                    "value": -0.02526992297909154
+                    "value": -0.025269836695479702
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -398,7 +398,7 @@
                     "statistic": null,
                     "symbol": "b_1",
                     "unit": "MPa*mm^{1/2}",
-                    "value": -0.09633586353012359
+                    "value": -0.0963359424805409
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -413,7 +413,7 @@
                     "statistic": null,
                     "symbol": "b_2",
                     "unit": "MPa",
-                    "value": -0.052952272399706984
+                    "value": -0.05295226021675895
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -428,7 +428,7 @@
                     "statistic": null,
                     "symbol": "b_3",
                     "unit": "MPa*mm^{-1/2}",
-                    "value": 0.0020903500571001297
+                    "value": 0.002090350741146333
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -443,7 +443,7 @@
                     "statistic": null,
                     "symbol": "b_4",
                     "unit": "MPa*mm^{-1}",
-                    "value": -0.0013153615431611794
+                    "value": -0.0013153621598861443
                 },
                 {
                     "derived_from_quantity_ids": [],
@@ -458,7 +458,7 @@
                     "statistic": null,
                     "symbol": "b_5",
                     "unit": "MPa*mm^{-3/2}",
-                    "value": 0.00010562766682693808
+                    "value": 0.00010562766405630883
                 },
                 {
                     "derived_from_quantity_ids": [],

@@ -12,16 +12,41 @@ def test_visualization_graph_consumes_envelope_records_and_dependency_edges():
     assert "InputRecord" in node_types
     assert "CrackTipEstimateResult" in node_types
     assert "CrackTipFrame" in node_types
+    assert "MethodMetadata" in node_types
     assert "AnalysisRun" in node_types
     assert "ResultRecord" in node_types
     assert "ResultQuantity" in node_types
+
+    method_nodes = {
+        node["id"]: node
+        for node in payload["nodes"]
+        if node["type"] == "MethodMetadata"
+    }
+    assert set(method_nodes) == {
+        "crackpy.fracture.williams_fit",
+        "crackpy.crack_tip.manual_import",
+    }
+    assert method_nodes["crackpy.fracture.williams_fit"]["label"] == "Williams Fit"
 
     roles = {edge["role"] for edge in payload["edges"]}
     assert "used_input" in roles
     assert "used_configuration" in roles
     assert "used_crack_tip_estimate" in roles
     assert "used_crack_tip_frame" in roles
+    assert "used_method" in roles
     assert "was_generated_by" in roles
     assert "has_quantity" in roles
+
+    method_edges = {
+        (edge["source"], edge["target"])
+        for edge in payload["edges"]
+        if edge["role"] == "used_method"
+    }
+    assert any(
+        source.startswith("run:williams_fit:DemoNodemap:right:")
+        and target == "crackpy.fracture.williams_fit"
+        for source, target in method_edges
+    )
+    assert ("crack_tip_estimate:DemoNodemap:right", "crackpy.crack_tip.manual_import") in method_edges
 
     assert all("subject_uri" not in node["data"] for node in payload["nodes"])

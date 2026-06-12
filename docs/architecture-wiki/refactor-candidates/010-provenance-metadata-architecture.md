@@ -1,7 +1,7 @@
 # CrackPy Provenance and Metadata Architecture
 
-Status: proposed
-Role: Future architecture candidate for internal provenance metadata, compact knowledge-graph export, and optional detailed process provenance. This is a planning note only; no implementation is approved.
+Status: proposed, with first Williams-fit slice partially implemented
+Role: Architecture candidate for internal provenance metadata, compact knowledge-graph export, and optional detailed process provenance. The first Williams-fit slice now exists in production code; broader provenance architecture remains planning-only.
 
 Related: [[refactor-candidates/001-explicit-analysis-result]], [[refactor-candidates/002-input-loading-seam]], [[refactor-candidates/008-result-tag-schema]], [[refactor-candidates/009-sequence-index-vocabulary]], [[open-questions#Question Index]]
 
@@ -44,7 +44,7 @@ The `prototypes/result_spine` experiment in the prototype worktree supports the 
 
 Status: draft field-level planning specification
 
-This section folds the useful conclusions from the preserved `prototypes/result_spine_package` worktree prototype into the architecture wiki. It defines one minimal Williams-fit result/provenance slice on paper. It does not approve production `crackpy/` code changes, package restructuring, writer changes, reader changes, or RDF export implementation.
+This section folds the useful conclusions from the preserved `prototypes/result_spine_package` worktree prototype into the architecture wiki. It defines one minimal Williams-fit result/provenance slice. Current code has partially implemented this slice under `crackpy.provenance`, `crackpy.results.result_data`, `crackpy.results.kg_statement_bundle`, `crackpy.results.graph_visualization`, and `crackpy.fracture_analysis.methods.williams_fit`. The broader candidate still does not approve package-wide restructuring, current result-reader replacement, CJP/integral provenance slices, or RDF export implementation.
 
 The slice covers one Williams displacement-field fit over one nodemap-like input and one crack-tip estimate. It must be large enough to prove the result/provenance spine, but small enough to avoid landing the full method registry, implementation fingerprinting, generalized input identity model, full crack-tip-frame model, compact KG exporter, and optional detailed PROV artifact in one step.
 
@@ -309,6 +309,7 @@ The graph visualization kit is a downstream adapter over the first-slice envelop
 Primary visualization input:
 
 - `InputRecord`;
+- `MethodMetadata`;
 - `CrackTipEstimateResult`;
 - `CrackTipFrame`;
 - `AnalysisRun`;
@@ -317,7 +318,9 @@ Primary visualization input:
 - `ArtifactRef`;
 - `DependencyEdge`.
 
-The first useful graph view should show stable IDs, node types, result quantities, artifact references, and dependency roles such as `used_input`, `used_configuration`, `used_crack_tip_estimate`, `used_crack_tip_frame`, `was_generated_by`, and `has_quantity`.
+The first useful graph view should show stable IDs, node types, method metadata, result quantities, artifact references, and dependency roles such as `used_input`, `used_configuration`, `used_method`, `used_crack_tip_estimate`, `used_crack_tip_frame`, `was_generated_by`, and `has_quantity`.
+
+Method metadata should be rendered as first-class graph nodes rather than hidden only as `method_id` strings. Analysis runs and imported crack-tip estimates should point to their method records with `used_method` edges so a maintainer can inspect the method identity, method revision, implementation reference, and method kind directly in the graph.
 
 Visualization concerns remain outside the core record model:
 
@@ -423,7 +426,7 @@ The retained seams are:
 - `WilliamsFitResultParameters`: documents and validates Williams-specific result-affecting parameters without growing `MethodResultSource`;
 - `load_williams_fit_spec()`: keeps Williams definitions close to the Williams builder while avoiding package import cycles.
 
-One-time helper functions that do not name a domain operation or validation boundary should be inlined. This intentionally relaxes DRY when duplicated structure would make the vertical slice easier to read and easier to adapt for CJP or J-integral.
+One-time helper functions that do not name a domain operation, validation boundary, reusable transformation, or local policy should be inlined. This intentionally relaxes DRY when duplicated structure would make the vertical slice easier to read and easier to adapt for CJP or J-integral. This follows [[decision-log#2026-06-12-human-maintainability-is-an-architecture-constraint]]: private helpers and classes should earn their interface through locality, invariants, lifecycle, adapter role, or clear domain meaning.
 
 Method-specific parameter and result schemas can use Pydantic models with field descriptions. These models should describe the new method interface directly; legacy object traversal or current `FractureAnalysis` attribute mapping belongs only in temporary transition facades, not in the method parameter contract.
 
@@ -1491,13 +1494,13 @@ class AnalysisExecutionMetadata:
 
 ## Next Steps
 
+- Audit the current Williams-fit implementation against [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]] before extending the slice or adding another result family.
 - Decide whether `C-010` belongs with [[refactor-candidates/001-explicit-analysis-result]] as part of a future result model or remains a separate provenance feature.
-- Review and approve or revise [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]] before touching production code.
 - Use the Williams-fit first-slice decision in [[decision-log#2026-06-05-williams-fit-is-the-first-result-provenance-implementation-slice]] as the implementation target unless maintainers explicitly reverse it.
 - Use the first-slice compact target export profile as the starting point for a future KG adapter specification, including grouping, subject identity, URI minting, descriptor-field, datatype, and unit normalization policy.
 - Sketch the first YAML/JSON method-reference registry entries for Williams fitting, Bueckner-Chen, line integrals, and crack-tip detection.
-- Keep this note in planning state until the refactor specification is approved.
+- Keep broader provenance work in planning state until the next refactor specification is approved.
 
 ## Decision State
 
-Not decided. No implementation approved.
+Partially decided and partially implemented for the first Williams-fit slice. Broader provenance, method registry, CJP/integral slices, full KG/RDF export, and detailed process provenance remain not decided.

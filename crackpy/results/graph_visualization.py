@@ -21,6 +21,18 @@ def envelope_to_visualization_graph(envelope: ResultEnvelope) -> VisualizationGr
     for input_record in envelope.input_records:
         nodes.append(_node(input_record.input_id, "InputRecord", input_record.source_label or input_record.input_id))
 
+    for method in envelope.methods:
+        nodes.append(
+            _node(
+                method.method_id,
+                "MethodMetadata",
+                method.display_name,
+                kind=method.kind,
+                method_revision=method.method_revision,
+                implementation_ref=method.implementation_ref,
+            )
+        )
+
     for configuration in envelope.configurations:
         nodes.append(
             _node(
@@ -45,9 +57,25 @@ def envelope_to_visualization_graph(envelope: ResultEnvelope) -> VisualizationGr
 
     for estimate in envelope.crack_tip_estimates:
         nodes.append(_node(estimate.estimate_id, "CrackTipEstimateResult", estimate.estimate_id, source=estimate.source))
+        edges.append(
+            VisualizationEdge(
+                source=estimate.estimate_id,
+                target=estimate.method_id,
+                role="used_method",
+                label="used method",
+            )
+        )
 
     for run in envelope.analysis_runs:
         nodes.append(_node(run.run_id, "AnalysisRun", run.run_id, method_id=run.method_id))
+        edges.append(
+            VisualizationEdge(
+                source=run.run_id,
+                target=run.method_id,
+                role="used_method",
+                label="used method",
+            )
+        )
         for dependency in run.dependencies:
             edges.append(
                 VisualizationEdge(
