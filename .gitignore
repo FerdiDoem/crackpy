@@ -10,6 +10,9 @@ tom.egg-info
 !/docs/architecture-wiki/**
 !/docs/code-style/
 !/docs/code-style/**
+!/docs/inspection/
+!/docs/inspection/crackpy-lab-prototype/
+!/docs/inspection/crackpy-lab-prototype/**
 !/docs/superpowers/
 !/docs/superpowers/**
 /data/
@@ -21,6 +24,7 @@ tom.egg-info
 /videos/
 /dist/
 /build/
+/node_modules/
 /crackpy.egg-info
 
 # Ignore downloaded crack detection models

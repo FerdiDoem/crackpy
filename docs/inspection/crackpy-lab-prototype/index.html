@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CrackPy Lab Prototype</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M4 16.6 9.2 13l2.2 2.1L20 6.8" />
+            <path d="M4 20h16" />
+          </svg>
+        </span>
+        <div>
+          <strong>CrackPy Lab</strong>
+          <span>research workbench</span>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="Workbench areas">
+        <button class="nav-item is-active" type="button" data-panel="workspace">
+          <span class="nav-icon" aria-hidden="true">W</span>
+          <span>Workspace</span>
+        </button>
+        <button class="nav-item" type="button" data-panel="experiments">
+          <span class="nav-icon" aria-hidden="true">E</span>
+          <span>Experiments</span>
+        </button>
+        <button class="nav-item" type="button" data-panel="detection">
+          <span class="nav-icon" aria-hidden="true">D</span>
+          <span>Detection</span>
+        </button>
+        <button class="nav-item" type="button" data-panel="analysis">
+          <span class="nav-icon" aria-hidden="true">A</span>
+          <span>Analysis</span>
+        </button>
+        <button class="nav-item" type="button" data-panel="results">
+          <span class="nav-icon" aria-hidden="true">R</span>
+          <span>Results</span>
+        </button>
+        <button class="nav-item" type="button" data-panel="provenance">
+          <span class="nav-icon" aria-hidden="true">P</span>
+          <span>Provenance</span>
+        </button>
+      </nav>
+
+      <section class="side-card">
+        <span class="section-label">Active run</span>
+        <strong id="sideRunName">DIC CT specimen</strong>
+        <span id="sideRunMeta">72 frames, plane stress</span>
+        <div class="progress-track" aria-label="Run progress">
+          <span id="sideProgress"></span>
+        </div>
+      </section>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div class="project-switcher">
+          <label for="experimentSelect">Project</label>
+          <select id="experimentSelect"></select>
+        </div>
+        <div class="run-state">
+          <span id="runBadge" class="badge is-ready">ready</span>
+          <span id="runMessage">No job running</span>
+        </div>
+        <button class="primary-action" id="startRunButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <span>Start Experiment</span>
+        </button>
+      </header>
+
+      <section class="tab-strip" aria-label="Feature demonstration tabs">
+        <button type="button" class="tab is-active" data-view="setup">Setup</button>
+        <button type="button" class="tab" data-view="field">Field</button>
+        <button type="button" class="tab" data-view="methods">Methods</button>
+        <button type="button" class="tab" data-view="provenance">Provenance</button>
+        <button type="button" class="tab" data-view="debug">Debug</button>
+      </section>
+
+      <section class="lab-grid" aria-live="polite">
+        <section class="setup-panel panel" aria-labelledby="setupTitle" data-feature="setup-panel" data-testid="setup-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-label">experiment setup</span>
+              <h1 id="setupTitle">Nodemap analysis plan</h1>
+            </div>
+            <button class="icon-button" id="resetButton" type="button" title="Reset run state" aria-label="Reset run state">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4 4v6h6" />
+                <path d="M20 11a8 8 0 1 0-2.34 5.66" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="field-stack">
+            <label class="control">
+              <span>Nodemap source</span>
+              <select id="nodemapSelect"></select>
+            </label>
+            <label class="control">
+              <span>Specimen side</span>
+              <select id="sideSelect">
+                <option value="right">right</option>
+                <option value="left">left</option>
+              </select>
+            </label>
+            <label class="control">
+              <span>Material model</span>
+              <select id="materialSelect"></select>
+            </label>
+          </div>
+
+          <section class="source-note" aria-label="Crack-tip correction source">
+            <span class="section-label">crack-tip delta source</span>
+            <strong>actual fixture output minus crack_info_by_nodemap</strong>
+          </section>
+
+          <div class="input-grid">
+            <label class="numeric">
+              <span>min radius</span>
+              <input id="minRadius" type="number" min="0.05" max="20" step="0.05" value="5">
+              <small>mm</small>
+            </label>
+            <label class="numeric">
+              <span>max radius</span>
+              <input id="maxRadius" type="number" min="0.1" max="30" step="0.1" value="10">
+              <small>mm</small>
+            </label>
+            <label class="numeric">
+              <span>angle gap</span>
+              <input id="angleGap" type="number" min="0" max="80" step="1" value="20">
+              <small>deg</small>
+            </label>
+            <label class="numeric">
+              <span>integral paths</span>
+              <input id="pathCount" type="number" min="1" max="12" step="1" value="9">
+              <small>paths</small>
+            </label>
+          </div>
+
+          <section class="config-lenses" id="configLenses" aria-label="Live visualization configuration" data-feature="config-lenses" data-testid="config-lenses"></section>
+        </section>
+
+        <section class="field-panel panel" aria-labelledby="fieldTitle" data-feature="field-panel" data-testid="field-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-label">dic field inspection</span>
+              <h2 id="fieldTitle">Setup geometry on actual nodemap</h2>
+            </div>
+            <div class="field-toolbar" role="group" aria-label="Nodemap field">
+              <button type="button" class="tool is-active" data-overlay="eps_eqv">eps_eqv</button>
+              <button type="button" class="tool" data-overlay="disp_y">disp_y</button>
+              <button type="button" class="tool" data-overlay="eps_xy">eps_xy</button>
+            </div>
+          </div>
+
+          <div class="specimen-view">
+            <div class="field-stage" data-testid="field-stage">
+              <canvas id="fieldCanvas" width="780" height="500" data-feature="field-image" data-testid="field-canvas" aria-label="Live nodemap field rendering"></canvas>
+              <svg id="fieldSvg" viewBox="0 0 780 500" role="img" aria-labelledby="fieldSvgTitle fieldSvgDesc">
+              <title id="fieldSvgTitle">Actual CrackPy DIC fixture field demonstrator</title>
+              <desc id="fieldSvgDesc">A nodemap-derived fixture field with setup geometry for the crack-tip detection window, Williams annulus, and line-integral paths.</desc>
+              <defs>
+                <linearGradient id="fieldGradient" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#eef4f7" />
+                  <stop offset="40%" stop-color="#e5f6f1" />
+                  <stop offset="68%" stop-color="#fff1d0" />
+                  <stop offset="100%" stop-color="#f7c9bc" />
+                </linearGradient>
+                <pattern id="mesh" width="28" height="28" patternUnits="userSpaceOnUse">
+                  <path d="M28 0H0v28" fill="none" stroke="#9fb1b8" stroke-opacity=".22" stroke-width="1" />
+                </pattern>
+                <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#203035" flood-opacity=".15" />
+                </filter>
+              </defs>
+              <clipPath id="fieldClip">
+                <rect x="18" y="20" width="744" height="452" rx="8" />
+              </clipPath>
+              <g clip-path="url(#fieldClip)">
+                <rect x="18" y="20" width="744" height="452" fill="rgba(18,23,25,.35)" />
+                <rect x="18" y="20" width="744" height="452" fill="url(#mesh)" opacity=".28" data-feature="mesh-overlay" />
+              </g>
+              <g id="setupGeometryLayer" data-testid="setup-geometry-layer"></g>
+              </svg>
+            </div>
+            <div class="visual-controls" aria-label="Visualization controls">
+              <label class="toggle-control">
+                <input id="showLinePaths" type="checkbox" checked>
+                <span>line integral paths</span>
+              </label>
+              <label class="toggle-control">
+                <input id="showAnnulus" type="checkbox" checked>
+                <span>Williams annulus</span>
+              </label>
+              <label class="toggle-control">
+                <input id="showDetectionWindow" type="checkbox" checked>
+                <span>detection window</span>
+              </label>
+              <label class="compact-control">
+                <span>setup overlay</span>
+                <select id="setupOverlayMode">
+                  <option value="combined">combined</option>
+                  <option value="annulus">annulus only</option>
+                  <option value="integrals">integrals only</option>
+                  <option value="detection-window">detection window only</option>
+                </select>
+              </label>
+              <label class="compact-control">
+                <span>coloring</span>
+                <select id="fieldColoring">
+                  <option value="turbo">turbo</option>
+                  <option value="viridis">viridis</option>
+                  <option value="cividis">cividis</option>
+                  <option value="magma">magma</option>
+                </select>
+              </label>
+              <label class="compact-control">
+                <span>scale</span>
+                <select id="fieldScalePreset">
+                  <option value="auto">auto p01-p99</option>
+                  <option value="sigma1">mean +/- 1 sigma</option>
+                  <option value="sigma2">mean +/- 2 sigma</option>
+                  <option value="sigma3">mean +/- 3 sigma</option>
+                  <option value="customSigma">mean +/- X sigma</option>
+                  <option value="manual">manual vmin/vmax</option>
+                </select>
+              </label>
+              <label class="compact-control">
+                <span>X sigma</span>
+                <input id="fieldSigma" type="number" min="0.1" max="8" step="0.1" value="2">
+              </label>
+              <label class="compact-control">
+                <span>vmin</span>
+                <input id="fieldVmin" type="number" step="0.0001">
+              </label>
+              <label class="compact-control">
+                <span>vmax</span>
+                <input id="fieldVmax" type="number" step="0.0001">
+              </label>
+              <label class="compact-control">
+                <span>zoom</span>
+                <input id="fieldZoom" type="range" min="1" max="4" step="0.25" value="1">
+              </label>
+            </div>
+            <div class="field-readout">
+              <div>
+                <span class="section-label">corrected crack-tip estimate</span>
+                <strong id="tipReadout">x=12.42 mm, y=4.18 mm</strong>
+              </div>
+              <div>
+                <span class="section-label">correction delta</span>
+                <strong id="deltaReadout">dx=-0.08 mm, dy=0.03 mm</strong>
+              </div>
+              <div>
+                <span class="section-label">field</span>
+                <strong id="overlayReadout">sig_vm</strong>
+              </div>
+              <div>
+                <span class="section-label">scale</span>
+                <strong id="fieldScaleReadout">auto</strong>
+              </div>
+              <div>
+                <span class="section-label">setup overlay</span>
+                <strong id="setupGeometryReadout">combined</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="result-panel panel" aria-labelledby="resultTitle" data-feature="result-panel" data-testid="result-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-label">result inspector</span>
+              <h2 id="resultTitle">Frame <span id="activeFrameLabel">52</span></h2>
+            </div>
+            <span id="qualityBadge" class="badge is-good">fixture ok</span>
+          </div>
+
+          <div id="metricGrid" class="metric-grid" data-feature="metric-cards" data-testid="metric-grid"></div>
+
+          <section class="method-evidence" data-feature="method-evidence" data-testid="method-evidence">
+            <div class="evidence-head">
+              <div>
+                <span class="section-label">method evidence</span>
+                <strong id="methodEvidenceTitle">Williams terms</strong>
+              </div>
+              <select id="methodEvidenceMode" aria-label="Method evidence mode">
+                <option value="williamsTerms">Williams terms</option>
+                <option value="pathStability">path stability</option>
+                <option value="integralSummary">integral summary</option>
+              </select>
+            </div>
+            <div id="methodEvidenceTable" class="method-evidence-table"></div>
+          </section>
+
+          <div class="method-stack" id="methodStack" data-feature="method-stack" data-testid="method-stack"></div>
+
+          <section class="warning-box" aria-label="Scientific warnings" data-feature="scientific-warnings" data-testid="warning-box">
+            <strong>Scientific notes</strong>
+            <ul id="warningList"></ul>
+          </section>
+        </aside>
+
+        <section class="timeline-panel panel" aria-labelledby="timelineTitle" data-feature="frame-table" data-testid="frame-table-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-label">experiment sequence</span>
+              <h2 id="timelineTitle">Result frames and feature surface</h2>
+            </div>
+            <button class="ghost-action" id="exportButton" type="button">Export provenance</button>
+          </div>
+
+          <div class="frame-table-wrap">
+            <table class="frame-table">
+              <thead>
+                <tr>
+                  <th>frame</th>
+                  <th>cycles</th>
+                  <th>a</th>
+                  <th>K_I source</th>
+                  <th>K_II source</th>
+                  <th>J</th>
+                  <th>residual</th>
+                  <th>status</th>
+                </tr>
+              </thead>
+              <tbody id="frameRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="provenance-panel panel" aria-labelledby="provenanceTitle" data-feature="provenance-panel" data-testid="provenance-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-label">provenance demonstrator</span>
+              <h2 id="provenanceTitle">Frame results and separate proof graph</h2>
+            </div>
+            <span class="badge" id="provenanceBadge">separate proof graph</span>
+          </div>
+          <div class="analysis-graph" id="analysisGraph" aria-label="Analysis graph visualization" data-feature="analysis-graph" data-testid="analysis-graph"></div>
+          <section class="source-evidence" id="sourceEvidence" aria-label="Actual data sources" data-feature="source-evidence" data-testid="source-evidence"></section>
+          <section class="node-surface-matrix" id="nodeSurfaceMatrix" aria-label="Frontend graph node implementation matrix" data-feature="node-surface-matrix" data-testid="node-surface-matrix"></section>
+          <div class="provenance-flow" id="provenanceFlow" data-feature="provenance-flow" data-testid="provenance-flow"></div>
+          <div class="graph-node-chips" id="graphNodeChips" aria-label="Frontend-facing graph node types" data-feature="graph-node-chips" data-testid="graph-node-chips"></div>
+          <section class="node-inspector" aria-label="Selected graph node details" data-feature="node-inspector" data-testid="node-inspector">
+            <div>
+              <span class="section-label">selected node</span>
+              <h3 id="nodeInspectorTitle">InputRecord</h3>
+              <p id="nodeInspectorRole"></p>
+            </div>
+            <dl id="nodeInspectorFields"></dl>
+          </section>
+          <pre id="provenanceSnippet" class="snippet" data-feature="provenance-snippet" data-testid="provenance-snippet"></pre>
+        </section>
+
+        <section class="debug-panel panel" aria-labelledby="debugTitle" data-testid="debug-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-label">debug and test controls</span>
+              <h2 id="debugTitle">Feature visibility matrix</h2>
+            </div>
+            <div class="debug-actions">
+              <button class="ghost-action" id="runDebugAssertions" type="button" data-testid="run-debug-assertions">Run assertions</button>
+              <button class="ghost-action" id="resetFeatureFlags" type="button" data-testid="reset-feature-flags">Reset visibility</button>
+            </div>
+          </div>
+          <div class="debug-grid">
+            <section class="debug-feature-matrix" id="debugFeatureMatrix" aria-label="Feature toggles" data-testid="debug-feature-matrix"></section>
+            <section class="debug-output" aria-label="Debug state">
+              <div>
+                <span class="section-label">assertion result</span>
+                <strong id="debugAssertionStatus" data-testid="debug-assertion-status">not run</strong>
+              </div>
+              <pre id="debugState" class="debug-state" data-testid="debug-state"></pre>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "prototype:data": "python docs/inspection/crackpy-lab-prototype/build_data.py",
+    "prototype:serve": "python -m http.server 8765 -d .",
+    "test:prototype": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}
