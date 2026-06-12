@@ -6,9 +6,8 @@ import logging
 
 from crackpy.fracture_analysis.analysis import FractureAnalysis
 from crackpy.fracture_analysis.crack_tip import unit_of_williams_coefficients
-from crackpy.results.graph_visualization import envelope_to_visualization_graph, write_visualization_graph_html
-from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
-from crackpy.results.result_data import ResultEnvelope, write_json_file
+from crackpy.results.envelope_artifacts import write_result_envelope_artifacts
+from crackpy.results.result_data import ResultEnvelope
 from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_analysis
 from crackpy.fracture_analysis.methods.cjp_fit import build_cjp_fit_envelope_from_analysis
 
@@ -27,27 +26,12 @@ def write_williams_fit_provenance_artifacts(
     and future adapters should be able to exercise artifact projection without
     constructing the mutable analysis facade.
     """
-    output_path = Path(path)
-    output_path.mkdir(parents=True, exist_ok=True)
-    kg_statement_bundle = envelope_to_kg_statement_bundle(envelope)
-    visualization_graph = envelope_to_visualization_graph(envelope)
-
-    return {
-        "envelope": write_json_file(envelope.to_dict(), output_path / f"{stem}_williams_fit_envelope.json"),
-        "kg_statement_bundle": write_json_file(
-            kg_statement_bundle.to_dict(),
-            output_path / f"{stem}_williams_fit_kg_statement_bundle.json",
-        ),
-        "visualization_graph": write_json_file(
-            visualization_graph.to_dict(),
-            output_path / f"{stem}_williams_fit_graph.json",
-        ),
-        "visualization_graph_html": write_visualization_graph_html(
-            visualization_graph,
-            output_path / f"{stem}_williams_fit_graph.html",
-            title="Williams Fit Provenance Graph",
-        ),
-    }
+    return write_result_envelope_artifacts(
+        envelope=envelope,
+        path=path,
+        stem=f"{stem}_williams_fit",
+        graph_title="Williams Fit Provenance Graph",
+    ).as_dict()
 
 
 def write_cjp_fit_provenance_artifacts(
@@ -56,27 +40,12 @@ def write_cjp_fit_provenance_artifacts(
     stem: str,
 ) -> dict[str, Path]:
     """Write CJP-fit provenance projections from an explicit result envelope."""
-    output_path = Path(path)
-    output_path.mkdir(parents=True, exist_ok=True)
-    kg_statement_bundle = envelope_to_kg_statement_bundle(envelope)
-    visualization_graph = envelope_to_visualization_graph(envelope)
-
-    return {
-        "envelope": write_json_file(envelope.to_dict(), output_path / f"{stem}_cjp_fit_envelope.json"),
-        "kg_statement_bundle": write_json_file(
-            kg_statement_bundle.to_dict(),
-            output_path / f"{stem}_cjp_fit_kg_statement_bundle.json",
-        ),
-        "visualization_graph": write_json_file(
-            visualization_graph.to_dict(),
-            output_path / f"{stem}_cjp_fit_graph.json",
-        ),
-        "visualization_graph_html": write_visualization_graph_html(
-            visualization_graph,
-            output_path / f"{stem}_cjp_fit_graph.html",
-            title="CJP Fit Provenance Graph",
-        ),
-    }
+    return write_result_envelope_artifacts(
+        envelope=envelope,
+        path=path,
+        stem=f"{stem}_cjp_fit",
+        graph_title="CJP Fit Provenance Graph",
+    ).as_dict()
 
 
 class OutputWriter:

@@ -29,6 +29,7 @@ crackpy/
     crack_tip_info.py
     input_data.py
   results/
+    envelope_artifacts.py
     graph_visualization.py
     kg_statement_bundle.py
     plot.py
@@ -109,7 +110,7 @@ See [[fracture-analysis]].
 
 ### `crackpy.results`
 
-Consumes `FractureAnalysis` instances and emits text files, current JSON, plots, flattened CSVs, and optional Williams-fit provenance artifacts. The legacy text/current-JSON/plot paths still create a direct dependency from result I/O back to analysis internals. The Williams-fit provenance path goes through a method-local source adapter and shared provenance/result records, but it is still reached from `OutputWriter`. See [[results-io-workflows]] and [[coupling-map]].
+Consumes `FractureAnalysis` instances and emits text files, current JSON, plots, flattened CSVs, and optional Williams-fit/CJP-fit provenance artifacts. The legacy text/current-JSON/plot paths still create a direct dependency from result I/O back to analysis internals. The explicit result-envelope artifact writer lives in `results.envelope_artifacts` and can emit envelope JSON, compact KG statement bundle, graph JSON, and graph HTML without a live `FractureAnalysis`. The Williams-fit and CJP-fit `OutputWriter` methods remain compatibility bridges that first derive an envelope from `FractureAnalysis`. See [[results-io-workflows]] and [[coupling-map]].
 
 ### `crackpy.provenance`
 
