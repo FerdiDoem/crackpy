@@ -32,6 +32,12 @@ class SourceInput:
     source_label: str | None = None
     source_hash: str | None = None
 
+    def __post_init__(self) -> None:
+        if not self.input_id:
+            raise ValueError("SourceInput requires a non-empty input_id.")
+        if not self.data_ref:
+            raise ValueError("SourceInput requires a non-empty data_ref.")
+
 
 @dataclass(frozen=True)
 class SourceDependency:

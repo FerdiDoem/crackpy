@@ -363,6 +363,8 @@ Current implementation note: `ProvenanceSliceSpec` now validates that dependency
 
 Current test-coverage note: the Williams-fit envelope builder is now covered by a direct `MethodResultSource` fixture. This proves fixture authors can exercise the generic source/slice-spec path without constructing a fake `FractureAnalysis` object when the builder itself is under test.
 
+Current invariant note: `SourceInput` now rejects empty `input_id` and `data_ref` values. This keeps the primary input anchor fail-fast and prevents graph, KG, and frontend projections from receiving anonymous input nodes.
+
 ### Source Adapter And Minimal Source Snapshot
 
 The generic builder should not consume `FractureAnalysis` directly. Current CrackPy objects should be translated by Python [[glossary#Source adapter]] code into a minimal immutable [[glossary#MethodResultSource]], then the builder should combine that source with the [[glossary#Provenance slice spec]].

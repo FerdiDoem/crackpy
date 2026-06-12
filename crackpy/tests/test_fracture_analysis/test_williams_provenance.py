@@ -296,6 +296,14 @@ def test_source_dependency_record_requires_explicit_provenance_identity():
         SourceDependency(dependency_name="crack_tip_frame", record=UnidentifiedRecord())
 
 
+def test_source_input_requires_identity_and_data_reference():
+    with pytest.raises(ValueError, match="input_id"):
+        SourceInput(input_id="", data_ref="DirectNodemap.txt")
+
+    with pytest.raises(ValueError, match="data_ref"):
+        SourceInput(input_id="input:direct", data_ref="")
+
+
 from crackpy.fracture_analysis.methods.williams_fit import (
     build_williams_fit_envelope_from_analysis,
     build_williams_fit_envelope_from_source,
