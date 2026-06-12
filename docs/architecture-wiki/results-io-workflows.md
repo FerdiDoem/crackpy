@@ -48,6 +48,7 @@ Observed files and modules:
 
 - `crackpy/results/result_data.py`: canonical result/provenance dataclasses, strict JSON helpers, canonical JSON hashing, compact KG statement records, and graph visualization record shapes.
 - `crackpy/results/result_data.py`: `ResultSchemaIndex` derives a lookup table from `ResultEnvelope` quantities so adapters can resolve canonical symbols, units, descriptions, schema versions, and legacy aliases without importing `FractureAnalysis`, `Plotter`, or writer policy.
+- `crackpy/results/result_data.py`: `CrackTipFrame.from_legacy_side()` is the first orientation compatibility adapter for provenance records. It keeps current side labels as compatibility metadata and adds an explicit `geometry_profile`, defaulting to `surface_planar`.
 - `crackpy/provenance/source.py`: immutable `MethodResultSource`, `SourceInput`, `SourceDependency`, `SourceParameters`, and `SourceQuantity` snapshots consumed by provenance builders.
 - `crackpy/provenance/spec.py`: Pydantic slice-spec models loaded from YAML.
 - `crackpy/provenance/builder.py`: shared `MethodResultEnvelopeBuilder` that projects source snapshots and slice specs into result records.
@@ -73,6 +74,7 @@ Frontend integration handoff:
 - C-010 input-anchor update: frontend graph or table tests can assume input nodes have non-empty `input_id` and `data_ref` values because `SourceInput` rejects empty primary input anchors before envelope construction.
 - C-002 update: frontend integration should use `InputRecord.input_id` as the stable input key. `InputRecord.sequence_index` is available only for ordering input series, and source-specific labels such as `stage` belong in `InputRecord.source_metadata`.
 - C-009 update: detection and fracture-analysis pipeline objects can now expose an `InputMappingResult` named `input_mapping` after nearest-cycle assignment. Frontend integration should treat `input_mapping.input_id_to_representative_input_id` as the durable mapping and keep legacy `stage -> detection_stage` or `stage -> max_force_stage` dictionaries as compatibility labels only.
+- C-005 update: `CrackTipFrame` graph nodes now expose `data.geometry_profile`, currently `surface_planar` for the Williams-fit slice. Frontend integration should display or filter by `geometry_profile` when useful, and treat `data.compatibility_side` as a legacy label rather than the full orientation model.
 - Use `_williams_fit_graph.html` as the reference implementation for an inspectable layout and interaction model, not as the long-term application shell. The HTML embeds the graph payload and demonstrates lane-based layout, node-type styling, legend generation, and node detail inspection.
 - If the frontend generates its own view, keep UI state, colors, layout coordinates, filters, expansion state, and RDF namespace choices outside `ResultEnvelope`. Those remain visualization adapter concerns, not canonical provenance fields.
 - The Python entry point for backend/frontend integration is `write_williams_fit_provenance_artifacts(envelope, path, stem)`. Existing legacy flows can continue through `OutputWriter.write_williams_fit_provenance_artifacts()`.
@@ -84,6 +86,7 @@ Observed coupling:
 - Williams-fit schema lookup can now be derived from the canonical envelope, but legacy text, current JSON, and CSV readers still keep their existing string contracts.
 - Input identity and ordering metadata can now be projected into canonical input records, but `InputData` remains the mutable compatibility carrier.
 - Nearest-cycle assignment in crack-detection and fracture-analysis pipelines now records an ID-based input mapping result while preserving existing stage dictionaries.
+- Williams-fit crack-tip frames now carry explicit geometry-profile metadata while preserving legacy side labels for output compatibility.
 - Only Williams-fit quantities and aliases are covered by this first slice.
 - CJP results, line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
 - The compact KG projection currently loads the Williams-fit spec by default, so it is not yet a generic exporter for all future result envelopes.

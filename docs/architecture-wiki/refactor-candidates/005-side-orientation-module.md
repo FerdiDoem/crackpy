@@ -43,4 +43,4 @@ The planning target is a general frame concept with declared geometry profiles. 
 
 ## Decision State
 
-Planning direction accepted for OQ-001 and OQ-020. Candidate remains proposed; no implementation approved.
+Planning direction accepted for OQ-001 and OQ-020. A first narrow implementation slice now exists in the Williams-fit provenance path: `CrackTipFrame.from_legacy_side()` centralizes legacy side-to-frame projection, preserves the current side label as compatibility metadata, and records `geometry_profile` with the default `surface_planar`. Broader detection, correction, plotting, training, and fracture-analysis migration away from raw side strings is not approved.

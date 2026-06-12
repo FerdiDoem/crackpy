@@ -61,7 +61,7 @@ Observed Williams-fit method module:
 - `runner.py`: defines the `WilliamsFitOptimizer` protocol and `run_williams_fit()` typed numerical runner. Optimization exceptions propagate from the optimizer rather than being converted into silent fallback results.
 - `result.py`: defines Pydantic `WilliamsFitResult` and `WilliamsCoefficientSet` records.
 - `parameters.py`: defines Pydantic material and optimization parameter snapshots with field descriptions and parameter-origin metadata.
-- `source_adapter.py`: translates either current `FractureAnalysis` Williams attributes or a typed `WilliamsFitResult` into a `MethodResultSource`.
+- `source_adapter.py`: translates either current `FractureAnalysis` Williams attributes or a typed `WilliamsFitResult` into a `MethodResultSource`; current left/right side labels are projected through `CrackTipFrame.from_legacy_side()` so the frame carries explicit `geometry_profile` metadata while preserving the compatibility side label.
 - `spec.yaml` and `spec_loader.py`: hold and validate Williams-specific schema versions, method metadata, dependency roles, scalar quantity definitions, and coefficient-series definitions.
 - `builder.py`: wraps the shared provenance builder to produce the first Williams-fit result/provenance envelope.
 - `crackpy.results.write.write_williams_fit_provenance_artifacts()`: writes envelope, compact KG statement bundle, and visualization graph artifacts from a `ResultEnvelope`; `OutputWriter` remains the compatibility bridge from `FractureAnalysis`.

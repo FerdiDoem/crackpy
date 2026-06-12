@@ -27,16 +27,14 @@ def source_from_analysis(analysis: Any) -> MethodResultSource:
         raise ValueError("Williams fit results are missing; run Williams optimization before building provenance.")
 
     stem = Path(str(analysis.nodemap_file)).stem
-    side = analysis.crack_tip.left_or_right
-    frame = CrackTipFrame(
-        frame_id=f"crack_tip_frame:{stem}:{side}",
-        tip_id=f"crack_tip:{stem}:{side}",
+    frame = CrackTipFrame.from_legacy_side(
+        stem=stem,
+        side=analysis.crack_tip.left_or_right,
         origin_mm={
             "x": analysis.crack_tip.crack_tip_x,
             "y": analysis.crack_tip.crack_tip_y,
         },
         angle_deg=analysis.crack_tip.crack_tip_angle,
-        compatibility_side=analysis.crack_tip.left_or_right,
     )
     fit_res = analysis.williams_fit_res
     result = WilliamsFitResult(

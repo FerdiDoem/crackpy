@@ -160,8 +160,10 @@ class CrackTipFrame:
 
     `frame_id` is the provenance identity. `tip_id` names the crack-tip entity.
     `origin_mm` stores the frame origin in millimetres. `angle_deg` stores the
-    in-plane orientation in degrees. `compatibility_side` preserves legacy
-    left/right vocabulary when available.
+    in-plane local crack-extension direction in degrees. `compatibility_side`
+    preserves legacy left/right vocabulary when available. `geometry_profile`
+    declares the spatial assumptions of the frame so current planar-surface
+    methods are not mistaken for general 3D crack-front support.
     """
 
     frame_id: str
@@ -169,6 +171,44 @@ class CrackTipFrame:
     origin_mm: Mapping[str, float | None]
     angle_deg: float | None
     compatibility_side: str | None = None
+    geometry_profile: str = "surface_planar"
+
+    def __post_init__(self) -> None:
+        if not self.frame_id:
+            raise ValueError("CrackTipFrame requires a non-empty frame_id.")
+        if not self.tip_id:
+            raise ValueError("CrackTipFrame requires a non-empty tip_id.")
+        if not self.geometry_profile:
+            raise ValueError("CrackTipFrame requires a non-empty geometry_profile.")
+
+    @classmethod
+    def from_legacy_side(
+            cls,
+            *,
+            stem: str,
+            side: str,
+            origin_mm: Mapping[str, float | None],
+            angle_deg: float | None,
+            geometry_profile: str = "surface_planar",
+    ) -> "CrackTipFrame":
+        """Create a frame from the current left/right compatibility label.
+
+        This adapter is the first C-005 seam: legacy `side` remains a file and
+        output label, while the returned frame carries explicit provenance
+        identity and geometry-profile metadata for downstream records.
+        """
+        if not stem:
+            raise ValueError("CrackTipFrame.from_legacy_side() requires a non-empty stem.")
+        if side not in {"left", "right", "l", "r"}:
+            raise ValueError("Legacy crack-tip side must be one of 'left', 'right', 'l', or 'r'.")
+        return cls(
+            frame_id=f"crack_tip_frame:{stem}:{side}",
+            tip_id=f"crack_tip:{stem}:{side}",
+            origin_mm=origin_mm,
+            angle_deg=angle_deg,
+            compatibility_side=side,
+            geometry_profile=geometry_profile,
+        )
 
     @property
     def provenance_id(self) -> str:

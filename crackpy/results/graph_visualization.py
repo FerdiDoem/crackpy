@@ -69,6 +69,7 @@ def envelope_to_visualization_graph(envelope: ResultEnvelope) -> VisualizationGr
                 frame.frame_id,
                 angle_deg=frame.angle_deg,
                 compatibility_side=frame.compatibility_side,
+                geometry_profile=frame.geometry_profile,
             )
         )
 

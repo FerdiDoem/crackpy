@@ -32,6 +32,12 @@ def test_visualization_graph_consumes_envelope_records_and_dependency_edges():
     }
     assert method_nodes["crackpy.fracture.williams_fit"]["label"] == "Williams Fit"
 
+    frame_nodes = [
+        node for node in payload["nodes"]
+        if node["type"] == "CrackTipFrame"
+    ]
+    assert frame_nodes[0]["data"]["geometry_profile"] == "surface_planar"
+
     roles = {edge["role"] for edge in payload["edges"]}
     assert "used_input" in roles
     assert "used_configuration" in roles

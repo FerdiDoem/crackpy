@@ -372,6 +372,7 @@ def test_build_williams_fit_envelope_maps_current_result_section():
     assert payload["input_records"][0]["input_id"] == "input:DemoNodemap"
     assert payload["crack_tip_frames"][0]["angle_deg"] == 12.0
     assert payload["crack_tip_frames"][0]["compatibility_side"] == "right"
+    assert payload["crack_tip_frames"][0]["geometry_profile"] == "surface_planar"
     assert payload["analysis_runs"][0]["dependencies"][0]["role"] == "used_input"
     assert payload["analysis_runs"][0]["crackpy_version"] == "test-version"
 
@@ -381,6 +382,30 @@ def test_build_williams_fit_envelope_maps_current_result_section():
     assert quantities["error_xy"]["legacy_aliases"] == ["Williams_fit_results.error_xy", "Error_xy"]
     assert quantities["a_-1"]["legacy_aliases"] == ["Williams_fit_results.a_-1"]
     assert quantities["c_1"]["value"] is None
+
+
+def test_crack_tip_frame_legacy_side_adapter_preserves_compatibility_label():
+    frame = CrackTipFrame.from_legacy_side(
+        stem="DemoNodemap",
+        side="left",
+        origin_mm={"x": 1.0, "y": 2.0},
+        angle_deg=45.0,
+    )
+
+    assert frame.frame_id == "crack_tip_frame:DemoNodemap:left"
+    assert frame.tip_id == "crack_tip:DemoNodemap:left"
+    assert frame.compatibility_side == "left"
+    assert frame.geometry_profile == "surface_planar"
+
+
+def test_crack_tip_frame_legacy_side_adapter_rejects_unknown_side():
+    with pytest.raises(ValueError, match="Legacy crack-tip side"):
+        CrackTipFrame.from_legacy_side(
+            stem="DemoNodemap",
+            side="middle",
+            origin_mm={"x": 1.0, "y": 2.0},
+            angle_deg=45.0,
+        )
 
 
 def _typed_williams_envelope() -> ResultEnvelope:
