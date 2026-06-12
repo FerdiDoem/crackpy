@@ -4,9 +4,9 @@
 
 **Goal:** Implement the approved CJP mixed-mode and Mode-I result/provenance slice while preserving legacy CJP output behavior.
 
-**Architecture:** Add a method-local `crackpy.fracture_analysis.methods.cjp_fit` package that mirrors the Williams slice boundary: typed result models, tested formula conversions, YAML-owned stable definitions, a source adapter, and a builder that reuses `crackpy.provenance.MethodResultEnvelopeBuilder`. Generic provenance code stays method-neutral; CJP-specific quantity variants and coefficient mapping stay in the CJP package.
+**Architecture:** Add a method-local `crackpy.fracture_analysis.methods.cjp_fit` package that mirrors the Williams slice boundary after `main` commit `7d82e9d`: typed result models, explicit coefficient result assembly, an explicit crack-tip-centered displacement-field fit interface, YAML-owned stable definitions, a source adapter, and a builder that reuses `crackpy.provenance.MethodResultEnvelopeBuilder`. Generic provenance code stays method-neutral; CJP-specific quantity variants and coefficient mapping stay in the CJP package.
 
-**Tech Stack:** Python 3.12+, Pydantic v2, PyYAML, NumPy/SciPy optimizer results, existing CrackPy result/provenance dataclasses, pytest.
+**Tech Stack:** Python 3.12+, Pydantic v2, PyYAML, NumPy/SciPy least-squares fitting, existing CrackPy result/provenance dataclasses, pytest.
 
 ---
 
@@ -146,7 +146,67 @@ def run_cjp_fit(optimizer: CjpOptimizer) -> CjpFitResult:
 
 Do not catch optimizer exceptions in this method-local runner.
 
-- [ ] **Step 5: Run tests green and commit**
+- [ ] **Step 5: Add explicit coefficient and displacement-field interfaces after the latest main update**
+
+Add tests that import:
+
+```python
+from crackpy.fracture_analysis.crack_tip import cjp_displ_field_mixedmode, cjp_displ_field_modeI
+from crackpy.fracture_analysis.methods.cjp_fit import (
+    CjpFitDisplacementField,
+    fit_cjp_displacement_field,
+    run_cjp_fit_from_coefficients,
+)
+from crackpy.structure_elements.material import Material
+```
+
+Assert explicit coefficient assembly:
+
+```python
+result = run_cjp_fit_from_coefficients(
+    mixed_mode_coefficients=np.asarray([2.0, -0.5, 0.25, 30.0, 0.75]),
+    mixed_mode_error=0.125,
+    mode_i_coefficients=np.asarray([3.0, -1.0, 25.0, 0.5, 12.0]),
+    mode_i_error=0.25,
+)
+assert result.mixed_mode.K_II == cjp_mixed_mode_outputs_from_coefficients([2.0, -0.5, 0.25, 30.0, 0.75], error=0.125).K_II
+assert result.mode_i.T_y == -12.0
+```
+
+Assert explicit-field fitting on synthetic data:
+
+```python
+material = Material()
+r_grid, phi_grid = np.mgrid[1.0:2.0:5j, -1.0:1.0:6j]
+mixed_coefficients = np.asarray([2.0, -0.5, 0.25, 30.0, 0.75])
+mixed_x, mixed_y = cjp_displ_field_mixedmode(mixed_coefficients, phi_grid, r_grid, material)
+mode_i_coefficients = np.asarray([3.0, -1.0, 25.0, 0.5, 12.0])
+mode_i_x, mode_i_y = cjp_displ_field_modeI(mode_i_coefficients, phi_grid, r_grid, material)
+field = CjpFitDisplacementField(
+    r_grid=r_grid,
+    phi_grid=phi_grid,
+    mixed_mode_disp_x=mixed_x,
+    mixed_mode_disp_y=mixed_y,
+    mode_i_disp_x=mode_i_x,
+    mode_i_disp_y=mode_i_y,
+    material=material,
+)
+fit = fit_cjp_displacement_field(
+    field,
+    initial_mixed_mode_coefficients=mixed_coefficients,
+    initial_mode_i_coefficients=mode_i_coefficients,
+)
+assert fit.mixed_mode.error < 1e-20
+assert fit.mode_i.error < 1e-20
+```
+
+Create `CjpFitDisplacementField` as a frozen dataclass in `runner.py`. It carries only resolved arrays: `r_grid`, `phi_grid`, `mixed_mode_disp_x`, `mixed_mode_disp_y`, `mode_i_disp_x`, `mode_i_disp_y`, and `material`. The class validates matching shapes. It does not load files, transform coordinates, interpolate data, or choose fitting radii.
+
+Create `run_cjp_fit_from_coefficients(...) -> CjpFitResult` as the shared result assembler used by both the legacy optimizer adapter and the explicit array fit.
+
+Create `fit_cjp_displacement_field(...) -> CjpFitResult` with SciPy `least_squares` residuals against `cjp_displ_field_mixedmode` and `cjp_displ_field_modeI`. Require explicit initial coefficient vectors for deterministic tests and to avoid preserving the legacy random-start policy in this new interface.
+
+- [ ] **Step 6: Run tests green and commit**
 
 Run:
 
