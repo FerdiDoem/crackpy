@@ -30,6 +30,7 @@ tom.egg-info
 # Ignore all files in the scripts folder except for python files
 /scripts/**/*.*
 !/scripts/**/*.py
+!/scripts/fracture_analysis/method_fit_usage_demo.ipynb
 
 __pycache__
 *.xml
