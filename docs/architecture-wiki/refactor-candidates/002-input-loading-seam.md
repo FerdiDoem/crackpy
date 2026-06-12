@@ -45,4 +45,4 @@ Candidate adapters:
 
 ## Decision State
 
-Not decided. No implementation approved.
+The first narrow implementation slice is now present: `InputData.source_input()` projects already-loaded input identity and source metadata into a `SourceInput`, and `SourceInput`/`InputRecord` carry optional `sequence_index` as an ordering hint. This does not approve a broader `InputData` rewrite; nodemap parsing, manual data injection, transforms, mechanics helpers, VTK export, masking, and legacy stage handling remain compatibility behavior.

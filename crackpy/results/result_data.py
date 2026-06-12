@@ -61,14 +61,16 @@ class InputRecord:
 
     `input_id` is the stable identity used in dependency edges. `data_ref`
     points to the input data. `source_metadata` carries optional source-system
-    facts. `source_label` is a human/workflow label. `source_hash` identifies
-    input content when available.
+    facts. `source_label` is a human/workflow label. `sequence_index` is an
+    ordering hint for input series and must not replace `input_id` as identity.
+    `source_hash` identifies input content when available.
     """
 
     input_id: str
     data_ref: str
     source_metadata: Mapping[str, Any] = field(default_factory=dict)
     source_label: str | None = None
+    sequence_index: int | None = None
     source_hash: str | None = None
 
     @property

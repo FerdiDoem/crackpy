@@ -469,6 +469,7 @@ def test_build_williams_fit_envelope_accepts_direct_source_fixture():
                 data_ref="DirectNodemap.txt",
                 source_label="direct",
                 source_metadata={"stage": 4},
+                sequence_index=7,
             ),
         ),
         dependencies=(SourceDependency("crack_tip_frame", record=frame),),
@@ -486,6 +487,8 @@ def test_build_williams_fit_envelope_accepts_direct_source_fixture():
     envelope = build_williams_fit_envelope_from_source(source, crackpy_version="test-version")
 
     assert envelope.input_records[0].input_id == "input:direct"
+    assert envelope.input_records[0].source_metadata == {"stage": 4}
+    assert envelope.input_records[0].sequence_index == 7
     assert envelope.configurations[0].adapter_policy["test_fixture"] is True
     assert envelope.analysis_runs[0].crackpy_version == "test-version"
     assert {dependency.role for dependency in envelope.analysis_runs[0].dependencies} >= {

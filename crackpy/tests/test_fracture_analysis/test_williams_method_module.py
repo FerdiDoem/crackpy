@@ -221,7 +221,7 @@ def test_williams_envelope_builder_requires_stable_input_identity():
 
     frame, parameters, result = _demo_source_inputs()
 
-    with pytest.raises(ValueError, match="source_label or data_ref"):
+    with pytest.raises(ValueError, match="data_ref"):
         build_williams_fit_envelope_from_result(
             input_id="input:demo",
             data_ref="",

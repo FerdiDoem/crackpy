@@ -30,6 +30,22 @@ class TestInputData(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.data.require_fields('coor_z')
 
+    def test_source_input_records_identity_without_loading_policy(self):
+        self.data.nodemap_file = r"C:\data\DemoNodemap.txt"
+        self.data.force = 100.0
+        self.data.cycles = 4
+        self.data.time = None
+
+        source_input = self.data.source_input(sequence_index=7)
+
+        self.assertEqual(source_input.input_id, "input:DemoNodemap")
+        self.assertEqual(source_input.data_ref, r"C:\data\DemoNodemap.txt")
+        self.assertEqual(source_input.source_label, "DemoNodemap")
+        self.assertEqual(source_input.sequence_index, 7)
+        self.assertEqual(source_input.source_metadata["force"], 100.0)
+        self.assertEqual(source_input.source_metadata["cycles"], 4)
+        self.assertNotIn("time", source_input.source_metadata)
+
     def test_validate_shapes_detects_mismatch(self):
         self.data.disp_x = self.data.disp_x[:-1]
         with self.assertRaises(ValueError):

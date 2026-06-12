@@ -54,6 +54,7 @@ class MethodResultEnvelopeBuilder:
                 data_ref=source_input.data_ref,
                 source_metadata=source_input.source_metadata,
                 source_label=source_input.source_label,
+                sequence_index=source_input.sequence_index,
                 source_hash=source_input.source_hash,
             )
             for source_input in self.source.inputs

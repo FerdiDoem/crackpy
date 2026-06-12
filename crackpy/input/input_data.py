@@ -7,6 +7,7 @@ import numpy as np
 import pyvista
 from pyvista import CellType
 
+from crackpy.provenance import SourceInput
 from crackpy.structure_elements import data_files
 from crackpy.structure_elements.material import Material
 
@@ -249,6 +250,42 @@ class InputData:
                 inconsistent length.
         """
         self._validate_data_shapes(required_fields=field_names)
+
+    def source_input(
+            self,
+            *,
+            input_id: str | None = None,
+            source_label: str | None = None,
+            sequence_index: int | None = None,
+            source_hash: str | None = None,
+    ) -> SourceInput:
+        """Project loaded input identity and source metadata into a provenance input record.
+
+        The method is an adapter seam over the current mutable `InputData`
+        lifecycle. It does not read files, validate numerical arrays, transform
+        coordinates, or infer processing provenance. `input_id` is the stable
+        identity used by result/provenance records; `sequence_index` is only an
+        ordering hint for input series. Header-derived metadata remains
+        source metadata and excludes missing values.
+        """
+        if not self.nodemap_file:
+            raise ValueError("InputData.source_input() requires 'nodemap_file' to provide the source reference.")
+
+        data_ref = str(self.nodemap_file)
+        inferred_label = source_label or Path(data_ref).stem
+        source_metadata = {
+            attribute: getattr(self, attribute)
+            for attribute in self.meta_attributes
+            if getattr(self, attribute, None) is not None
+        }
+        return SourceInput(
+            input_id=input_id or f"input:{inferred_label}",
+            data_ref=data_ref,
+            source_metadata=source_metadata,
+            source_label=inferred_label,
+            sequence_index=sequence_index,
+            source_hash=source_hash,
+        )
 
     def to_vtk(self, output_folder: str | Path = None, metadata: bool = True, alpha: float = 1.0):
         """Returns a vtk file of the DIC data.

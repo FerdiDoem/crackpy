@@ -71,6 +71,7 @@ Frontend integration handoff:
 - C-010 validation update: provenance artifacts are now generated from a slice spec that rejects dependency or quantity key/name drift. The frontend graph payload shape is unchanged, but integration code can assume `VisualizationGraph` node and edge names came from a validated spec rather than a partially inconsistent YAML mapping.
 - C-010 fixture update: backend/frontend contract tests can build a Williams-fit envelope from a direct `MethodResultSource` fixture when they need stable graph/schema payloads without a fake `FractureAnalysis` object.
 - C-010 input-anchor update: frontend graph or table tests can assume input nodes have non-empty `input_id` and `data_ref` values because `SourceInput` rejects empty primary input anchors before envelope construction.
+- C-002 update: frontend integration should use `InputRecord.input_id` as the stable input key. `InputRecord.sequence_index` is available only for ordering input series, and source-specific labels such as `stage` belong in `InputRecord.source_metadata`.
 - Use `_williams_fit_graph.html` as the reference implementation for an inspectable layout and interaction model, not as the long-term application shell. The HTML embeds the graph payload and demonstrates lane-based layout, node-type styling, legend generation, and node detail inspection.
 - If the frontend generates its own view, keep UI state, colors, layout coordinates, filters, expansion state, and RDF namespace choices outside `ResultEnvelope`. Those remain visualization adapter concerns, not canonical provenance fields.
 - The Python entry point for backend/frontend integration is `write_williams_fit_provenance_artifacts(envelope, path, stem)`. Existing legacy flows can continue through `OutputWriter.write_williams_fit_provenance_artifacts()`.
@@ -80,6 +81,7 @@ Observed coupling:
 - The provenance source adapter still reads `FractureAnalysis` post-run attributes for the legacy bridge.
 - Williams-fit envelope-to-artifact projection no longer requires the broad `FractureAnalysis` attribute bag once a `ResultEnvelope` is available.
 - Williams-fit schema lookup can now be derived from the canonical envelope, but legacy text, current JSON, and CSV readers still keep their existing string contracts.
+- Input identity and ordering metadata can now be projected into canonical input records, but `InputData` remains the mutable compatibility carrier.
 - Only Williams-fit quantities and aliases are covered by this first slice.
 - CJP results, line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
 - The compact KG projection currently loads the Williams-fit spec by default, so it is not yet a generic exporter for all future result envelopes.

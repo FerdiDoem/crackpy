@@ -22,14 +22,16 @@ class SourceInput:
     `input_id` is the stable provenance identity for the input. `data_ref`
     points to the source data or artifact. `source_metadata` carries optional
     source-system facts, not method parameters. `source_label` is a human or
-    workflow label useful for deterministic IDs. `source_hash` identifies the
-    input content when available.
+    workflow label useful for deterministic IDs. `sequence_index` is an
+    ordering hint for input series and must not replace `input_id` as identity.
+    `source_hash` identifies the input content when available.
     """
 
     input_id: str
     data_ref: str
     source_metadata: Mapping[str, Any] = field(default_factory=dict)
     source_label: str | None = None
+    sequence_index: int | None = None
     source_hash: str | None = None
 
     def __post_init__(self) -> None:
