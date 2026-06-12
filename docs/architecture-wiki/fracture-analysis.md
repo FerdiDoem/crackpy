@@ -68,7 +68,7 @@ Observed Williams-fit method module:
 - `builder.py`: wraps the shared provenance builder to produce the first Williams-fit result/provenance envelope.
 - `crackpy.results.write.write_williams_fit_provenance_artifacts()`: writes envelope, compact KG statement bundle, and visualization graph artifacts from a `ResultEnvelope`; `OutputWriter` remains the compatibility bridge from `FractureAnalysis`.
 
-This is a partial deeper module around Williams fitting. The runner can now fit explicit crack-tip-centered displacement arrays and assemble typed results from explicit coefficient vectors without a `FractureAnalysis` or `Optimization` instance. CJP fitting, line integrals, correction-time Williams optimization in `crack_detection.correction`, legacy result writing, and plotting still consume or expose the older mutable `FractureAnalysis` attribute shape.
+This is a partial deeper module around Williams fitting. The runner can now fit explicit crack-tip-centered displacement arrays and assemble typed results from explicit coefficient vectors without a `FractureAnalysis` or `Optimization` instance. Line integrals, correction-time Williams optimization in `crack_detection.correction`, legacy result writing, and plotting still consume or expose the older mutable `FractureAnalysis` attribute shape.
 
 ## CJP Fitting
 
@@ -77,6 +77,7 @@ Implemented by:
 - `optimize_cjp_displacements_modeI()`
 - `optimize_cjp_displacements_mixedmode()`
 - analytical fields in `crack_tip.py`
+- `crackpy/fracture_analysis/methods/cjp_fit/`
 
 Observed behavior:
 
@@ -94,6 +95,15 @@ Mode-I CJP coefficients:
 
 - `(A, B, C, E, F)`
 - derived outputs: `K_F`, `K_R`, `K_S`, `T_x`, `T_y`
+
+Observed CJP-fit method module:
+
+- `runner.py`: defines the `CjpOptimizer` compatibility protocol, `CjpFitDisplacementField` array interface, `fit_cjp_displacement_field()` least-squares runner, `run_cjp_fit_from_coefficients()` result assembler, and `run_cjp_fit()` legacy optimizer adapter. The explicit array interface requires caller-provided initial coefficients so tests and future field-cache consumers do not inherit the legacy random-start policy.
+- `result.py`: defines Pydantic result records for mixed-mode and Mode-I CJP variants. Canonical singular coefficients are exported in `MPa*m^{1/2}` while native optimizer coefficient snapshots remain available in `MPa*mm^{1/2}` for audit.
+- `parameters.py`: defines Pydantic material and optimization parameter snapshots with field descriptions and parameter-origin metadata.
+- `source_adapter.py`: translates either current `FractureAnalysis` CJP attributes or a typed `CjpFitResult` into a `MethodResultSource`; quantity names are variant-scoped while exported symbols stay close to the scientific notation.
+- `spec.yaml` and `spec_loader.py`: hold and validate CJP schema versions, two method identities, dependency roles, aliases, units, and variant-scoped quantity definitions.
+- `builder.py`: wraps the shared provenance builder to produce one CJP envelope with one input record, one crack-tip frame, one normalized configuration, two CJP method records, two analysis runs, and two result records.
 
 ## Line Integrals
 
