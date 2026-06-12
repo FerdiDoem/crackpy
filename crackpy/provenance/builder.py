@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, TypeVar
 
 from crackpy.provenance.source import MethodResultSource, ProvenanceIdentified, SourceQuantity
-from crackpy.provenance.spec import DependencySpec, ProvenanceSliceSpec
+from crackpy.provenance.spec import DependencySpec, ProvenanceSliceSpec, QuantitySpec
 from crackpy.results.result_data import (
     DependencyEdge,
     InputRecord,
@@ -46,6 +46,42 @@ class MethodResultEnvelopeBuilder:
         if dependency_spec is None:
             raise ValueError(f"Provenance spec is missing {dependency_name!r} dependency.")
         return dependency_spec
+
+    def quantity_spec(self, source_quantity: SourceQuantity) -> QuantitySpec:
+        """Return the spec entry for a source quantity and validate qualifier names.
+
+        Qualifier keys are part of the source/spec interface because they decide
+        whether dimensions such as CJP variant, path statistic, or path index are
+        projected deliberately. Values remain method-specific unless a method
+        spec adds a narrower validation rule.
+        """
+        quantity_spec = self.spec.quantities.get(source_quantity.quantity_name)
+        if quantity_spec is None:
+            raise ValueError(f"Unsupported quantity: {source_quantity.quantity_name!r}")
+        self.validate_qualifier_names(
+            quantity_name=source_quantity.quantity_name,
+            qualifiers=source_quantity.qualifiers,
+            allowed_qualifiers=quantity_spec.allowed_qualifiers,
+        )
+        return quantity_spec
+
+    def validate_qualifier_names(
+        self,
+        *,
+        quantity_name: str,
+        qualifiers: Mapping[str, Any],
+        allowed_qualifiers: tuple[str, ...],
+    ) -> None:
+        """Reject source-quantity qualifier names not declared by the slice spec."""
+        unsupported_qualifiers = sorted(set(qualifiers) - set(allowed_qualifiers))
+        if unsupported_qualifiers:
+            joined = ", ".join(repr(qualifier) for qualifier in unsupported_qualifiers)
+            raise ValueError(f"Unsupported qualifiers for {quantity_name!r}: {joined}")
+
+    def validate_source_quantities(self) -> None:
+        """Validate quantity names and qualifier names for the full source snapshot."""
+        for source_quantity in self.source.quantities:
+            self.quantity_spec(source_quantity)
 
     def input_records(self) -> list[InputRecord]:
         return [
@@ -133,9 +169,7 @@ class MethodResultEnvelopeBuilder:
         method_id: str,
         source_quantity: SourceQuantity,
     ) -> ResultQuantity:
-        quantity_spec = self.spec.quantities.get(source_quantity.quantity_name)
-        if quantity_spec is None:
-            raise ValueError(f"Unsupported quantity: {source_quantity.quantity_name!r}")
+        quantity_spec = self.quantity_spec(source_quantity)
         return self.result_quantity(
             result_id=result_id,
             method_id=method_id,

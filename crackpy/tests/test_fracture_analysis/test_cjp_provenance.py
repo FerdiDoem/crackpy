@@ -147,6 +147,52 @@ def test_build_cjp_fit_envelope_accepts_direct_source_fixture():
     }
 
 
+def test_build_cjp_fit_envelope_rejects_undeclared_quantity_qualifier():
+    import pytest
+    from crackpy.fracture_analysis.methods.cjp_fit import build_cjp_fit_envelope_from_source
+    from crackpy.provenance import MethodResultSource, SourceDependency, SourceInput, SourceParameters, SourceQuantity
+
+    frame = CrackTipFrame(
+        frame_id="crack_tip_frame:direct:right",
+        tip_id="crack_tip:direct:right",
+        origin_mm={"x": 1.5, "y": 2.5},
+        angle_deg=12.0,
+        compatibility_side="right",
+    )
+    source = MethodResultSource(
+        inputs=(SourceInput(input_id="input:direct", data_ref="DirectNodemap.txt", source_label="direct"),),
+        dependencies=(SourceDependency("crack_tip_frame", record=frame),),
+        parameters=SourceParameters(result_parameters={}, parameter_origins={}),
+        quantities=(SourceQuantity("mixed_mode.K_II", 1.25, {"variant": "mixed_mode", "path_index": 0}),),
+    )
+
+    with pytest.raises(ValueError, match="Unsupported qualifiers.*path_index"):
+        build_cjp_fit_envelope_from_source(source, crackpy_version="test-version")
+
+
+def test_build_cjp_fit_envelope_requires_variant_qualifier():
+    import pytest
+    from crackpy.fracture_analysis.methods.cjp_fit import build_cjp_fit_envelope_from_source
+    from crackpy.provenance import MethodResultSource, SourceDependency, SourceInput, SourceParameters, SourceQuantity
+
+    frame = CrackTipFrame(
+        frame_id="crack_tip_frame:direct:right",
+        tip_id="crack_tip:direct:right",
+        origin_mm={"x": 1.5, "y": 2.5},
+        angle_deg=12.0,
+        compatibility_side="right",
+    )
+    source = MethodResultSource(
+        inputs=(SourceInput(input_id="input:direct", data_ref="DirectNodemap.txt", source_label="direct"),),
+        dependencies=(SourceDependency("crack_tip_frame", record=frame),),
+        parameters=SourceParameters(result_parameters={}, parameter_origins={}),
+        quantities=(SourceQuantity("mixed_mode.K_II", 1.25),),
+    )
+
+    with pytest.raises(ValueError, match="requires variant qualifier"):
+        build_cjp_fit_envelope_from_source(source, crackpy_version="test-version")
+
+
 def test_cjp_envelope_builder_requires_stable_input_identity():
     import pytest
     from crackpy.fracture_analysis.methods.cjp_fit import build_cjp_fit_envelope_from_result

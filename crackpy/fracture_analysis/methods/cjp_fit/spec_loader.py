@@ -15,6 +15,10 @@ class CjpQuantitySpec(QuantitySpec):
     model_config = ConfigDict(frozen=True)
 
     variant: str = Field(description="CJP variant that owns this quantity: mixed_mode or mode_i.")
+    allowed_qualifiers: tuple[str, ...] = Field(
+        default=("variant",),
+        description="SourceQuantity qualifier names accepted for CJP quantities.",
+    )
 
 
 class CjpFitSliceSpec(ProvenanceSliceSpec):

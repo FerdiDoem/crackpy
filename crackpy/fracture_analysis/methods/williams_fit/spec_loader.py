@@ -14,6 +14,10 @@ class WilliamsCoefficientQuantitySpec(BaseModel):
     symbol_template: str = Field(description="Template for canonical Williams coefficient symbols.")
     description_template: str = Field(description="Template for Williams coefficient result descriptions.")
     legacy_alias_template: str = Field(description="Template for current Williams_fit_results coefficient aliases.")
+    allowed_qualifiers: tuple[str, ...] = Field(
+        default=("coefficient_series", "term_order"),
+        description="SourceQuantity qualifier names accepted for Williams coefficient quantities.",
+    )
     allowed_coefficient_series: tuple[str, ...] = Field(
         description="Allowed Williams coefficient series labels, currently lower-case a, b, and c.",
     )

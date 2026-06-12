@@ -37,6 +37,14 @@ def build_cjp_fit_envelope_from_source(
     """Build a CJP result/provenance envelope from a method source snapshot."""
     spec = spec or load_cjp_fit_spec()
     builder = MethodResultEnvelopeBuilder(source, spec)
+    builder.validate_source_quantities()
+    for source_quantity in source.quantities:
+        variant = source_quantity.qualifiers.get("variant")
+        if variant not in VARIANT_METHOD_NAMES:
+            raise ValueError(
+                f"CJP source quantity {source_quantity.quantity_name!r} requires variant qualifier "
+                f"{tuple(VARIANT_METHOD_NAMES)}."
+            )
     primary_input = source.inputs[0]
     frame = builder.dependency_record("crack_tip_frame", CrackTipFrame)
     side = frame.compatibility_side or frame.frame_id

@@ -105,6 +105,15 @@ def build_williams_fit_envelope_from_source(
             )
             continue
 
+        builder.validate_qualifier_names(
+            quantity_name=source_quantity.quantity_name,
+            qualifiers=source_quantity.qualifiers,
+            allowed_qualifiers=coefficient_quantity.allowed_qualifiers,
+        )
+        missing_qualifiers = sorted(set(coefficient_quantity.allowed_qualifiers) - set(source_quantity.qualifiers))
+        if missing_qualifiers:
+            joined = ", ".join(repr(qualifier) for qualifier in missing_qualifiers)
+            raise ValueError(f"Missing qualifiers for {source_quantity.quantity_name!r}: {joined}")
         coefficient_series = str(source_quantity.qualifiers["coefficient_series"])
         if coefficient_series not in coefficient_quantity.allowed_coefficient_series:
             raise ValueError(f"Unsupported Williams coefficient series: {coefficient_series!r}")

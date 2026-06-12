@@ -265,6 +265,55 @@ def test_provenance_slice_spec_rejects_key_name_drift():
         ProvenanceSliceSpec.model_validate(payload)
 
 
+def test_provenance_builder_rejects_undeclared_source_quantity_qualifiers():
+    from crackpy.provenance import MethodResultEnvelopeBuilder, MethodResultSource
+    from crackpy.provenance import SourceInput, SourceParameters, SourceQuantity
+    from crackpy.provenance.spec import ProvenanceSliceSpec
+
+    spec = ProvenanceSliceSpec.model_validate(
+        {
+            "schemas": {
+                "envelope": "crackpy.result_envelope.demo.v1",
+                "result": "crackpy.result_record.demo.v1",
+                "configuration": "crackpy.configuration.demo.v1",
+                "kg_statement_bundle": "crackpy.kg_statement_bundle.demo.v1",
+            },
+            "methods": {
+                "analysis": {
+                    "method_id": "crackpy.demo.method",
+                    "display_name": "Demo Method",
+                    "kind": "analysis",
+                    "method_revision": "1",
+                    "implementation_ref": "crackpy.demo",
+                }
+            },
+            "dependencies": {},
+            "quantities": {
+                "K_I": {
+                    "quantity_name": "K_I",
+                    "symbol": "K_I",
+                    "description": "Mode I stress intensity factor.",
+                    "unit": "MPa*m^{1/2}",
+                    "allowed_qualifiers": ("variant",),
+                }
+            },
+        }
+    )
+    source = MethodResultSource(
+        inputs=(SourceInput(input_id="input:demo", data_ref="demo.txt"),),
+        dependencies=(),
+        parameters=SourceParameters(result_parameters={}, parameter_origins={}),
+        quantities=(SourceQuantity("K_I", 12.5, {"variant": "demo", "path_index": 0}),),
+    )
+
+    with pytest.raises(ValueError, match="Unsupported qualifiers.*path_index"):
+        MethodResultEnvelopeBuilder(source, spec).result_quantity_from_source(
+            result_id="result:demo",
+            method_id="crackpy.demo.method",
+            source_quantity=source.quantities[0],
+        )
+
+
 def test_generic_provenance_contains_no_coefficient_specific_schema_or_builder_api():
     from crackpy.provenance import MethodResultEnvelopeBuilder
     from crackpy.provenance import spec as spec_models
@@ -525,6 +574,31 @@ def test_build_williams_fit_envelope_accepts_direct_source_fixture():
     quantities = {quantity.symbol: quantity for quantity in envelope.results[0].quantities}
     assert quantities["K_I"].legacy_aliases == ["Williams_fit_results.K_I"]
     assert quantities["a_1"].legacy_aliases == ["Williams_fit_results.a_1"]
+
+
+def test_build_williams_fit_envelope_rejects_malformed_coefficient_qualifiers():
+    frame = CrackTipFrame(
+        frame_id="crack_tip_frame:direct:right",
+        tip_id="crack_tip:direct:right",
+        origin_mm={"x": 1.5, "y": 2.5},
+        angle_deg=12.0,
+        compatibility_side="right",
+    )
+    source = MethodResultSource(
+        inputs=(SourceInput(input_id="input:direct", data_ref="DirectNodemap.txt", source_label="direct"),),
+        dependencies=(SourceDependency("crack_tip_frame", record=frame),),
+        parameters=SourceParameters(result_parameters={}, parameter_origins={}),
+        quantities=(
+            SourceQuantity(
+                "williams_coefficient",
+                2.0,
+                {"coefficient_series": "a", "term_order": 1, "path_index": 0},
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Unsupported qualifiers.*path_index"):
+        build_williams_fit_envelope_from_source(source, crackpy_version="test-version")
 
 
 def test_williams_fit_source_from_analysis_requires_input_identity():

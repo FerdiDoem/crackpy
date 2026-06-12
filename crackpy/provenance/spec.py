@@ -45,6 +45,10 @@ class QuantitySpec(BaseModel):
     description: str = Field(description="Human-readable meaning of the scientific quantity.")
     unit: str = Field(description="Canonical unit label for the quantity value.")
     legacy_aliases: tuple[str, ...] = Field(default=(), description="Legacy output keys that map to this quantity.")
+    allowed_qualifiers: tuple[str, ...] = Field(
+        default=(),
+        description="SourceQuantity qualifier names accepted for this quantity; empty means no qualifiers are allowed.",
+    )
 
 
 class ProvenanceSliceSpec(BaseModel):

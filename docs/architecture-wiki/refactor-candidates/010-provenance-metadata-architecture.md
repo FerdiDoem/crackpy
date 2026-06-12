@@ -359,9 +359,9 @@ The generic `ProvenanceSliceSpec` should stay scalar-only. Williams fitting exte
 
 Concrete Williams slice definitions should have one source of truth. The Williams YAML spec owns schema-version strings, method metadata, dependency roles, quantity definitions, aliases, and coefficient-series definitions. Python owns Pydantic validation models, source extraction, invariant checks, hashing, and envelope construction logic; generic result/provenance dataclasses and generic provenance spec models should not define Williams schema-version constants, coefficient fields, or Williams-specific defaults.
 
-Current implementation note: `ProvenanceSliceSpec` now validates that dependency and quantity mapping keys match their embedded `dependency_name` and `quantity_name` values. This keeps source adapters, builders, graph projections, and frontend consumers aligned on the same spec-defined names instead of allowing YAML key/name drift.
+Current implementation note: `ProvenanceSliceSpec` now validates that dependency and quantity mapping keys match their embedded `dependency_name` and `quantity_name` values. `QuantitySpec.allowed_qualifiers` defines the qualifier names accepted for ordinary scalar quantities, and `MethodResultEnvelopeBuilder` rejects undeclared qualifier keys before result projection. This keeps source adapters, builders, graph projections, and frontend consumers aligned on the same spec-defined names instead of allowing YAML key/name drift.
 
-Current test-coverage note: the Williams-fit envelope builder is now covered by a direct `MethodResultSource` fixture. This proves fixture authors can exercise the generic source/slice-spec path without constructing a fake `FractureAnalysis` object when the builder itself is under test.
+Current test-coverage note: the Williams-fit and CJP-fit envelope builders are now covered by direct `MethodResultSource` fixtures. This proves fixture authors can exercise the generic source/slice-spec path without constructing a fake `FractureAnalysis` object when the builder itself is under test.
 
 Current invariant note: `SourceInput` now rejects empty `input_id` and `data_ref` values. This keeps the primary input anchor fail-fast and prevents graph, KG, and frontend projections from receiving anonymous input nodes.
 
@@ -412,13 +412,13 @@ The first source quantity shape should avoid separate top-level containers for W
 | --- | --- | --- |
 | `quantity_name` | Spec-facing quantity name, such as `K_I`, `error_xy`, `williams_coefficient`, `J`, or `crack_tip_x`. | Gives the spec a stable lookup name without baking legacy result sections into builder logic. |
 | `value` | JSON-compatible scalar or small value. | Carries the result extracted from current objects. |
-| `qualifiers` | Optional mapping for method dimensions such as `coefficient_series=a`, `term_order=-1`, `statistic=mean`, `path_index=0`, or `mode=mixed_mode`. | Supports Williams coefficients, CJP modes, and J-integral/path statistics without growing `MethodResultSource` fields. |
+| `qualifiers` | Optional mapping for method dimensions such as `coefficient_series=a`, `term_order=-1`, `statistic=mean`, `path_index=0`, or `variant=mixed_mode`. | Supports Williams coefficients, CJP variants, and J-integral/path statistics without growing `MethodResultSource` fields. |
 
 For Williams fitting, the source adapter should emit `williams_coefficient` quantities with `coefficient_series` and `term_order` qualifiers rather than separate `a_n`, `b_n`, and `c_n` containers. Literature and CrackPy's own theory notes usually describe in-plane Williams coefficients as `A_n` for the Mode I contribution and `B_n` for the Mode II contribution. Canonical source qualifiers should still use compact lower-case labels `a`, `b`, and `c`, matching current CrackPy result symbols and keeping legacy aliases direct. The provenance spec should map lower-case coefficient-series labels to display notation and aliases such as `Williams_fit_results.a_{n}`, `Williams_fit_results.b_{n}`, and `Williams_fit_results.c_{n}`.
 
 For J-integral and path-based results, the source adapter should emit quantities with `statistic` and/or `path_index` qualifiers rather than separate `statistics` or `paths` containers.
 
-The `ProvenanceSliceSpec` should validate which quantity names and qualifier names are allowed for a slice. If future methods need additional dimensions, extend the spec's allowed qualifiers before adding new top-level source fields.
+The `ProvenanceSliceSpec` validates ordinary quantity names and qualifier names for a slice. CJP declares `variant` as the allowed qualifier for its variant-scoped quantities. Williams coefficients use a method-local repeated-quantity extension that declares `coefficient_series` and `term_order` as required qualifiers. If future methods need additional dimensions, extend the spec's allowed qualifiers before adding new top-level source fields.
 
 ### Williams Method Module Refactor Notes
 
