@@ -1,12 +1,29 @@
 """Envelope-first graph visualization adapter for CrackPy results."""
 from __future__ import annotations
 
+from base64 import b64encode
+from html import escape
+import json
+from pathlib import Path
+
 from crackpy.results.result_data import (
     ResultEnvelope,
     VisualizationEdge,
     VisualizationGraph,
     VisualizationNode,
 )
+
+NODE_TYPE_STYLES = {
+    "InputRecord": ("#155e75", "#ecfeff"),
+    "MethodMetadata": ("#4338ca", "#eef2ff"),
+    "NormalizedConfiguration": ("#7c2d12", "#fff7ed"),
+    "CrackTipFrame": ("#166534", "#f0fdf4"),
+    "CrackTipEstimateResult": ("#166534", "#f0fdf4"),
+    "AnalysisRun": ("#1d4ed8", "#eff6ff"),
+    "ResultRecord": ("#6d28d9", "#f5f3ff"),
+    "ResultQuantity": ("#b45309", "#fffbeb"),
+    "ArtifactRef": ("#374151", "#f9fafb"),
+}
 
 
 def _node(node_id: str, node_type: str, label: str, **data: object) -> VisualizationNode:
@@ -126,3 +143,157 @@ def envelope_to_visualization_graph(envelope: ResultEnvelope) -> VisualizationGr
             )
 
     return VisualizationGraph(nodes=nodes, edges=edges)
+
+
+def render_visualization_graph_html(
+    graph: VisualizationGraph,
+    *,
+    title: str = "CrackPy Provenance Graph",
+) -> str:
+    """Render a standalone HTML/SVG graph explorer.
+
+    The visualization is an output adapter over `VisualizationGraph`. It keeps
+    layout state, colors, and browser interaction out of the provenance records
+    so the canonical envelope remains reusable for JSON, KG, RDF, or other
+    projections.
+    """
+    graph_json = json.dumps(graph.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False)
+    graph_payload = b64encode(graph_json.encode("ascii")).decode("ascii")
+    title_html = escape(title, quote=True)
+    quantity_count = sum(1 for node in graph.nodes if node.type == "ResultQuantity")
+    styles_json = json.dumps(NODE_TYPE_STYLES, sort_keys=True, separators=(",", ":"))
+
+    # The graph payload is base64 encoded before insertion into the script so
+    # labels and data values cannot terminate script or HTML tags.
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title_html}</title>
+<style>
+:root {{ color-scheme: light; font-family: Inter, Segoe UI, Arial, sans-serif; }}
+body {{ margin: 0; background: #f8fafc; color: #0f172a; }}
+header {{ padding: 16px 20px; background: #ffffff; border-bottom: 1px solid #dbe3ee; }}
+h1 {{ margin: 0 0 6px; font-size: 20px; letter-spacing: 0; }}
+.meta {{ color: #475569; font-size: 13px; display: flex; gap: 16px; flex-wrap: wrap; }}
+main {{ display: grid; grid-template-columns: minmax(620px, 1fr) 340px; min-height: calc(100vh - 72px); }}
+#graph {{ width: 100%; height: calc(100vh - 72px); background: #f8fafc; }}
+aside {{ background: #ffffff; border-left: 1px solid #dbe3ee; padding: 16px; overflow: auto; }}
+section {{ margin-bottom: 18px; }}
+h2 {{ margin: 0 0 8px; font-size: 14px; }}
+.legend {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }}
+.legend span {{ display: inline-flex; align-items: center; gap: 6px; }}
+.swatch {{ width: 10px; height: 10px; border-radius: 50%; display: inline-block; }}
+.node text {{ font-size: 11px; dominant-baseline: middle; text-anchor: middle; pointer-events: none; }}
+.node circle {{ stroke-width: 2; cursor: pointer; }}
+.edge {{ stroke: #94a3b8; stroke-width: 1.3; marker-end: url(#arrow); }}
+.edge-label {{ font-size: 10px; fill: #475569; text-anchor: middle; paint-order: stroke; stroke: #f8fafc; stroke-width: 4px; }}
+pre {{ white-space: pre-wrap; overflow-wrap: anywhere; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 12px; }}
+@media (max-width: 900px) {{ main {{ grid-template-columns: 1fr; }} aside {{ border-left: 0; border-top: 1px solid #dbe3ee; }} #graph {{ height: 70vh; }} }}
+</style>
+</head>
+<body>
+<header>
+<h1>{title_html}</h1>
+<div class="meta"><span>Nodes: {len(graph.nodes)}</span><span>Edges: {len(graph.edges)}</span><span>Quantities: {quantity_count}</span></div>
+</header>
+<main>
+<svg id="graph" role="img" aria-label="{title_html}"></svg>
+<aside>
+<section>
+<h2>Selection</h2>
+<pre id="details">Click a node to inspect its record.</pre>
+</section>
+<section>
+<h2>Legend</h2>
+<div class="legend" id="legend"></div>
+</section>
+</aside>
+</main>
+<script>
+const graph = JSON.parse(atob('{graph_payload}'));
+const styles = {styles_json};
+const svg = document.getElementById('graph');
+const details = document.getElementById('details');
+const legend = document.getElementById('legend');
+for (const [type, colors] of Object.entries(styles)) {{
+  const row = document.createElement('span');
+  row.innerHTML = `<i class="swatch" style="background:${{colors[0]}}"></i>${{type}}`;
+  legend.appendChild(row);
+}}
+const ns = 'http://www.w3.org/2000/svg';
+const width = () => svg.clientWidth || 1000;
+const height = () => svg.clientHeight || 700;
+function el(name, attrs = {{}}, text = '') {{
+  const node = document.createElementNS(ns, name);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+  if (text) node.textContent = text;
+  return node;
+}}
+function shorten(label) {{ return label.length > 22 ? label.slice(0, 19) + '...' : label; }}
+function layout() {{
+  const lanes = {{InputRecord: 0, MethodMetadata: 1, CrackTipFrame: 2, CrackTipEstimateResult: 2, NormalizedConfiguration: 2, AnalysisRun: 3, ResultRecord: 4, ResultQuantity: 5, ArtifactRef: 5}};
+  const byLane = new Map();
+  graph.nodes.forEach((node) => {{
+    const lane = lanes[node.type] ?? 3;
+    if (!byLane.has(lane)) byLane.set(lane, []);
+    byLane.get(lane).push(node);
+  }});
+  const marginX = 80;
+  const laneWidth = Math.max(120, (width() - marginX * 2) / 5);
+  const positions = new Map();
+  for (const [lane, nodes] of byLane.entries()) {{
+    const usable = Math.max(80, height() - 120);
+    nodes.forEach((node, index) => positions.set(node.id, {{
+      x: marginX + lane * laneWidth,
+      y: 60 + usable * ((index + 1) / (nodes.length + 1)),
+    }}));
+  }}
+  return positions;
+}}
+function render() {{
+  svg.replaceChildren();
+  const defs = el('defs');
+  const marker = el('marker', {{id: 'arrow', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse'}});
+  marker.appendChild(el('path', {{d: 'M 0 0 L 10 5 L 0 10 z', fill: '#94a3b8'}}));
+  defs.appendChild(marker);
+  svg.appendChild(defs);
+  const positions = layout();
+  for (const edge of graph.edges) {{
+    const source = positions.get(edge.source);
+    const target = positions.get(edge.target);
+    if (!source || !target) continue;
+    svg.appendChild(el('line', {{class: 'edge', x1: source.x, y1: source.y, x2: target.x, y2: target.y}}));
+    svg.appendChild(el('text', {{class: 'edge-label', x: (source.x + target.x) / 2, y: (source.y + target.y) / 2 - 4}}, edge.label || edge.role));
+  }}
+  for (const node of graph.nodes) {{
+    const pos = positions.get(node.id);
+    const [stroke, fill] = styles[node.type] || ['#475569', '#ffffff'];
+    const group = el('g', {{class: 'node', tabindex: '0'}});
+    group.appendChild(el('circle', {{cx: pos.x, cy: pos.y, r: node.type === 'ResultQuantity' ? 22 : 28, fill, stroke}}));
+    group.appendChild(el('text', {{x: pos.x, y: pos.y}}, shorten(node.label)));
+    group.addEventListener('click', () => {{ details.textContent = JSON.stringify(node, null, 2); }});
+    group.addEventListener('keydown', (event) => {{ if (event.key === 'Enter') details.textContent = JSON.stringify(node, null, 2); }});
+    svg.appendChild(group);
+  }}
+}}
+window.addEventListener('resize', render);
+render();
+</script>
+</body>
+</html>
+"""
+
+
+def write_visualization_graph_html(
+    graph: VisualizationGraph,
+    path: str | Path,
+    *,
+    title: str = "CrackPy Provenance Graph",
+) -> Path:
+    """Write a standalone graph explorer and return the target path."""
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(render_visualization_graph_html(graph, title=title), encoding="utf-8")
+    return target

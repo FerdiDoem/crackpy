@@ -322,6 +322,8 @@ The first useful graph view should show stable IDs, node types, method metadata,
 
 Method metadata should be rendered as first-class graph nodes rather than hidden only as `method_id` strings. Analysis runs and imported crack-tip estimates should point to their method records with `used_method` edges so a maintainer can inspect the method identity, method revision, implementation reference, and method kind directly in the graph.
 
+Implementation note: the first reusable graph visualization kit now exposes a `VisualizationGraph` to standalone HTML/SVG adapter and `OutputWriter.write_williams_fit_provenance_artifacts()` writes that HTML explorer alongside the envelope, compact KG bundle, and graph JSON. The HTML remains a projection artifact; it is not a source of canonical provenance facts.
+
 Visualization concerns remain outside the core record model:
 
 - layout coordinates, colors, expanded or collapsed UI state, and graph explorer HTML;

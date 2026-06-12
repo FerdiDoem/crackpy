@@ -6,7 +6,7 @@ import logging
 
 from crackpy.fracture_analysis.analysis import FractureAnalysis
 from crackpy.fracture_analysis.crack_tip import unit_of_williams_coefficients
-from crackpy.results.graph_visualization import envelope_to_visualization_graph
+from crackpy.results.graph_visualization import envelope_to_visualization_graph, write_visualization_graph_html
 from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
 from crackpy.results.result_data import write_json_file
 from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_analysis
@@ -654,8 +654,8 @@ class OutputWriter:
         with open(json_file, 'w') as outfile:
             json.dump(json_dict, outfile, indent=4, default=str)
 
-    def write_williams_fit_provenance_json(self, path=None) -> dict[str, Path]:
-        """Write canonical Williams-fit provenance artifacts without changing legacy outputs."""
+    def write_williams_fit_provenance_artifacts(self, path=None) -> dict[str, Path]:
+        """Write Williams-fit provenance JSON projections plus the HTML graph viewer."""
         output_path = self._make_path(path if path is not None else self.path)
         stem = Path(self.filename).stem
 
@@ -673,8 +673,23 @@ class OutputWriter:
                 visualization_graph.to_dict(),
                 output_path / f"{stem}_williams_fit_graph.json",
             ),
+            "visualization_graph_html": write_visualization_graph_html(
+                visualization_graph,
+                output_path / f"{stem}_williams_fit_graph.html",
+                title="Williams Fit Provenance Graph",
+            ),
         }
         return written
+
+    def write_williams_fit_provenance_json(self, path=None) -> dict[str, Path]:
+        """Compatibility alias for the first provenance artifact writer.
+
+        The first implementation only emitted JSON files, so existing callers
+        may still use this name. New code should prefer
+        `write_williams_fit_provenance_artifacts()` because the writer now also
+        emits a standalone HTML graph explorer.
+        """
+        return self.write_williams_fit_provenance_artifacts(path=path)
 
     @staticmethod
     def _make_path(output_path) -> Path:
