@@ -361,6 +361,8 @@ Concrete Williams slice definitions should have one source of truth. The William
 
 Current implementation note: `ProvenanceSliceSpec` now validates that dependency and quantity mapping keys match their embedded `dependency_name` and `quantity_name` values. This keeps source adapters, builders, graph projections, and frontend consumers aligned on the same spec-defined names instead of allowing YAML key/name drift.
 
+Current test-coverage note: the Williams-fit envelope builder is now covered by a direct `MethodResultSource` fixture. This proves fixture authors can exercise the generic source/slice-spec path without constructing a fake `FractureAnalysis` object when the builder itself is under test.
+
 ### Source Adapter And Minimal Source Snapshot
 
 The generic builder should not consume `FractureAnalysis` directly. Current CrackPy objects should be translated by Python [[glossary#Source adapter]] code into a minimal immutable [[glossary#MethodResultSource]], then the builder should combine that source with the [[glossary#Provenance slice spec]].

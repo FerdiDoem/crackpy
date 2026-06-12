@@ -298,9 +298,11 @@ def test_source_dependency_record_requires_explicit_provenance_identity():
 
 from crackpy.fracture_analysis.methods.williams_fit import (
     build_williams_fit_envelope_from_analysis,
+    build_williams_fit_envelope_from_source,
     build_williams_fit_envelope_from_result,
     source_from_analysis,
 )
+from crackpy.provenance import MethodResultSource, SourceInput, SourceParameters, SourceQuantity
 
 
 def _fake_analysis():
@@ -442,6 +444,51 @@ def test_williams_fit_source_snapshot_uses_dependencies_parameters_and_quantitie
         if quantity.quantity_name == "williams_coefficient" and quantity.qualifiers["term_order"] == -1
     ]
     assert {quantity.qualifiers["coefficient_series"] for quantity in coefficient_quantities} == {"a", "b", "c"}
+
+
+def test_build_williams_fit_envelope_accepts_direct_source_fixture():
+    frame = CrackTipFrame(
+        frame_id="crack_tip_frame:direct:right",
+        tip_id="crack_tip:direct:right",
+        origin_mm={"x": 1.5, "y": 2.5},
+        angle_deg=12.0,
+        compatibility_side="right",
+    )
+    source = MethodResultSource(
+        inputs=(
+            SourceInput(
+                input_id="input:direct",
+                data_ref="DirectNodemap.txt",
+                source_label="direct",
+                source_metadata={"stage": 4},
+            ),
+        ),
+        dependencies=(SourceDependency("crack_tip_frame", record=frame),),
+        parameters=SourceParameters(
+            result_parameters={"optimization": {"terms": [-1, 1]}, "material": {"E_MPa": 72000}},
+            parameter_origins={"terms": "direct fixture", "E_MPa": "direct fixture"},
+            adapter_policy={"test_fixture": True},
+        ),
+        quantities=(
+            SourceQuantity("K_I", 12.5),
+            SourceQuantity("williams_coefficient", 2.0, {"coefficient_series": "a", "term_order": 1}),
+        ),
+    )
+
+    envelope = build_williams_fit_envelope_from_source(source, crackpy_version="test-version")
+
+    assert envelope.input_records[0].input_id == "input:direct"
+    assert envelope.configurations[0].adapter_policy["test_fixture"] is True
+    assert envelope.analysis_runs[0].crackpy_version == "test-version"
+    assert {dependency.role for dependency in envelope.analysis_runs[0].dependencies} >= {
+        "used_input",
+        "used_configuration",
+        "used_crack_tip_frame",
+        "used_crack_tip_estimate",
+    }
+    quantities = {quantity.symbol: quantity for quantity in envelope.results[0].quantities}
+    assert quantities["K_I"].legacy_aliases == ["Williams_fit_results.K_I"]
+    assert quantities["a_1"].legacy_aliases == ["Williams_fit_results.a_1"]
 
 
 def test_williams_fit_source_from_analysis_requires_input_identity():
