@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class SchemaVersions(BaseModel):
@@ -58,6 +58,25 @@ class ProvenanceSliceSpec(BaseModel):
     )
     dependencies: dict[str, DependencySpec] = Field(description="Allowed source dependencies keyed by dependency name.")
     quantities: dict[str, QuantitySpec] = Field(description="Allowed scalar source quantities keyed by quantity name.")
+
+    @model_validator(mode="after")
+    def require_mapping_keys_to_match_embedded_names(self) -> ProvenanceSliceSpec:
+        """Reject YAML definitions where a mapping key and embedded name disagree.
+
+        Slice specs intentionally keep stable definitions in YAML. If
+        `dependencies.crack_tip_frame.dependency_name` or
+        `quantities.K_I.quantity_name` can drift away from its key, adapters and
+        builders no longer have one source of truth for the names they match on.
+        """
+        for dependency_key, dependency_spec in self.dependencies.items():
+            if dependency_key != dependency_spec.dependency_name:
+                raise ValueError(
+                    f"dependencies['{dependency_key}'] must declare dependency_name={dependency_key!r}."
+                )
+        for quantity_key, quantity_spec in self.quantities.items():
+            if quantity_key != quantity_spec.quantity_name:
+                raise ValueError(f"quantities['{quantity_key}'] must declare quantity_name={quantity_key!r}.")
+        return self
 
 
 def load_provenance_slice_spec(path: str | Path) -> ProvenanceSliceSpec:

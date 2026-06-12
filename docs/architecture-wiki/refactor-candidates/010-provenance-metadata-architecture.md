@@ -359,6 +359,8 @@ The generic `ProvenanceSliceSpec` should stay scalar-only. Williams fitting exte
 
 Concrete Williams slice definitions should have one source of truth. The Williams YAML spec owns schema-version strings, method metadata, dependency roles, quantity definitions, aliases, and coefficient-series definitions. Python owns Pydantic validation models, source extraction, invariant checks, hashing, and envelope construction logic; generic result/provenance dataclasses and generic provenance spec models should not define Williams schema-version constants, coefficient fields, or Williams-specific defaults.
 
+Current implementation note: `ProvenanceSliceSpec` now validates that dependency and quantity mapping keys match their embedded `dependency_name` and `quantity_name` values. This keeps source adapters, builders, graph projections, and frontend consumers aligned on the same spec-defined names instead of allowing YAML key/name drift.
+
 ### Source Adapter And Minimal Source Snapshot
 
 The generic builder should not consume `FractureAnalysis` directly. Current CrackPy objects should be translated by Python [[glossary#Source adapter]] code into a minimal immutable [[glossary#MethodResultSource]], then the builder should combine that source with the [[glossary#Provenance slice spec]].

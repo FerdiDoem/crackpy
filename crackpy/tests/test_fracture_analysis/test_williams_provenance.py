@@ -220,6 +220,50 @@ def test_provenance_spec_models_document_all_fields():
         assert missing_descriptions == []
 
 
+def test_provenance_slice_spec_rejects_key_name_drift():
+    from crackpy.provenance.spec import ProvenanceSliceSpec
+
+    payload = {
+        "schemas": {
+            "envelope": "crackpy.result_envelope.williams_fit.v1",
+            "result": "crackpy.result_record.williams_fit.v1",
+            "configuration": "crackpy.configuration.williams_fit.v1",
+            "kg_statement_bundle": "crackpy.kg_statement_bundle.williams_fit.v1",
+        },
+        "methods": {
+            "analysis": {
+                "method_id": "crackpy.fracture.williams_fit",
+                "display_name": "Williams Fit",
+                "kind": "analysis",
+                "method_revision": "1",
+                "implementation_ref": "crackpy.fracture_analysis.methods.williams_fit",
+            }
+        },
+        "dependencies": {
+            "crack_tip_frame": {
+                "dependency_name": "wrong_dependency_name",
+                "role": "used_crack_tip_frame",
+                "target_type": "CrackTipFrame",
+            }
+        },
+        "quantities": {
+            "K_I": {
+                "quantity_name": "wrong_quantity_name",
+                "symbol": "K_I",
+                "description": "Mode I stress intensity factor.",
+                "unit": "MPa*m^{1/2}",
+            }
+        },
+    }
+
+    with pytest.raises(ValueError, match="dependencies\\['crack_tip_frame'\\]"):
+        ProvenanceSliceSpec.model_validate(payload)
+
+    payload["dependencies"]["crack_tip_frame"]["dependency_name"] = "crack_tip_frame"
+    with pytest.raises(ValueError, match="quantities\\['K_I'\\]"):
+        ProvenanceSliceSpec.model_validate(payload)
+
+
 def test_generic_provenance_contains_no_coefficient_specific_schema_or_builder_api():
     from crackpy.provenance import MethodResultEnvelopeBuilder
     from crackpy.provenance import spec as spec_models
