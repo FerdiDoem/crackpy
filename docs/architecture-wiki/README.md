@@ -29,6 +29,7 @@ This directory is an Obsidian-style working memory for CrackPy architecture plan
 - [[crack-detection]]: neural-network detection, line-intercept detection, correction, data preparation, and training.
 - [[fracture-analysis]]: Williams fitting, CJP fitting, line integrals, pipeline orchestration, and numerical assumptions.
 - [[results-io-workflows]]: scripts, test workflows, result readers/writers, plotting, operational dependencies, and result schema observations.
+- [[results-io-workflows#Williams-Fit Provenance Outputs]]: observed first Williams-fit provenance output hook, compact KG statement-bundle projection, and graph visualization projection.
 
 ## Domain And Scientific Context
 
@@ -47,6 +48,7 @@ This directory is an Obsidian-style working memory for CrackPy architecture plan
 
 - [[coupling-map]]: observed coupling, side effects, implicit interfaces, repeated patterns, and shallow modules.
 - [[refactor-roadmap]]: higher-level sequencing view across resolved decisions and future refactor candidates.
+- [[goal-driven-refactoring-plan]]: ten goal-sized architecture improvement candidates with Definition Of Done checks.
 - [[refactor-notes]]: index of future architecture candidates.
 - [[refactor-candidates/index]]: detailed future candidate notes.
 - [[refactor-candidates/010-provenance-metadata-architecture]]: future provenance and metadata architecture concept for compact RDF/JSON export and optional detailed provenance.
@@ -61,7 +63,7 @@ The architecture mapping combined:
 - repository searches for literature, assumptions, side effects, and TODO/prototype signals;
 - parallel read-only subagent explorations covering input/results, fracture analysis, crack detection, scripts/tests, scientific references, architecture coupling, and terminology.
 
-No production code was refactored in this phase.
+The initial mapping phase did not refactor production code. The current repository now contains a first Williams-fit provenance implementation slice, documented as observed reality in [[system-map]], [[fracture-analysis]], and [[results-io-workflows]]. Broader package restructuring is still not approved by the architecture wiki.
 
 ## Package Overview
 
@@ -81,4 +83,4 @@ flowchart LR
     H --> I
 ```
 
-The main architectural theme is that `InputData` is the central mutable carrier, while `FractureAnalysis` and the pipeline classes combine orchestration, algorithm selection, result storage, and output coordination.
+The main architectural theme is that `InputData` is the central mutable carrier, while `FractureAnalysis` and the pipeline classes combine orchestration, algorithm selection, result storage, and output coordination. The Williams-fit path now has a partial deeper module under `crackpy.fracture_analysis.methods.williams_fit` plus shared provenance records/builders under `crackpy.provenance`; legacy writers and plots still depend on `FractureAnalysis` post-run attributes.

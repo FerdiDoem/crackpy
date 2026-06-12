@@ -5,12 +5,17 @@ Role: Consolidate resolved planning decisions into a cross-candidate sequencing 
 
 Related: [[refactor-notes]], [[refactor-candidates/index]], [[decision-log]], [[open-questions]]
 
+Goal-sized execution plan: [[goal-driven-refactoring-plan]]
+
 ## Roadmap Rules
 
 - Keep observed-system notes as the baseline for current behavior.
 - Treat this roadmap as sequencing guidance for future specifications, not as implementation approval.
 - Keep future architecture grouped by initiative while detailed proposal content remains in candidate notes.
 - Before production code changes, define field-level specifications for any proposed records, configuration objects, registries, adapters, or workflow runners.
+- Treat human maintainability as an architecture constraint: important classes and functions should be self-explanatory through names, docstrings, field descriptions, and decision-focused inline comments.
+- Use private helpers and object-oriented structure where they create real depth, locality, lifecycle control, invariant ownership, or adapter seams. Do not extract helpers or classes only to satisfy DRY when local readability would get worse.
+- Before approving future architecture code changes, run a documentation-focused review on individual functions/classes with limited background context to check whether their purpose, inputs, side effects, invariants, and failure modes are understandable locally.
 - Preserve compatibility behavior until an approved migration plan says otherwise.
 
 ## Initiative 1: Result And Provenance Spine
@@ -38,7 +43,7 @@ Recent KG artifact and prototype review calibrates the first target: keep the ad
 
 That first slice still needs enough export policy to avoid later rework: grouping policy, subject identity policy, URI minting policy, descriptor-field policy, datatype normalization, unit normalization, and compatibility aliases for current result tags. The external JSON/Turtle artifacts show that grouped metadata statements and RDF descriptor resources are KG export representations, not CrackPy core record types.
 
-The draft field-level Williams-fit slice now lives in [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]]. It folds the preserved `result_spine_package` prototype conclusions into planning notes and should be reviewed or revised before any production result-writer, reader, or KG-export work starts.
+The field-level Williams-fit slice lives in [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]]. It folds the preserved `result_spine_package` prototype conclusions into planning notes. Current code now contains a partial implementation of this slice: shared provenance source/spec/builder modules, Williams-fit method-local typed records and source adapter, a YAML-backed Williams spec, a compact KG statement-bundle projection, a graph visualization projection, and an optional `OutputWriter.write_williams_fit_provenance_json()` hook.
 
 The first-slice choice is accepted for planning in [[decision-log#2026-06-05-williams-fit-is-the-first-result-provenance-implementation-slice]]: Williams fitting is the first implementation target, with crack-tip estimates included as explicit dependencies.
 
@@ -48,7 +53,7 @@ The graph visualization kit is accepted as a downstream adapter over the canonic
 
 Approval gate:
 
-Do not implement result writers or readers until a field-level result/provenance specification is approved, including node types, edge roles, schema-version policy, quantity fields, artifact references, and compatibility aliases for current result tags.
+Do not broaden result writers, readers, CSV output, CJP results, line-integral results, Bueckner-Chen results, plot metadata, or KG/RDF export beyond the current Williams-fit slice until the next field-level result/provenance specification is approved, including node types, edge roles, schema-version policy, quantity fields, artifact references, and compatibility aliases for the affected current result tags.
 
 ## Initiative 2: Input Identity And Ordering
 
@@ -170,8 +175,8 @@ Do not perform broad renames until compatibility aliases, public documentation i
 ## Suggested Specification Order
 
 1. Approve or revise this roadmap grouping.
-2. Review and approve or revise the draft [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]].
-3. Expand the result/provenance spine, including canonical result graph nodes, output artifact roles, provenance edge roles, and legacy adapter aliases.
+2. Audit the current Williams-fit provenance implementation against [[refactor-candidates/010-provenance-metadata-architecture#First Williams-Fit Slice Specification]] and record any drift as a decision or follow-up candidate.
+3. Expand the result/provenance spine only after that audit, including canonical result graph nodes, output artifact roles, provenance edge roles, and legacy adapter aliases for the next result family.
 4. Specify input identity and ordering, including `InputRecord`, `input_id`, `sequence_index`, and mapping policies.
 5. Specify crack-tip estimate and `CrackTipFrame` records.
 6. Specify normalized configuration, method registry, method references, model metadata, and fingerprint validation.

@@ -5,6 +5,8 @@ Role: List candidate notes that describe possible future architecture changes. T
 
 ## Candidates
 
+Goal-sized execution plan: [[goal-driven-refactoring-plan]]
+
 - [[refactor-candidates/001-explicit-analysis-result]]
 - [[refactor-candidates/002-input-loading-seam]]
 - [[refactor-candidates/003-self-contained-williams-fit-interface]]

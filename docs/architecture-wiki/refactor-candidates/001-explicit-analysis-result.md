@@ -1,7 +1,7 @@
 # Candidate 001: Explicit Analysis Result
 
-Status: proposed
-Role: Future architecture candidate for separating fracture-analysis computation from result storage and output adapters.
+Status: proposed, with Williams-fit result/provenance slice partially implemented
+Role: Architecture candidate for separating fracture-analysis computation from result storage and output adapters.
 
 ## Observed Evidence
 
@@ -42,4 +42,4 @@ Accepted OQ-006 boundary: the future result interface should feed the graph-shap
 
 ## Decision State
 
-OQ-005 and OQ-006 planning boundaries accepted. No implementation approved.
+OQ-005 and OQ-006 planning boundaries accepted. The first Williams-fit result/provenance envelope is partially implemented through `crackpy.results.result_data` and `crackpy.fracture_analysis.methods.williams_fit`, but `FractureAnalysis` still exposes the broad mutable post-run attribute interface and broader analysis-result separation is not approved.

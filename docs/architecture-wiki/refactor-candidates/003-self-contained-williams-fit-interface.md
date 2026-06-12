@@ -1,7 +1,7 @@
 # Candidate 003: Self-Contained Williams Fit Interface
 
-Status: proposed
-Role: Future architecture candidate for exposing Williams fitting as an explicit computational interface.
+Status: proposed, with typed runner partially implemented
+Role: Architecture candidate for exposing Williams fitting as an explicit computational interface.
 
 ## Observed Evidence
 
@@ -41,4 +41,4 @@ Correction interfaces built on this fitting layer should emit an absolute correc
 
 ## Decision State
 
-Planning vocabulary accepted. No implementation approved.
+Planning vocabulary accepted. A typed Williams-fit runner, result model, parameter model, source adapter, and provenance builder wrapper now exist under `crackpy.fracture_analysis.methods.williams_fit`. The full candidate remains open because the current runner still depends on the existing optimizer object, not an explicit array-based computational interface, and crack-tip correction still uses its own Williams optimization bridge.

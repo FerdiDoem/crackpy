@@ -938,3 +938,36 @@ Consequences:
 - Generic result/provenance dataclasses do not carry Williams schema-version defaults.
 - Method-specific builders read schema versions and method metadata from the loaded slice spec.
 - Future CJP, J-integral, and graph/KG slices should add or compose specs instead of editing generic record constants.
+
+## 2026-06-12: Human Maintainability Is An Architecture Constraint
+
+Status: accepted for planning
+
+Decision:
+
+Future CrackPy architecture work should optimize for solid principles and human maintainability together. A deeper module is not successful only because it reduces duplication or introduces a cleaner abstraction; it must also be understandable to a maintainer who is inspecting one class or function with limited surrounding context.
+
+Maintainability expectations:
+
+- Public classes, important dataclasses, Pydantic models, protocol-like interfaces, and non-trivial functions need expressive docstrings that explain functionality, invariants, units, side effects, error modes, and why the module exists.
+- Inline comments should preserve decisions close to the implementation when intent would not be obvious from code alone, such as dependency direction, validation rules, naming choices, scientific assumptions, or compatibility behavior.
+- Comments should not narrate simple statements. Documentation should explain the decision or contract a future maintainer needs.
+- Private helper functions should be used when they name a real domain operation, validation boundary, reusable transformation, or local policy. They should not be extracted only to satisfy DRY when the extraction makes a caller harder to read.
+- Some duplication is acceptable when it keeps a vertical slice or method module locally understandable. DRY is not always the highest-priority principle.
+- Object-oriented coding should be used where it earns its interface: lifecycle, invariants, state that belongs together, polymorphic adapters, protocol seams, or domain concepts. Avoid classes that only wrap one pass-through function or hold unrelated bags of data.
+
+Review discipline:
+
+Introduce a documentation-focused review task before approving future architecture code changes. The reviewer should inspect one function or class at a time with deliberately limited background knowledge and ask whether its docstring, field descriptions, inline comments, names, and local structure make the functionality self-explanatory. This review should not rely on broad repository context to understand basic intent, required inputs, state changes, or failure modes.
+
+Rationale:
+
+CrackPy contains scientific algorithms, result schemas, compatibility behavior, and provenance planning that are easy to make technically correct but hard to maintain. Over-extracted helper functions, shallow wrapper classes, or under-documented scientific assumptions can make a module look clean while hiding the facts a human maintainer needs. The architecture should therefore measure depth by leverage and locality, but also by whether the interface and implementation remain readable without an oral tradition.
+
+Consequences:
+
+- Future specifications should describe documentation expectations together with field and parameter contracts.
+- Code review should include a local self-explanation pass for newly introduced or reshaped classes and functions.
+- Pydantic fields should continue to use `Field(description=...)`; dataclasses without field metadata need class docstrings or nearby comments that explain important fields.
+- Refactors may intentionally keep small amounts of duplicated structure when extraction would reduce locality or make a method slice harder to understand.
+- Class-based designs should justify their object shape through behavior, invariants, lifecycle, or adapter role rather than style preference.

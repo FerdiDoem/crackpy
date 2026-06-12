@@ -43,6 +43,8 @@ The pipeline has high fan-out:
 
 `results.write` and `results.plot` import `FractureAnalysis`, which couples result emission back to analysis internals and contributes to import cycles.
 
+The newer Williams-fit provenance path reduces part of this coupling by translating `FractureAnalysis` through `crackpy.fracture_analysis.methods.williams_fit.source_adapter` into a `MethodResultSource` before building result/provenance records. This is only a partial seam: `OutputWriter.write_williams_fit_provenance_json()` still starts from `FractureAnalysis`, and legacy text, current JSON, CSV, and plot paths still inspect analysis attributes directly.
+
 ## Import Graph Observations
 
 Observed import shape:
@@ -59,6 +61,9 @@ flowchart TD
     FP --> RESP["results.plot"]
     RESW --> ANA
     RESP --> ANA
+    RESW --> WFB["williams_fit builder"]
+    WFB --> PROV["provenance builder"]
+    WFB --> RD["results.result_data"]
     CD --> CDL["deep_learning"]
     CDL --> ATT["attention"]
     ATT --> CDL
@@ -116,6 +121,7 @@ Key implicit contracts:
 - interpolation uses both `ReusableLinearInterpolator` and SciPy `griddata`;
 - output/result shape is duplicated across writer, reader, tests, and plotter;
 - `InputData` field requirements are repeated as caller assumptions rather than centralized validation.
+- Williams-fit result/provenance shape now has a YAML-backed first slice, but CJP, line-integral, Bueckner-Chen, path, CSV, and plot result shapes still remain duplicated or implicit.
 
 ## Shallow Or Placeholder Modules
 

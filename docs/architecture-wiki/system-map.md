@@ -17,6 +17,8 @@ crackpy/
     line_intercept.py
     model.py
   fracture_analysis/
+    methods/
+      williams_fit/
     analysis.py
     crack_tip.py
     line_integration.py
@@ -27,10 +29,16 @@ crackpy/
     crack_tip_info.py
     input_data.py
   results/
+    graph_visualization.py
+    kg_statement_bundle.py
     plot.py
     read.py
     result_data.py
     write.py
+  provenance/
+    builder.py
+    source.py
+    spec.py
   structure_elements/
     data_files.py
     material.py
@@ -54,9 +62,14 @@ flowchart TD
     FA --> LI["LineIntegral"]
     OPT --> FAR["Mutable FractureAnalysis result attributes"]
     LI --> FAR
+    OPT --> WFR["WilliamsFitResult"]
+    WFR --> WFM["williams_fit method module"]
     FAR --> OW["OutputWriter"]
     FAR --> PL["Plotter"]
     OW --> OR["OutputReader / CSV"]
+    OW --> WFP["Williams-fit provenance JSON"]
+    WFP --> KGB["KG statement bundle"]
+    WFP --> VG["Visualization graph"]
 ```
 
 ## Main Package Responsibilities
@@ -89,13 +102,18 @@ Contains the scientific numerical core:
 - analytical crack-tip fields;
 - displacement fitting for Williams and CJP models;
 - J-integral, interaction integral, T-stress, Bueckner-Chen integral, and J-mode decomposition;
+- a first method module at `crackpy.fracture_analysis.methods.williams_fit` with a typed Williams runner, typed parameter/result models, source adapter, YAML-backed slice spec loader, and envelope builder wrapper;
 - single-nodemap and batch-pipeline orchestration.
 
 See [[fracture-analysis]].
 
 ### `crackpy.results`
 
-Consumes `FractureAnalysis` instances and emits text files, JSON, plots, and flattened CSVs. This creates a direct dependency from result I/O back to analysis internals. See [[results-io-workflows]] and [[coupling-map]].
+Consumes `FractureAnalysis` instances and emits text files, current JSON, plots, flattened CSVs, and optional Williams-fit provenance artifacts. The legacy text/current-JSON/plot paths still create a direct dependency from result I/O back to analysis internals. The Williams-fit provenance path goes through a method-local source adapter and shared provenance/result records, but it is still reached from `OutputWriter`. See [[results-io-workflows]] and [[coupling-map]].
+
+### `crackpy.provenance`
+
+Contains shared provenance source snapshots, YAML-backed slice-spec models, and `MethodResultEnvelopeBuilder`. This package is currently used by the Williams-fit slice; it is not yet a complete method registry or universal result model.
 
 ## External Dependencies
 

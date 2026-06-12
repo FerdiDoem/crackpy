@@ -125,9 +125,86 @@ Key dependencies:
 
 - `line_integration.LineIntegral`
 - `optimization.Optimization`
+- `methods.williams_fit.runner.run_williams_fit`
 - `InputData`
 - `CrackTipInfo`
 - `Material`
+
+### `crackpy/fracture_analysis/methods/williams_fit/runner.py`
+
+Classes:
+
+- `WilliamsFitOptimizer` protocol
+
+Functions:
+
+- `run_williams_fit`
+- `_coefficient_map`
+
+Purpose:
+
+- typed Williams displacement-fit runner over the current optimizer interface.
+
+### `crackpy/fracture_analysis/methods/williams_fit/result.py`
+
+Classes:
+
+- `WilliamsCoefficientSet`
+- `WilliamsFitResult`
+
+Purpose:
+
+- typed Williams result and coefficient records.
+
+### `crackpy/fracture_analysis/methods/williams_fit/parameters.py`
+
+Classes:
+
+- `WilliamsMaterialParameters`
+- `WilliamsOptimizationParameters`
+- `WilliamsFitResultParameters`
+
+Purpose:
+
+- result-affecting material and optimization parameter snapshots for Williams-fit provenance.
+
+### `crackpy/fracture_analysis/methods/williams_fit/source_adapter.py`
+
+Functions:
+
+- `source_from_analysis`
+- `source_from_result`
+
+Purpose:
+
+- translate current `FractureAnalysis` Williams attributes or typed Williams results into `MethodResultSource`.
+
+### `crackpy/fracture_analysis/methods/williams_fit/spec_loader.py`
+
+Classes:
+
+- `CoefficientQuantitySpec`
+- `WilliamsFitSliceSpec`
+
+Functions:
+
+- `load_williams_fit_spec`
+
+Purpose:
+
+- load and validate the Williams-fit YAML slice specification.
+
+### `crackpy/fracture_analysis/methods/williams_fit/builder.py`
+
+Functions:
+
+- `build_williams_fit_envelope_from_source`
+- `build_williams_fit_envelope_from_result`
+- `build_williams_fit_envelope_from_analysis`
+
+Purpose:
+
+- build the first Williams-fit result/provenance envelope using shared provenance records and method-local source adapters.
 
 ### `crackpy/fracture_analysis/optimization.py`
 
@@ -541,6 +618,7 @@ Important methods:
 - `write_header`
 - `write_results`
 - `write_json`
+- `write_williams_fit_provenance_json`
 
 ### `crackpy/results/read.py`
 
@@ -570,4 +648,97 @@ Important methods:
 
 ### `crackpy/results/result_data.py`
 
-Empty placeholder.
+Classes:
+
+- `InputRecord`
+- `MethodMetadata`
+- `NormalizedConfiguration`
+- `CrackTipFrame`
+- `CrackTipEstimateResult`
+- `DependencyEdge`
+- `AnalysisRun`
+- `ResultQuantity`
+- `ArtifactRef`
+- `ResultRecord`
+- `ResultEnvelope`
+- `KGStatement`
+- `KGStatementBundle`
+- `VisualizationNode`
+- `VisualizationEdge`
+- `VisualizationGraph`
+
+Functions:
+
+- `to_jsonable`
+- `canonical_json_bytes`
+- `sha256_canonical_json`
+- `write_json_file`
+
+Purpose:
+
+- canonical result/provenance records, strict JSON serialization helpers, hash helpers, compact KG projection records, and graph visualization records.
+
+### `crackpy/results/kg_statement_bundle.py`
+
+Functions:
+
+- `envelope_to_kg_statement_bundle`
+
+Purpose:
+
+- compact grouped KG statement-bundle projection from a result/provenance envelope.
+
+### `crackpy/results/graph_visualization.py`
+
+Functions:
+
+- `envelope_to_visualization_graph`
+
+Purpose:
+
+- graph visualization projection from a result/provenance envelope.
+
+## Provenance
+
+### `crackpy/provenance/source.py`
+
+Classes:
+
+- `ProvenanceIdentified`
+- `SourceInput`
+- `SourceDependency`
+- `SourceParameters`
+- `SourceQuantity`
+- `MethodResultSource`
+
+Purpose:
+
+- minimal immutable source snapshots consumed by provenance builders.
+
+### `crackpy/provenance/spec.py`
+
+Classes:
+
+- `SchemaVersions`
+- `MethodSpec`
+- `DependencySpec`
+- `QuantitySpec`
+- `ProvenanceSliceSpec`
+
+Functions:
+
+- `load_provenance_slice_spec`
+
+Purpose:
+
+- typed YAML-backed provenance slice specifications.
+
+### `crackpy/provenance/builder.py`
+
+Classes:
+
+- `MethodResultEnvelopeBuilder`
+
+Purpose:
+
+- shared projection from method source snapshots plus slice specs into canonical result/provenance records.

@@ -8,6 +8,7 @@ Terminology references: see [[glossary]] for stable definitions and [[terminolog
 ## Core Modules
 
 - `crackpy/fracture_analysis/analysis.py`
+- `crackpy/fracture_analysis/methods/williams_fit/`
 - `crackpy/fracture_analysis/optimization.py`
 - `crackpy/fracture_analysis/line_integration.py`
 - `crackpy/fracture_analysis/crack_tip.py`
@@ -35,7 +36,7 @@ The public interface is therefore more than `run()`: callers and output modules 
 
 ## Williams Fitting
 
-Implemented mainly by `Optimization.optimize_williams_displacements_xy()` and `Optimization.optimize_williams_displacements_z()`.
+The numerical optimization is still performed by `Optimization.optimize_williams_displacements_xy()` and `Optimization.optimize_williams_displacements_z()`. `FractureAnalysis._run_williams_optimization()` now calls `crackpy.fracture_analysis.methods.williams_fit.runner.run_williams_fit()` to convert optimizer output into a typed `WilliamsFitResult`, then writes that result back onto legacy `FractureAnalysis` attributes.
 
 Observed behavior:
 
@@ -54,6 +55,17 @@ Derived quantities:
 - `K_II = -sqrt(2*pi) * b_1 / sqrt(1000)`
 - `T = 4*a_2`
 - `K_III = sqrt(0.5*pi) * c_1 / sqrt(1000)`
+
+Observed Williams-fit method module:
+
+- `runner.py`: defines the `WilliamsFitOptimizer` protocol and `run_williams_fit()` typed numerical runner. Optimization exceptions propagate from the optimizer rather than being converted into silent fallback results.
+- `result.py`: defines Pydantic `WilliamsFitResult` and `WilliamsCoefficientSet` records.
+- `parameters.py`: defines Pydantic material and optimization parameter snapshots with field descriptions and parameter-origin metadata.
+- `source_adapter.py`: translates either current `FractureAnalysis` Williams attributes or a typed `WilliamsFitResult` into a `MethodResultSource`.
+- `spec.yaml` and `spec_loader.py`: hold and validate Williams-specific schema versions, method metadata, dependency roles, scalar quantity definitions, and coefficient-series definitions.
+- `builder.py`: wraps the shared provenance builder to produce the first Williams-fit result/provenance envelope.
+
+This is a partial deeper module around Williams fitting. CJP fitting, line integrals, correction-time Williams optimization in `crack_detection.correction`, legacy result writing, and plotting still consume or expose the older mutable `FractureAnalysis` attribute shape.
 
 ## CJP Fitting
 
@@ -157,3 +169,5 @@ The richest regression coverage is in `test_scripts/test_fracture_analysis.py`:
 - synthetic 3D Williams-field recovery expecting `K_I=10`, `K_II=20`, `K_III=30`, and `T=40`.
 
 Additional package tests cover crack-tip closed forms, data processing, result reading, and interpolation utility comparisons.
+
+Newer package tests also cover the Williams-fit method module, provenance envelope construction, compact KG statement-bundle projection, graph visualization projection, and an actual-data Williams provenance path under `crackpy/tests/test_fracture_analysis`.

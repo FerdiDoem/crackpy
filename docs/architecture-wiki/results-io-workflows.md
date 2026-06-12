@@ -26,6 +26,8 @@ Observed text tags:
 
 `OutputWriter` knows the shape of `FractureAnalysis` internals directly.
 
+`OutputWriter.write_williams_fit_provenance_json()` is a newer optional output hook. It builds a Williams-fit result/provenance envelope from the current `FractureAnalysis` object and writes three additional JSON artifacts without changing the legacy text or current JSON outputs.
+
 ### `OutputReader`
 
 `crackpy/results/read.py` parses tagged text files into pandas DataFrames and writes flattened CSV outputs.
@@ -39,6 +41,31 @@ Observed risks:
 ### `Plotter`
 
 `crackpy/results/plot.py` consumes `FractureAnalysis`, including its `InputData` and numerical result attributes, and writes PNG plots. It sets the matplotlib backend to `Agg` at import time.
+
+## Williams-Fit Provenance Outputs
+
+Observed files and modules:
+
+- `crackpy/results/result_data.py`: canonical result/provenance dataclasses, strict JSON helpers, canonical JSON hashing, compact KG statement records, and graph visualization record shapes.
+- `crackpy/provenance/source.py`: immutable `MethodResultSource`, `SourceInput`, `SourceDependency`, `SourceParameters`, and `SourceQuantity` snapshots consumed by provenance builders.
+- `crackpy/provenance/spec.py`: Pydantic slice-spec models loaded from YAML.
+- `crackpy/provenance/builder.py`: shared `MethodResultEnvelopeBuilder` that projects source snapshots and slice specs into result records.
+- `crackpy/results/kg_statement_bundle.py`: compact grouped KG statement-bundle projection from a `ResultEnvelope`.
+- `crackpy/results/graph_visualization.py`: graph visualization projection from a `ResultEnvelope`.
+- `crackpy/fracture_analysis/methods/williams_fit/spec.yaml`: first Williams-fit slice definitions for schema versions, method metadata, dependency roles, scalar quantities, aliases, and coefficient-series definitions.
+
+Current writer behavior:
+
+- `_williams_fit_envelope.json`: graph-shaped result/provenance envelope with input, method, configuration, crack-tip frame, crack-tip estimate, analysis run, and result records.
+- `_williams_fit_kg_statement_bundle.json`: compact statement-bundle projection grouped by `related_to` categories.
+- `_williams_fit_graph.json`: visualization projection with nodes and dependency edges.
+
+Observed coupling:
+
+- The new provenance source adapter still reads `FractureAnalysis` post-run attributes for the legacy bridge.
+- Only Williams-fit quantities and aliases are covered by this first slice.
+- CJP results, line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
+- The compact KG projection currently loads the Williams-fit spec by default, so it is not yet a generic exporter for all future result envelopes.
 
 ## User-Facing Scripts
 
