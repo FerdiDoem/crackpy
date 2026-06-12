@@ -41,16 +41,16 @@ flowchart TD
     I --> J
 ```
 
-Model expectations:
+Crack-detection network expectations:
 
 - input shape `[B, 2, 256, 256]`;
 - channels are displacement `ux` and `uy`;
-- `ParallelNets` output contains a segmentation mask and coordinate regressor, but runtime detection uses the mask;
-- `UNetPath` output is a path segmentation mask;
+- `ParallelNets` is the current crack-tip detection network; its output contains a segmentation mask and coordinate regressor, but runtime detection uses the mask;
+- `UNetPath` is the current compatibility selector and weights artifact stem for a `UNet` crack-path segmentation network;
 - crack-tip detection expects the right-side crack convention used during training;
 - left-side data is mirrored into the right-side crack convention before detection.
 
-`get_model()` supports only `ParallelNets` and `UNetPath`. If weights are missing, it creates a local model directory and downloads from Zenodo.
+`get_model()` remains the current compatibility function and supports only `ParallelNets` and `UNetPath`. It still combines detector selector, detection task, network architecture, weights artifact, local cache/download policy, and device mapping. C-006 planning now treats those as separate terms before introducing any provider seam.
 
 Detection-grid coordinate mapping:
 
@@ -158,7 +158,7 @@ Current correction APIs mostly return relative `dx`/`dy` shifts, and plotting ap
 
 ## Side Effects
 
-- `get_model()` can create directories and download model weights.
+- `get_model()` can create directories and download pretrained detector weights through the default provider.
 - detection pipelines write plots and result files.
 - data preparation prints progress to stdout.
 - plotting helpers create output directories.

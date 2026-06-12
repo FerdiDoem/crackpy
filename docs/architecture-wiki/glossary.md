@@ -362,16 +362,46 @@ Internal mask limiting crack-path pixels to the angle-detection radius around th
 Crack-path post-processing step that keeps the largest connected pixel region before fitting the crack angle.
 
 #### Model name
-String passed to `get_model()`. The currently supported public names are `ParallelNets` and `UNetPath`. This name is currently overloaded because it also acts as a weight-file stem and local cache key. Future model metadata should split `model_id`, `model_role`, `architecture`, `weights_id`, and aliases.
+Legacy compatibility string passed to `get_model()`. The currently supported public names are `ParallelNets` and `UNetPath`. This name is overloaded because it can mean method, detector selector, network architecture, weight-file stem, local cache key, or loaded PyTorch object. New implementation vocabulary should avoid bare `model` and split this into method identity, [[glossary#Detection task]], [[glossary#Implementation family]], [[glossary#Crack-detection network]], [[glossary#Network architecture]], [[glossary#Weights artifact]], and compatibility aliases.
+
+#### CrackTipLocalizationMethod
+Method category for producing a crack-tip estimate or crack-tip frame. Literature also uses crack-tip detection, identification, localization, position estimation, and tracking; internal architecture should name the output explicitly as a crack-tip estimate.
+
+#### CrackPathSegmentationMethod
+Method category for producing a crack-path mask, line, skeleton, or segmented crack path. This is distinct from crack-tip localization even when both tasks are performed by related neural networks or image-processing pipelines.
+
+#### CrackTipCorrectionMethod
+Method category for refining an existing crack-tip estimate. A correction method should expose both the corrected crack-tip estimate and the correction delta used for audit or legacy compatibility.
+
+#### CrackGrowthTrackingMethod
+Method category for linking crack-tip estimates over frames, stages, cycles, or time to produce crack length or propagation curves.
+
+#### Crack-detection network
+Loaded PyTorch network used by CrackPy's neural crack-detection workflow. This term names the executable neural-network object and should be paired with a [[glossary#Detection task]] such as crack-tip detection or crack-path segmentation.
+
+#### Detection task
+Specific crack-detection output a method is trained or used to produce. Proposed task labels include `crack_tip_localization`, `crack_path_segmentation`, `crack_tip_correction`, and `crack_growth_tracking`.
+
+#### Implementation family
+Algorithm family used to implement a crack-detection or crack-tip-estimation method. Examples include neural network, line intercept, image edge detection, Williams-series fit, symbolic regression, grid search, differential evolution, manual import, or external provider.
+
+#### Network architecture
+Implementation architecture of a crack-detection network, such as `ParallelNets` or `UNet`. This is separate from the detection task and from the concrete weights artifact.
+
+#### Weights artifact
+Concrete pretrained parameter file used to initialize a crack-detection network, such as `ParallelNets.pth` or `UNetPath.pth`. A weights artifact may have cache and download policy without changing the network architecture or detection task.
+
+#### PretrainedDetectorProvider
+Future adapter interface that provides a loaded crack-detection network from a public detector selector while making weights cache, download policy, device mapping, and metadata explicit. It should not be the method identity itself.
 
 #### ParallelNets
-Crack-tip model architecture and model-name string. It combines segmentation with a parallel coordinate-regression branch, although runtime crack-tip detection primarily uses segmentation output.
+Crack-tip detection network architecture and legacy detector selector. It combines segmentation with a parallel coordinate-regression branch, although runtime crack-tip detection primarily uses segmentation output.
 
 #### UNetPath
-Current public model-name string, weight-file stem, and legacy alias for the pretrained crack-path detector. It instantiates the `UNet` implementation class, so it names a model role and artifact rather than a distinct architecture. Future planning should prefer a stable paper- or method-linked `model_id`, with `UNetPath` retained as an alias or `weights_id`.
+Current public detector selector, weight-file stem, and legacy alias for the pretrained crack-path segmentation network. It instantiates the `UNet` implementation architecture, so it names a task/artifact combination rather than a distinct architecture.
 
 #### UNet
-Segmentation architecture used for crack-path prediction and related deep-learning utilities.
+Segmentation network architecture used for crack-path prediction and related deep-learning utilities.
 
 #### Input channels
 Neural-network input fields. Runtime detection uses displacement channels `ux` and `uy`; training utilities can also include equivalent strain (`eps_vm`) as an additional channel.
