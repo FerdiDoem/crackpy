@@ -7,7 +7,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import MutableMapping, Any
 
-import numpy as np
 import pandas as pd
 from rich import progress as progress_rich
 
@@ -16,6 +15,7 @@ from crackpy.fracture_analysis.line_integration import IntegralProperties
 from crackpy.fracture_analysis.optimization import OptimizationProperties
 from crackpy.input.crack_tip_info import CrackTipInfo
 from crackpy.input.input_data import InputData
+from crackpy.input.input_mapping import map_stage_cycles_to_representative_stages
 from crackpy.results.plot import PlotSettings, Plotter
 from crackpy.results.write import OutputWriter
 from crackpy.structure_elements.data_files import NodemapStructure, Nodemap
@@ -171,6 +171,7 @@ class FractureAnalysisPipeline:
 
         # initialize stages to max force stages for storage in dictionary
         self.stages_to_max_force_stages = None
+        self.input_mapping = None
 
         # initialize dictionary of integral properties
         self.integral_props = {}
@@ -220,15 +221,17 @@ class FractureAnalysisPipeline:
             if data.cycles is not None:
                 stages_to_cycles[stage] = data.cycles
 
-        # assign stages to their corresponding max force stage
-        stages_to_max_force_stages = {}
-        for stage, cycle in stages_to_cycles.items():
-            max_force_cycles_array = np.asarray(list(max_force_cycles_to_stages.keys()))
-            closest_max_force_cycle = np.argmin(np.abs(max_force_cycles_array - cycle))
-            closest_max_force_stage = max_force_cycles_to_stages[max_force_cycles_array[closest_max_force_cycle]]
-            stages_to_max_force_stages[stage] = closest_max_force_stage
+        # Keep the legacy stage dictionary while recording the ID-based policy
+        # output that future provenance and frontend adapters can consume.
+        stages_to_max_force_stages, input_mapping = map_stage_cycles_to_representative_stages(
+            stages_to_cycles,
+            max_force_cycles_to_stages,
+        )
+        for stage, closest_max_force_stage in stages_to_max_force_stages.items():
+            cycle = stages_to_cycles[stage]
             logger.debug("Stage %d (cycle %d) assigned to max force stage %.1f", stage, cycle, closest_max_force_stage)
         self.stages_to_max_force_stages = stages_to_max_force_stages
+        self.input_mapping = input_mapping
         logger.debug("Found %d filtered stages out of %d total stages", len(filtered_stages), len(self.input_df))
 
         return self.stages_to_max_force_stages

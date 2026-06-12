@@ -8,6 +8,7 @@ from crackpy.crack_detection.utils.plot import plot_prediction
 from crackpy.crack_detection.utils.utilityfunctions import get_nodemaps_and_stage_nums
 from crackpy.crack_detection.detection import CrackTipDetection, CrackPathDetection, CrackAngleEstimation, CrackDetection
 from crackpy.input.input_data import InputData
+from crackpy.input.input_mapping import map_stage_cycles_to_representative_stages
 from crackpy.structure_elements.data_files import Nodemap
 
 logger = logging.getLogger(__name__)
@@ -113,6 +114,7 @@ class CrackDetectionPipeline:
         self.stages_to_det_stages = None
         self.det_cycles_to_stages = None
         self.stages_to_cycles = None
+        self.input_mapping = None
 
     def filter_detection_stages(self, max_force: float, tol: float = 20) -> list:
         """Stages used for crack detection are selected by ``max_force`` with lower tolerance ``tol``.
@@ -303,13 +305,12 @@ class CrackDetectionPipeline:
         """
         logger.info("Assigning remaining (non-detected) stages to nearest max-load stages …")
 
-        # assign stages to there detection stage
-        stages_to_det_stages = {}
-        for i, cycle_i in self.stages_to_cycles.items():
-            det_cycles_array = np.asarray(list(self.det_cycles_to_stages.keys()))
-            closest_det_cycle = np.argmin(np.abs(det_cycles_array - cycle_i))
-            closest_det_stage = self.det_cycles_to_stages[det_cycles_array[closest_det_cycle]]
-            stages_to_det_stages[i] = closest_det_stage
+        # Keep the public stage mapping, but derive it through the input-ID policy
+        # so stage remains compatibility metadata rather than durable identity.
+        stages_to_det_stages, input_mapping = map_stage_cycles_to_representative_stages(
+            self.stages_to_cycles,
+            self.det_cycles_to_stages,
+        )
 
         # assign results
         for side in self.setup.sides:
@@ -317,6 +318,7 @@ class CrackDetectionPipeline:
                 if i not in self.sides_to_results[side]:
                     self.sides_to_results[side][i] = self.sides_to_results[side][stages_to_det_stages[i]]
         self.stages_to_det_stages = stages_to_det_stages
+        self.input_mapping = input_mapping
 
         return stages_to_det_stages
 

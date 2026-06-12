@@ -6,6 +6,7 @@ Role: Document current `InputData`, nodemap, metadata, material, and input lifec
 ## Core Modules
 
 - `crackpy/input/input_data.py`
+- `crackpy/input/input_mapping.py`
 - `crackpy/input/crack_tip_info.py`
 - `crackpy/structure_elements/data_files.py`
 - `crackpy/structure_elements/material.py`
@@ -60,6 +61,17 @@ This order is implicit. Many downstream modules assume `sig_x`, `sig_y`, `sig_xy
 ## Input Identity Projection
 
 `InputData.source_input()` is the first narrow input-loading seam. It keeps `InputData` as the compatibility carrier and derives a `SourceInput` from the already-known nodemap file and header metadata. The projection uses `input_id` as the stable result/provenance identity, keeps header values such as force or cycles in `source_metadata`, and treats `sequence_index` only as an ordering hint. It does not make `stage` a durable identity and it does not change file loading, manual data injection, transforms, stress calculation, VTK export, or masking behavior.
+
+## Input Mapping Policies
+
+`crackpy.input.input_mapping` is the first narrow sequence-index vocabulary slice. It defines:
+
+- `InputSequenceRecord`: mapping-policy input with durable `input_id`, optional numeric `cycle` metadata, optional `sequence_index`, optional source label, and source metadata such as current DIC `stage`;
+- `NearestCycleInputMappingPolicy`: maps records to representative records by nearest cycle metadata and returns `input_id -> representative_input_id`;
+- `InputMappingResult`: records the policy name, identity mapping, and skipped input IDs when required metadata such as cycles is absent;
+- `map_stage_cycles_to_representative_stages()`: compatibility adapter that translates current `stage -> cycle` dictionaries into input records, applies the ID-based policy, and returns the old `stage -> representative_stage` dictionary for existing pipelines.
+
+This policy does not change nodemap discovery, crack detection, fracture-analysis execution, result files, or current stage labels. It only makes the matching seam explicit so future provenance and frontend adapters can consume durable input IDs instead of reparsing stages.
 
 ## Nodemap Structures
 

@@ -40,4 +40,4 @@ Matching between records should be a separate [[glossary#Mapping policy]]. For e
 
 ## Decision State
 
-Planning vocabulary accepted in [[decision-log#2026-05-14-stage-is-source-metadata-sequence-index-is-internal-ordering]]. No implementation approved.
+Planning vocabulary accepted in [[decision-log#2026-05-14-stage-is-source-metadata-sequence-index-is-internal-ordering]]. A first narrow implementation slice now exists: nearest-cycle assignment can produce an `input_id -> representative_input_id` `InputMappingResult` while current crack-detection and fracture-analysis pipelines keep their legacy stage dictionaries. Broader pipeline migration away from stage-oriented public calls is not approved.

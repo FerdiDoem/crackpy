@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 import pandas as pd
 
@@ -58,6 +59,20 @@ class TestCrackDetPipeline(unittest.TestCase):
 
         finally:
             shutil.rmtree(temp_dir)
+
+
+def test_assign_remaining_stages_records_input_id_mapping_without_detection_models():
+    pipeline = object.__new__(CrackDetectionPipeline)
+    pipeline.setup = SimpleNamespace(sides=["left"])
+    pipeline.stages_to_cycles = {52: 888983.0, 53: 901098.0, 54: 901099.0, 55: 901100.0}
+    pipeline.det_cycles_to_stages = {888983.0: 52, 901100.0: 55}
+    pipeline.sides_to_results = {"left": {52: {"angle": 1.0}, 55: {"angle": 2.0}}}
+
+    stage_mapping = pipeline.assign_remaining_stages()
+
+    assert stage_mapping == {52: 52, 53: 55, 54: 55, 55: 55}
+    assert pipeline.input_mapping.input_id_to_representative_input_id["stage:53"] == "stage:55"
+    assert pipeline.sides_to_results["left"][53] == {"angle": 2.0}
 
 
 if __name__ == '__main__':

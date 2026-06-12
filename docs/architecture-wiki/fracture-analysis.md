@@ -143,6 +143,8 @@ The file contains direct methodological references to Kuna formulas, Christopher
 
 `FractureAnalysisPipeline` reads an input CSV, constructs per-row crack-tip info, loads nodemap data, computes stresses, transforms coordinates, runs `FractureAnalysis`, then writes text, JSON, and optional plots.
 
+`find_max_force_stages()` still returns the legacy `stage -> max_force_stage` dictionary. Internally it now uses `map_stage_cycles_to_representative_stages()` and stores the ID-based `InputMappingResult` as `input_mapping`, so max-force propagation has an explicit `input_id -> representative_input_id` policy result without changing existing stage-based calls.
+
 `single_run()` combines several responsibilities:
 
 - CSV row to `CrackTipInfo`;

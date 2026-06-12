@@ -85,6 +85,8 @@ detection_grid_spacing_y_mm_per_px = detection_window_extent_mm[1] / (detection_
 - always writes diagnostic plots during `run_detection()`;
 - writes `crack_info_by_nodemap.txt`.
 
+`assign_remaining_stages()` now keeps its legacy `stage -> detection_stage` dictionary but derives it through `map_stage_cycles_to_representative_stages()`. The policy result stored as `input_mapping` uses durable `input_id -> representative_input_id` values, while `stage` remains DIC source metadata for current filenames and outputs.
+
 The output columns are the implicit handoff to fracture analysis:
 
 - `Filename`
