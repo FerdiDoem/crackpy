@@ -1,6 +1,8 @@
 .idea
 .venv
-.agents
+.agents/*
+!.agents/skills/
+!.agents/skills/**
 .ipynb_chekpoints
 tom.egg-info
 /docs/*

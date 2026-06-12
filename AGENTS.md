@@ -1,8 +1,21 @@
-# Agent Working Memory
+# Agent Guide
 
-CrackPy uses `docs/architecture-wiki/` as the shared working memory for architectural planning and refactor work.
+This file is the repo-level entrypoint for agents working in CrackPy. Codex reads `AGENTS.md` files before doing work, so keep durable project rules here.
 
-Current phase: architectural mapping and planning only. Do not perform real refactoring or restructuring until the general specifications are clearly defined and explicitly approved.
+Codex project configuration belongs in `.codex/config.toml`. Repo-local skills belong in `.agents/skills/`, which is the documented repository skill discovery path. Do not move skills under `.codex/skills/`; that is not a documented skill location. Shared issue-tracker, triage, and domain-doc configuration lives under `docs/agents/`.
+
+## Current Phase
+
+CrackPy is in architectural mapping and planning. Do not perform real refactoring or restructuring until the general specifications are clearly defined and explicitly approved.
+
+Allowed planning work includes:
+
+- updating architecture-wiki notes with newly observed facts;
+- clarifying glossary terms and unresolved terminology questions;
+- framing future architecture candidates and decision options;
+- documenting accepted or rejected planning decisions.
+
+Keep proposed architecture separate from observed system behavior.
 
 ## Before Refactoring
 
@@ -28,36 +41,68 @@ Do not mix proposed architecture into observed-system notes. If a design decisio
 
 When proposing future containers, dataclasses, configuration objects, protocols, or complex functions/classes in architecture notes, document the fields or parameters at the point of introduction. Explain both what each field means and why it exists; names and type hints alone are not sufficient for planning documents.
 
-## Inline Documentation Discipline
+## Agent Skills
 
-When coding, preserve architectural intent close to the implementation. Add concise docstrings or inline comments where a design decision, dependency direction, import choice, validation rule, or naming choice would not be obvious from the code alone. Dataclasses that do not have field-level `Field(description=...)` metadata need class docstrings or nearby comments that explain what each field means and why it exists. Pydantic models should use `Field(description=...)` for every field unless the model has an explicit, documented reason not to. Keep comments decision-focused; do not narrate simple statements. When a code change reflects an architecture decision, update the relevant architecture-wiki note in the same pass.
-
-## Subagent Discipline
-
-Use subagents to inspect the architecture wiki when the task touches architecture planning, terminology, refactor candidates, or documentation consolidation. Prefer multiple narrow, read-only subagents over one broad scan when the work spans distinct areas such as observed-system notes, glossary/terminology, and refactor planning.
-
-The parent agent owns synthesis and edits. Subagents should normally return findings only and should not mutate files unless explicitly assigned a bounded write scope.
-
-Choose subagent models by task depth. Use smaller or faster models for bounded read-only scans, checklist audits, link checks, documentation audits, and summarization. Reserve GPT-5.5-class models for ambiguous architecture synthesis, scientific reasoning, high-risk integration decisions, or cases where cheaper-model findings conflict. For well-defined coding tasks with clear files, tests, acceptance criteria, and limited design ambiguity, Codex Spark-class workers are acceptable; keep broader design, decomposition, final synthesis, and integration responsibility with the parent agent or a stronger model.
-
-Adjust reasoning effort dynamically as well as model. Use low reasoning for mechanical scans, link checks, inventory extraction, and simple summarization. Use medium reasoning for subsystem audits, bounded bug localization, and straightforward implementation. Use high reasoning for architecture tradeoffs, scientific-method interpretation, cross-module coupling analysis, or when cheaper subagents disagree. Avoid high reasoning on routine helpers unless the result will drive an important decision.
-
-Subagents should not spawn further subagents by default. Allow nested subagents only for explicitly requested deep exploration, with a narrow read-only scope, a clear expected output, and no recursive delegation beyond that extra level.
-
-## Refactor Rule
-
-Until the planning phase is complete, limit work to architecture wiki notes, glossary updates, decision framing, and architecture proposals. When later changing architecture, preserve the current architecture wiki notes as the baseline. Update them only when the code reality changes or when new facts are discovered.
-
-## Agent skills
-
-### Issue tracker
+### Issue Tracker
 
 Issues and PRDs are tracked as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
 
-### Triage labels
+### Triage Labels
 
 Triage uses the default five-label vocabulary. See `docs/agents/triage-labels.md`.
 
-### Domain docs
+### Domain Docs
 
 Single-context repo using `docs/architecture-wiki/` as the domain and architecture working memory. See `docs/agents/domain.md`.
+
+### Local Skill Files
+
+Repo-local skills are installed under `.agents/skills/`. Use them when the task matches their scope, especially for architecture review, diagnosis, TDD, issue generation, triage, PRD creation, and handoffs.
+
+## Documentation Practice
+
+- Prefer small, source-backed edits over broad rewrites.
+- Preserve the current architecture wiki as the baseline for code reality.
+- Update observed-system notes only when code reality changes or when new facts are discovered.
+- Record stable decisions in `docs/architecture-wiki/decision-log.md` instead of silently folding them into older notes.
+- Keep future architecture candidates in `docs/architecture-wiki/refactor-notes.md`, `docs/architecture-wiki/refactor-roadmap.md`, or `docs/architecture-wiki/refactor-candidates/`.
+
+## Coding Practice
+
+Coding changes are out of scope during the current planning phase unless the user explicitly approves implementation work.
+
+When coding is approved:
+
+- Preserve architectural intent close to the implementation.
+- Add concise docstrings or inline comments where a design decision, dependency direction, import choice, validation rule, or naming choice would not be obvious from the code alone.
+- Dataclasses that do not have field-level `Field(description=...)` metadata need class docstrings or nearby comments that explain what each field means and why it exists.
+- Pydantic models should use `Field(description=...)` for every field unless the model has an explicit, documented reason not to.
+- Keep comments decision-focused; do not narrate simple statements.
+- When a code change reflects an architecture decision, update the relevant architecture-wiki note in the same pass.
+
+## Subagent Practice
+
+Use subagents to inspect the architecture wiki when the task touches architecture planning, terminology, refactor candidates, or documentation consolidation.
+
+Prefer multiple narrow, read-only subagents over one broad scan when the work spans distinct areas such as observed-system notes, glossary/terminology, and refactor planning.
+
+The parent agent owns synthesis and edits. Subagents should normally return findings only and should not mutate files unless explicitly assigned a bounded write scope.
+
+Choose subagent models by task depth:
+
+- Use smaller or faster models for bounded read-only scans, checklist audits, link checks, documentation audits, and summarization.
+- Use medium reasoning for subsystem audits, bounded bug localization, and straightforward implementation.
+- Use high reasoning for architecture tradeoffs, scientific-method interpretation, cross-module coupling analysis, or when cheaper subagents disagree.
+- Reserve GPT-5.5-class models for ambiguous architecture synthesis, scientific reasoning, high-risk integration decisions, or cases where cheaper-model findings conflict.
+
+For well-defined coding tasks with clear files, tests, acceptance criteria, and limited design ambiguity, Codex Spark-class workers are acceptable. Keep broader design, decomposition, final synthesis, and integration responsibility with the parent agent or a stronger model.
+
+Subagents should not spawn further subagents by default. Allow nested subagents only for explicitly requested deep exploration, with a narrow read-only scope, a clear expected output, and no recursive delegation beyond that extra level.
+
+## Repo Hygiene
+
+- Check the worktree before editing and do not overwrite unrelated user changes.
+- Use `rg` or `rg --files` for search when available.
+- Keep edits scoped to the requested files and the relevant architecture notes.
+- Prefer structured parsers and repo-local helpers over ad hoc text manipulation when changing code.
+- Verify changes with the narrowest useful command before reporting completion.
