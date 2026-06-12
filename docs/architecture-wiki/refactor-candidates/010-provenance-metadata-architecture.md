@@ -363,6 +363,8 @@ Current implementation note: `ProvenanceSliceSpec` now validates that dependency
 
 Current KG projection note: `envelope_to_kg_statement_bundle()` now derives the compact bundle schema from `ResultEnvelope.envelope_schema_version` when no explicit slice spec is passed. This keeps CJP envelopes from inheriting the Williams-fit KG schema during direct artifact projection, while leaving grouping, URI minting, RDF namespaces, descriptor resources, and richer method-specific KG profiles as adapter/exporter policy.
 
+Current graph projection note: `envelope_to_visualization_graph()` is covered directly for both Williams-fit and CJP-fit envelopes. CJP coverage proves the visualization graph can project two method records, two result records, and CJP-specific quantities without a Williams-specific branch.
+
 Current test-coverage note: the Williams-fit and CJP-fit envelope builders are now covered by direct `MethodResultSource` fixtures. This proves fixture authors can exercise the generic source/slice-spec path without constructing a fake `FractureAnalysis` object when the builder itself is under test.
 
 Current invariant note: `SourceInput` now rejects empty `input_id` and `data_ref` values. This keeps the primary input anchor fail-fast and prevents graph, KG, and frontend projections from receiving anonymous input nodes.
