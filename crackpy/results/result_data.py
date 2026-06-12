@@ -331,6 +331,95 @@ class ResultEnvelope:
 
 
 @dataclass(frozen=True)
+class ResultSchemaEntry:
+    """Schema-facing metadata for one canonical result quantity.
+
+    `symbol`, `description`, `unit`, and `legacy_aliases` describe the public
+    quantity contract that writers, readers, CSV adapters, and frontends can
+    share. `result_schema_version` and `envelope_schema_version` keep the entry
+    tied to the canonical result artifact version that produced it.
+    """
+
+    symbol: str
+    description: str
+    unit: str
+    legacy_aliases: tuple[str, ...]
+    result_schema_version: str
+    envelope_schema_version: str
+    method_id: str
+    result_id: str
+    quantity_id: str
+
+
+@dataclass(frozen=True)
+class ResultSchemaIndex:
+    """Lookup table for schema-backed quantities in a result envelope.
+
+    The index is intentionally built from `ResultEnvelope` records instead of
+    writer code. That keeps the schema seam independent from `FractureAnalysis`,
+    plotting, filesystem policy, and legacy text/CSV adapters.
+    """
+
+    entries: tuple[ResultSchemaEntry, ...]
+    _by_symbol: Mapping[str, ResultSchemaEntry] = field(init=False, repr=False)
+    _by_legacy_alias: Mapping[str, ResultSchemaEntry] = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        by_symbol: dict[str, ResultSchemaEntry] = {}
+        by_legacy_alias: dict[str, ResultSchemaEntry] = {}
+        for entry in self.entries:
+            if entry.symbol in by_symbol:
+                raise ValueError(f"Duplicate result symbol in schema index: {entry.symbol!r}")
+            by_symbol[entry.symbol] = entry
+
+            for alias in entry.legacy_aliases:
+                if alias in by_legacy_alias:
+                    raise ValueError(f"Duplicate legacy result alias in schema index: {alias!r}")
+                by_legacy_alias[alias] = entry
+
+        # The maps are derived from entries so callers cannot bypass index invariants.
+        object.__setattr__(self, "_by_symbol", by_symbol)
+        object.__setattr__(self, "_by_legacy_alias", by_legacy_alias)
+
+    @classmethod
+    def from_envelope(cls, envelope: ResultEnvelope) -> "ResultSchemaIndex":
+        """Build an index and reject ambiguous symbol or alias mappings."""
+        entries: list[ResultSchemaEntry] = []
+
+        for result in envelope.results:
+            for quantity in result.quantities:
+                entries.append(
+                    ResultSchemaEntry(
+                        symbol=quantity.symbol,
+                        description=quantity.description,
+                        unit=quantity.unit,
+                        legacy_aliases=tuple(quantity.legacy_aliases),
+                        result_schema_version=result.result_schema_version,
+                        envelope_schema_version=envelope.envelope_schema_version,
+                        method_id=quantity.method_id,
+                        result_id=result.result_id,
+                        quantity_id=quantity.quantity_id,
+                    )
+                )
+
+        return cls(entries=tuple(entries))
+
+    def entry_for_symbol(self, symbol: str) -> ResultSchemaEntry:
+        """Return the schema entry for a canonical result symbol."""
+        try:
+            return self._by_symbol[symbol]
+        except KeyError as exc:
+            raise KeyError(f"Unknown result symbol: {symbol!r}") from exc
+
+    def entry_for_legacy_alias(self, alias: str) -> ResultSchemaEntry:
+        """Return the schema entry for a legacy writer or reader alias."""
+        try:
+            return self._by_legacy_alias[alias]
+        except KeyError as exc:
+            raise KeyError(f"Unknown legacy result alias: {alias!r}") from exc
+
+
+@dataclass(frozen=True)
 class KGStatement:
     """Compact knowledge-graph statement derived from an envelope.
 

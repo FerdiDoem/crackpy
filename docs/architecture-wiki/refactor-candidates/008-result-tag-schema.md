@@ -76,4 +76,4 @@ Result schema metadata should align with [[refactor-candidates/010-provenance-me
 
 ## Decision State
 
-OQ-005, OQ-006, and OQ-011 planning boundaries accepted. The Williams-fit slice now defines scalar quantity aliases in `crackpy.fracture_analysis.methods.williams_fit/spec.yaml` and projects them into canonical result quantities. The broader concrete schema still needs future design, validation rules, and compatibility strategy for current JSON sections, text tags, CSV output, CJP, line-integral, Bueckner-Chen, path, and plot result families.
+OQ-005, OQ-006, and OQ-011 planning boundaries accepted. The Williams-fit slice now defines scalar quantity aliases in `crackpy.fracture_analysis.methods.williams_fit/spec.yaml`, projects them into canonical result quantities, and exposes an envelope-derived `ResultSchemaIndex` for resolving canonical symbols, units, descriptions, schema versions, and legacy aliases. The broader concrete schema still needs future design, validation rules, and compatibility strategy for current JSON sections, text tags, CSV output, CJP, line-integral, Bueckner-Chen, path, and plot result families.

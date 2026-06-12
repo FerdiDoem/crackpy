@@ -17,6 +17,7 @@ from crackpy.results.result_data import (
     ResultEnvelope,
     ResultQuantity,
     ResultRecord,
+    ResultSchemaIndex,
     canonical_json_bytes,
     sha256_canonical_json,
     to_jsonable,
@@ -532,3 +533,60 @@ def test_williams_provenance_artifact_writer_accepts_explicit_result_envelope(tm
     assert written["kg_statement_bundle"].exists()
     assert written["visualization_graph"].exists()
     assert written["visualization_graph_html"].exists()
+
+
+def test_result_schema_index_exposes_williams_legacy_aliases_from_envelope():
+    envelope = _typed_williams_envelope()
+
+    schema_index = ResultSchemaIndex.from_envelope(envelope)
+    k_i = schema_index.entry_for_legacy_alias("Williams_fit_results.K_I")
+    coefficient = schema_index.entry_for_symbol("a_-1")
+
+    assert k_i.symbol == "K_I"
+    assert k_i.unit == "MPa*m^{1/2}"
+    assert k_i.result_schema_version == "crackpy.result_record.williams_fit.v1"
+    assert k_i.envelope_schema_version == "crackpy.result_envelope.williams_fit.v1"
+    assert coefficient.legacy_aliases == ("Williams_fit_results.a_-1",)
+
+
+def test_result_schema_index_rejects_duplicate_legacy_aliases():
+    quantity = ResultQuantity(
+        quantity_id="quantity:demo:K_I",
+        result_id="result:demo",
+        symbol="K_I",
+        description="Mode I stress intensity factor.",
+        value=12.5,
+        unit="MPa*m^{1/2}",
+        method_id="crackpy.fracture.williams_fit",
+        legacy_aliases=["Williams_fit_results.K_I"],
+    )
+    duplicate = ResultQuantity(
+        quantity_id="quantity:demo:duplicate",
+        result_id="result:demo",
+        symbol="K_I_duplicate",
+        description="Duplicate alias for validation.",
+        value=12.5,
+        unit="MPa*m^{1/2}",
+        method_id="crackpy.fracture.williams_fit",
+        legacy_aliases=["Williams_fit_results.K_I"],
+    )
+    envelope = ResultEnvelope(
+        input_records=[],
+        methods=[],
+        configurations=[],
+        crack_tip_frames=[],
+        crack_tip_estimates=[],
+        analysis_runs=[],
+        results=[
+            ResultRecord(
+                result_id="result:demo",
+                run_id="run:demo",
+                result_schema_version="crackpy.result_record.williams_fit.v1",
+                quantities=[quantity, duplicate],
+            )
+        ],
+        envelope_schema_version="crackpy.result_envelope.williams_fit.v1",
+    )
+
+    with pytest.raises(ValueError, match="Duplicate legacy result alias"):
+        ResultSchemaIndex.from_envelope(envelope)

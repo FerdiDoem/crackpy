@@ -47,6 +47,7 @@ Observed risks:
 Observed files and modules:
 
 - `crackpy/results/result_data.py`: canonical result/provenance dataclasses, strict JSON helpers, canonical JSON hashing, compact KG statement records, and graph visualization record shapes.
+- `crackpy/results/result_data.py`: `ResultSchemaIndex` derives a lookup table from `ResultEnvelope` quantities so adapters can resolve canonical symbols, units, descriptions, schema versions, and legacy aliases without importing `FractureAnalysis`, `Plotter`, or writer policy.
 - `crackpy/provenance/source.py`: immutable `MethodResultSource`, `SourceInput`, `SourceDependency`, `SourceParameters`, and `SourceQuantity` snapshots consumed by provenance builders.
 - `crackpy/provenance/spec.py`: Pydantic slice-spec models loaded from YAML.
 - `crackpy/provenance/builder.py`: shared `MethodResultEnvelopeBuilder` that projects source snapshots and slice specs into result records.
@@ -66,6 +67,7 @@ Frontend integration handoff:
 
 - Prefer `_williams_fit_graph.json` as the frontend data contract. It contains `nodes` and `edges` from `VisualizationGraph`; node `type`, `id`, `label`, and `data` are the stable frontend-facing fields for this first slice.
 - C-001 update: frontend integration can request or consume the same artifacts from a prebuilt `ResultEnvelope` via `write_williams_fit_provenance_artifacts(envelope, path, stem)`. A frontend handoff test no longer needs to construct a full `FractureAnalysis` object just to verify graph, KG bundle, or envelope artifact output.
+- C-008 update: frontend integration should treat `ResultQuantity.symbol` as the display label and `ResultQuantity.legacy_aliases` as compatibility metadata. Backend/frontend tests can use `ResultSchemaIndex.from_envelope(envelope)` to verify aliases such as `Williams_fit_results.K_I` resolve to the expected canonical symbol, unit, and result schema version.
 - C-010 validation update: provenance artifacts are now generated from a slice spec that rejects dependency or quantity key/name drift. The frontend graph payload shape is unchanged, but integration code can assume `VisualizationGraph` node and edge names came from a validated spec rather than a partially inconsistent YAML mapping.
 - Use `_williams_fit_graph.html` as the reference implementation for an inspectable layout and interaction model, not as the long-term application shell. The HTML embeds the graph payload and demonstrates lane-based layout, node-type styling, legend generation, and node detail inspection.
 - If the frontend generates its own view, keep UI state, colors, layout coordinates, filters, expansion state, and RDF namespace choices outside `ResultEnvelope`. Those remain visualization adapter concerns, not canonical provenance fields.
@@ -75,6 +77,7 @@ Observed coupling:
 
 - The provenance source adapter still reads `FractureAnalysis` post-run attributes for the legacy bridge.
 - Williams-fit envelope-to-artifact projection no longer requires the broad `FractureAnalysis` attribute bag once a `ResultEnvelope` is available.
+- Williams-fit schema lookup can now be derived from the canonical envelope, but legacy text, current JSON, and CSV readers still keep their existing string contracts.
 - Only Williams-fit quantities and aliases are covered by this first slice.
 - CJP results, line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
 - The compact KG projection currently loads the Williams-fit spec by default, so it is not yet a generic exporter for all future result envelopes.
