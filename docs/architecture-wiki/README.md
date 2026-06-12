@@ -29,7 +29,7 @@ This directory is an Obsidian-style working memory for CrackPy architecture plan
 - [[crack-detection]]: neural-network detection, line-intercept detection, correction, data preparation, and training.
 - [[fracture-analysis]]: Williams fitting, CJP fitting, line integrals, pipeline orchestration, and numerical assumptions.
 - [[results-io-workflows]]: scripts, test workflows, result readers/writers, plotting, operational dependencies, and result schema observations.
-- [[results-io-workflows#Williams-Fit Provenance Outputs]]: observed first Williams-fit provenance output hook, compact KG statement-bundle projection, and graph visualization projection.
+- [[results-io-workflows#Williams-Fit And CJP-Fit Provenance Outputs]]: observed Williams-fit and CJP-fit provenance output hooks, compact KG statement-bundle projection, and graph visualization projection.
 
 ## Domain And Scientific Context
 

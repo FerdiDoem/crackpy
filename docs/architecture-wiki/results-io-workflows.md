@@ -26,7 +26,7 @@ Observed text tags:
 
 `OutputWriter` knows the shape of `FractureAnalysis` internals directly.
 
-`OutputWriter.write_williams_fit_provenance_json()` is a newer optional output hook. It builds a Williams-fit result/provenance envelope from the current `FractureAnalysis` object and delegates artifact writing to `write_williams_fit_provenance_artifacts()`, which accepts an explicit `ResultEnvelope`. This keeps legacy text and current JSON outputs unchanged while allowing the Williams-fit provenance artifact projection to be tested without a live `FractureAnalysis` instance.
+`OutputWriter.write_williams_fit_provenance_json()` is a newer optional output hook. It builds a Williams-fit result/provenance envelope from the current `FractureAnalysis` object and delegates artifact writing to `write_williams_fit_provenance_artifacts()`, which accepts an explicit `ResultEnvelope`. `OutputWriter.write_cjp_fit_provenance_artifacts()` now provides the same additive artifact bridge for CJP results. These hooks keep legacy text and current JSON outputs unchanged while allowing provenance artifact projection to be tested without a live `FractureAnalysis` instance.
 
 ### `OutputReader`
 
@@ -42,7 +42,7 @@ Observed risks:
 
 `crackpy/results/plot.py` consumes `FractureAnalysis`, including its `InputData` and numerical result attributes, and writes PNG plots. It sets the matplotlib backend to `Agg` at import time.
 
-## Williams-Fit Provenance Outputs
+## Williams-Fit And CJP-Fit Provenance Outputs
 
 Observed files and modules:
 
@@ -55,6 +55,7 @@ Observed files and modules:
 - `crackpy/results/kg_statement_bundle.py`: compact grouped KG statement-bundle projection from a `ResultEnvelope`.
 - `crackpy/results/graph_visualization.py`: graph visualization projection from a `ResultEnvelope`.
 - `crackpy/fracture_analysis/methods/williams_fit/spec.yaml`: first Williams-fit slice definitions for schema versions, method metadata, dependency roles, scalar quantities, aliases, and coefficient-series definitions.
+- `crackpy/fracture_analysis/methods/cjp_fit/spec.yaml`: CJP slice definitions for schema versions, two method identities, dependency roles, variant-scoped quantities, aliases, and coefficient units.
 
 Current writer behavior:
 
@@ -62,6 +63,10 @@ Current writer behavior:
 - `_williams_fit_kg_statement_bundle.json`: compact statement-bundle projection grouped by `related_to` categories.
 - `_williams_fit_graph.json`: visualization projection with nodes and dependency edges.
 - `_williams_fit_graph.html`: standalone SVG graph explorer generated from the visualization projection.
+- `_cjp_fit_envelope.json`: graph-shaped CJP result/provenance envelope with one input record, one crack-tip frame, one normalized configuration, two method records, two analysis runs, and two result records.
+- `_cjp_fit_kg_statement_bundle.json`: compact statement-bundle projection for the CJP envelope.
+- `_cjp_fit_graph.json`: visualization projection for the CJP envelope.
+- `_cjp_fit_graph.html`: standalone SVG graph explorer generated from the CJP visualization projection.
 - The direct artifact writer consumes a `ResultEnvelope`; the `OutputWriter` method remains a compatibility bridge that first derives that envelope from `FractureAnalysis`.
 
 Frontend integration handoff:
@@ -77,9 +82,10 @@ Frontend integration handoff:
 - C-005 update: `CrackTipFrame` graph nodes now expose `data.geometry_profile`, currently `surface_planar` for the Williams-fit slice. Frontend integration should display or filter by `geometry_profile` when useful, and treat `data.compatibility_side` as a legacy label rather than the full orientation model.
 - C-007 update: result/provenance payload shape is unchanged. Backend/frontend fixture code may omit `FractureAnalysis` option arguments without sharing mutated default `IntegralProperties` or `OptimizationProperties` across fixture runs; pass `None` explicitly when a fixture should disable line integrals or optimization.
 - C-003 update: result/provenance payload shape is unchanged. Backend/frontend contract tests can now build a `WilliamsFitResult` either from explicit coefficient arrays with `run_williams_fit_from_coefficients()` or from crack-tip-centered displacement grids with `WilliamsFitDisplacementField` and `fit_williams_displacement_field()`, without constructing `FractureAnalysis` or relying on `Optimization` constructor side effects.
+- CJP update: backend/frontend contract tests can now build CJP provenance artifacts from a prebuilt CJP `ResultEnvelope`, from a typed `CjpFitResult`, from explicit coefficient arrays with `run_cjp_fit_from_coefficients()`, or from crack-tip-centered displacement grids with `CjpFitDisplacementField` and `fit_cjp_displacement_field()`.
 - Use `_williams_fit_graph.html` as the reference implementation for an inspectable layout and interaction model, not as the long-term application shell. The HTML embeds the graph payload and demonstrates lane-based layout, node-type styling, legend generation, and node detail inspection.
 - If the frontend generates its own view, keep UI state, colors, layout coordinates, filters, expansion state, and RDF namespace choices outside `ResultEnvelope`. Those remain visualization adapter concerns, not canonical provenance fields.
-- The Python entry point for backend/frontend integration is `write_williams_fit_provenance_artifacts(envelope, path, stem)`. Existing legacy flows can continue through `OutputWriter.write_williams_fit_provenance_artifacts()`.
+- The Python entry points for backend/frontend integration are `write_williams_fit_provenance_artifacts(envelope, path, stem)` and `write_cjp_fit_provenance_artifacts(envelope, path, stem)`. Existing legacy flows can continue through the corresponding `OutputWriter` compatibility methods.
 
 Observed coupling:
 
@@ -91,8 +97,8 @@ Observed coupling:
 - Williams-fit crack-tip frames now carry explicit geometry-profile metadata while preserving legacy side labels for output compatibility.
 - Fracture-analysis default option objects are now created per analysis/optimizer call for the touched defaults, reducing hidden shared state in provenance fixture construction.
 - Williams-fit typed results can now be produced directly from explicit coefficient arrays or already-sampled displacement grids, but the envelope/source adapter layer is still the boundary that turns those results into frontend-facing graph payloads.
-- Only Williams-fit quantities and aliases are covered by this first slice.
-- CJP results, line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
+- Williams-fit and CJP-fit quantities and aliases are covered by provenance slices.
+- Line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
 - The compact KG projection currently loads the Williams-fit spec by default, so it is not yet a generic exporter for all future result envelopes.
 
 ## User-Facing Scripts
