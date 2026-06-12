@@ -1,0 +1,229 @@
+schemas:
+  envelope: crackpy.result_envelope.cjp_fit.v1
+  result: crackpy.result_record.cjp_fit.v1
+  configuration: crackpy.configuration.cjp_fit.v1
+  kg_statement_bundle: crackpy.kg_statement_bundle.cjp_fit.v1
+
+methods:
+  mixed_mode:
+    method_id: crackpy.fracture.cjp_mixed_mode_fit
+    display_name: CJP Mixed-Mode Fit
+    kind: analysis
+    method_revision: "1"
+    implementation_ref: crackpy.fracture_analysis.methods.cjp_fit.runner.run_cjp_fit
+    aliases:
+      - CJP_results
+    references:
+      - Christopher James Patterson mixed-mode CJP extension
+  mode_i:
+    method_id: crackpy.fracture.cjp_mode_i_fit
+    display_name: CJP Mode-I Fit
+    kind: analysis
+    method_revision: "1"
+    implementation_ref: crackpy.fracture_analysis.methods.cjp_fit.runner.run_cjp_fit
+    aliases:
+      - CJP_modeI_results
+    references:
+      - Christopher James Patterson Mode-I CJP model
+  crack_tip_import:
+    method_id: crackpy.crack_tip.manual_import
+    display_name: Manual Crack-Tip Import
+    kind: crack_tip_estimate
+    method_revision: "1"
+    implementation_ref: crackpy.input.crack_tip_info.CrackTipInfo
+    aliases:
+      - crack_info_by_nodemap.txt
+    references: []
+
+adapter_policy:
+  legacy_alias_scope: CJP_results+CJP_modeI_results
+
+dependencies:
+  crack_tip_estimate:
+    dependency_name: crack_tip_estimate
+    role: used_crack_tip_estimate
+    target_type: CrackTipEstimateResult
+  crack_tip_frame:
+    dependency_name: crack_tip_frame
+    role: used_crack_tip_frame
+    target_type: CrackTipFrame
+
+quantities:
+  mixed_mode.error:
+    quantity_name: mixed_mode.error
+    symbol: error
+    variant: mixed_mode
+    description: Mixed-mode CJP optimizer residual cost.
+    unit: "1"
+    legacy_aliases:
+      - CJP_results.error
+      - CJP_results.Error
+  mixed_mode.A_r:
+    quantity_name: mixed_mode.A_r
+    symbol: A_r
+    variant: mixed_mode
+    description: Mixed-mode CJP fitted A_r coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_results.A_r
+  mixed_mode.B_r:
+    quantity_name: mixed_mode.B_r
+    symbol: B_r
+    variant: mixed_mode
+    description: Mixed-mode CJP fitted B_r coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_results.B_r
+  mixed_mode.B_i:
+    quantity_name: mixed_mode.B_i
+    symbol: B_i
+    variant: mixed_mode
+    description: Mixed-mode CJP fitted B_i coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_results.B_i
+  mixed_mode.C:
+    quantity_name: mixed_mode.C
+    symbol: C
+    variant: mixed_mode
+    description: Mixed-mode CJP fitted non-singular C stress coefficient.
+    unit: MPa
+    legacy_aliases:
+      - CJP_results.C
+  mixed_mode.E:
+    quantity_name: mixed_mode.E
+    symbol: E
+    variant: mixed_mode
+    description: Mixed-mode CJP fitted E coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_results.E
+  mixed_mode.K_F:
+    quantity_name: mixed_mode.K_F
+    symbol: K_F
+    variant: mixed_mode
+    description: Mixed-mode CJP K_F derived from A_r, B_r, and E.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_results.K_F
+  mixed_mode.K_R:
+    quantity_name: mixed_mode.K_R
+    symbol: K_R
+    variant: mixed_mode
+    description: Mixed-mode CJP K_R derived from B_i and E.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_results.K_R
+  mixed_mode.K_S:
+    quantity_name: mixed_mode.K_S
+    symbol: K_S
+    variant: mixed_mode
+    description: Mixed-mode CJP K_S derived from A_r and B_r.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_results.K_S
+  mixed_mode.K_II:
+    quantity_name: mixed_mode.K_II
+    symbol: K_II
+    variant: mixed_mode
+    description: Mixed-mode CJP K_II derived from B_i.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_results.K_II
+  mixed_mode.T:
+    quantity_name: mixed_mode.T
+    symbol: T
+    variant: mixed_mode
+    description: Mixed-mode CJP T-stress derived from C.
+    unit: MPa
+    legacy_aliases:
+      - CJP_results.T
+  mode_i.error:
+    quantity_name: mode_i.error
+    symbol: error
+    variant: mode_i
+    description: Mode-I CJP optimizer residual cost.
+    unit: "1"
+    legacy_aliases:
+      - CJP_modeI_results.error
+      - CJP_modeI_results.Error
+  mode_i.A:
+    quantity_name: mode_i.A
+    symbol: A
+    variant: mode_i
+    description: Mode-I CJP fitted A coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_modeI_results.A
+  mode_i.B:
+    quantity_name: mode_i.B
+    symbol: B
+    variant: mode_i
+    description: Mode-I CJP fitted B coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_modeI_results.B
+  mode_i.C:
+    quantity_name: mode_i.C
+    symbol: C
+    variant: mode_i
+    description: Mode-I CJP fitted non-singular C stress coefficient.
+    unit: MPa
+    legacy_aliases:
+      - CJP_modeI_results.C
+  mode_i.E:
+    quantity_name: mode_i.E
+    symbol: E
+    variant: mode_i
+    description: Mode-I CJP fitted E coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_modeI_results.E
+  mode_i.F:
+    quantity_name: mode_i.F
+    symbol: F
+    variant: mode_i
+    description: Mode-I CJP fitted non-singular F stress coefficient.
+    unit: MPa
+    legacy_aliases:
+      - CJP_modeI_results.F
+  mode_i.K_F:
+    quantity_name: mode_i.K_F
+    symbol: K_F
+    variant: mode_i
+    description: Mode-I CJP K_F derived from A, B, and E.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_modeI_results.K_F
+  mode_i.K_R:
+    quantity_name: mode_i.K_R
+    symbol: K_R
+    variant: mode_i
+    description: Mode-I CJP K_R derived from E.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_modeI_results.K_R
+  mode_i.K_S:
+    quantity_name: mode_i.K_S
+    symbol: K_S
+    variant: mode_i
+    description: Mode-I CJP K_S derived from A and B.
+    unit: MPa*m^{1/2}
+    legacy_aliases:
+      - CJP_modeI_results.K_S
+  mode_i.T_x:
+    quantity_name: mode_i.T_x
+    symbol: T_x
+    variant: mode_i
+    description: Mode-I CJP x-direction T-stress derived from C.
+    unit: MPa
+    legacy_aliases:
+      - CJP_modeI_results.T_x
+  mode_i.T_y:
+    quantity_name: mode_i.T_y
+    symbol: T_y
+    variant: mode_i
+    description: Mode-I CJP y-direction T-stress derived from F.
+    unit: MPa
+    legacy_aliases:
+      - CJP_modeI_results.T_y
