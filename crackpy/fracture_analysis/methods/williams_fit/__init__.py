@@ -6,7 +6,13 @@ from crackpy.fracture_analysis.methods.williams_fit.parameters import (
     WilliamsOptimizationParameters,
 )
 from crackpy.fracture_analysis.methods.williams_fit.result import WilliamsCoefficientSet, WilliamsFitResult
-from crackpy.fracture_analysis.methods.williams_fit.runner import WilliamsFitOptimizer, run_williams_fit
+from crackpy.fracture_analysis.methods.williams_fit.runner import (
+    WilliamsFitDisplacementField,
+    WilliamsFitOptimizer,
+    fit_williams_displacement_field,
+    run_williams_fit,
+    run_williams_fit_from_coefficients,
+)
 from crackpy.fracture_analysis.methods.williams_fit.source_adapter import source_from_analysis, source_from_result
 
 __all__ = [
@@ -17,11 +23,14 @@ __all__ = [
     "WilliamsMaterialParameters",
     "WilliamsOptimizationParameters",
     "WilliamsFitOptimizer",
+    "WilliamsFitDisplacementField",
     "build_williams_fit_envelope_from_analysis",
     "build_williams_fit_envelope_from_result",
     "build_williams_fit_envelope_from_source",
+    "fit_williams_displacement_field",
     "load_williams_fit_spec",
     "run_williams_fit",
+    "run_williams_fit_from_coefficients",
     "source_from_analysis",
     "source_from_result",
 ]

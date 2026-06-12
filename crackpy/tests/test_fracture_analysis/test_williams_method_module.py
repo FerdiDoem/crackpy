@@ -143,6 +143,129 @@ def test_run_williams_fit_protocol_uses_actual_optimizer_result_type():
     assert get_type_hints(WilliamsFitOptimizer.optimize_williams_displacements_z)["return"] is OptimizeResult
 
 
+def test_williams_result_can_be_built_from_explicit_coefficient_arrays():
+    from crackpy.fracture_analysis.methods.williams_fit import run_williams_fit_from_coefficients
+
+    result = run_williams_fit_from_coefficients(
+        terms=(1, 2),
+        xy_coefficients=np.asarray([2.0, 1.0, -0.5, 0.3]),
+        error_xy=0.1,
+    )
+
+    assert result.error_xy == 0.1
+    assert result.error_z is np.nan or np.isnan(result.error_z)
+    assert result.K_I == np.sqrt(2 * np.pi) * 2.0 / np.sqrt(1000)
+    assert result.K_II == -np.sqrt(2 * np.pi) * -0.5 / np.sqrt(1000)
+    assert result.T == 4.0
+    assert result.coefficients.a == {1: 2.0, 2: 1.0}
+    assert result.coefficients.b == {1: -0.5, 2: 0.3}
+
+
+def test_williams_result_from_coefficients_validates_terms_and_lengths():
+    from crackpy.fracture_analysis.methods.williams_fit import run_williams_fit_from_coefficients
+
+    with pytest.raises(ValueError, match="terms 1 and 2"):
+        run_williams_fit_from_coefficients(
+            terms=(1,),
+            xy_coefficients=np.asarray([2.0, -0.5]),
+            error_xy=0.1,
+        )
+
+    with pytest.raises(ValueError, match="in-plane coefficient vector"):
+        run_williams_fit_from_coefficients(
+            terms=(1, 2),
+            xy_coefficients=np.asarray([2.0, 1.0, -0.5]),
+            error_xy=0.1,
+        )
+
+
+def test_williams_fit_displacement_field_recovers_synthetic_xy_coefficients():
+    from crackpy.fracture_analysis.crack_tip import williams_displ_field_xy
+    from crackpy.fracture_analysis.methods.williams_fit import (
+        WilliamsFitDisplacementField,
+        fit_williams_displacement_field,
+    )
+    from crackpy.structure_elements.material import Material
+
+    material = Material()
+    terms = (1, 2)
+    r_grid, phi_grid = np.mgrid[1.0:2.0:5j, -1.0:1.0:6j]
+    expected_a = np.asarray([2.0, 1.0])
+    expected_b = np.asarray([-0.5, 0.3])
+    disp_x, disp_y = williams_displ_field_xy(expected_a, expected_b, terms, phi_grid, r_grid, material)
+    field = WilliamsFitDisplacementField(
+        terms=terms,
+        r_grid=r_grid,
+        phi_grid=phi_grid,
+        disp_x=disp_x,
+        disp_y=disp_y,
+        disp_z=None,
+        material=material,
+    )
+
+    result = fit_williams_displacement_field(
+        field,
+        initial_xy_coefficients=np.asarray([1.5, 0.5, -0.2, 0.1]),
+    )
+
+    assert result.error_xy < 1e-20
+    assert result.coefficients.a[1] == pytest.approx(expected_a[0])
+    assert result.coefficients.a[2] == pytest.approx(expected_a[1])
+    assert result.coefficients.b[1] == pytest.approx(expected_b[0])
+    assert result.coefficients.b[2] == pytest.approx(expected_b[1])
+
+
+def test_williams_fit_displacement_field_validates_initial_coefficient_length():
+    from crackpy.fracture_analysis.methods.williams_fit import (
+        WilliamsFitDisplacementField,
+        fit_williams_displacement_field,
+    )
+    from crackpy.structure_elements.material import Material
+
+    grid = np.ones((2, 2))
+    field = WilliamsFitDisplacementField(
+        terms=(1, 2),
+        r_grid=grid,
+        phi_grid=grid,
+        disp_x=grid,
+        disp_y=grid,
+        disp_z=None,
+        material=Material(),
+    )
+
+    with pytest.raises(ValueError, match="Initial in-plane Williams coefficient vector"):
+        fit_williams_displacement_field(field, initial_xy_coefficients=np.ones(3))
+
+
+def test_williams_fit_displacement_field_validates_shape_and_required_terms():
+    from crackpy.fracture_analysis.methods.williams_fit import WilliamsFitDisplacementField
+    from crackpy.structure_elements.material import Material
+
+    grid = np.ones((2, 2))
+
+    with pytest.raises(ValueError, match="terms 1 and 2"):
+        WilliamsFitDisplacementField(
+            terms=(1,),
+            r_grid=grid,
+            phi_grid=grid,
+            disp_x=grid,
+            disp_y=grid,
+            disp_z=None,
+            material=Material(),
+        )
+
+    with pytest.raises(ValueError, match="disp_y shape"):
+        WilliamsFitDisplacementField(
+            terms=(1, 2),
+            r_grid=grid,
+            phi_grid=grid,
+            disp_x=grid,
+            disp_y=np.ones((3, 2)),
+            disp_z=None,
+            material=Material(),
+        )
+
+
 def test_common_provenance_builder_projects_scalar_source_quantities_from_spec():
     from crackpy.fracture_analysis.methods.williams_fit import load_williams_fit_spec, source_from_result
     from crackpy.provenance import MethodResultEnvelopeBuilder

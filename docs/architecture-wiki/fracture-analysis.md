@@ -60,7 +60,7 @@ Derived quantities:
 
 Observed Williams-fit method module:
 
-- `runner.py`: defines the `WilliamsFitOptimizer` protocol and `run_williams_fit()` typed numerical runner. Optimization exceptions propagate from the optimizer rather than being converted into silent fallback results.
+- `runner.py`: defines the `WilliamsFitOptimizer` compatibility protocol, `WilliamsFitDisplacementField` array interface, `fit_williams_displacement_field()` least-squares runner, `run_williams_fit_from_coefficients()` result assembler, and `run_williams_fit()` legacy optimizer adapter. Optimization exceptions propagate from SciPy or the optimizer rather than being converted into silent fallback results.
 - `result.py`: defines Pydantic `WilliamsFitResult` and `WilliamsCoefficientSet` records.
 - `parameters.py`: defines Pydantic material and optimization parameter snapshots with field descriptions and parameter-origin metadata.
 - `source_adapter.py`: translates either current `FractureAnalysis` Williams attributes or a typed `WilliamsFitResult` into a `MethodResultSource`; current left/right side labels are projected through `CrackTipFrame.from_legacy_side()` so the frame carries explicit `geometry_profile` metadata while preserving the compatibility side label.
@@ -68,7 +68,7 @@ Observed Williams-fit method module:
 - `builder.py`: wraps the shared provenance builder to produce the first Williams-fit result/provenance envelope.
 - `crackpy.results.write.write_williams_fit_provenance_artifacts()`: writes envelope, compact KG statement bundle, and visualization graph artifacts from a `ResultEnvelope`; `OutputWriter` remains the compatibility bridge from `FractureAnalysis`.
 
-This is a partial deeper module around Williams fitting. CJP fitting, line integrals, correction-time Williams optimization in `crack_detection.correction`, legacy result writing, and plotting still consume or expose the older mutable `FractureAnalysis` attribute shape.
+This is a partial deeper module around Williams fitting. The runner can now fit explicit crack-tip-centered displacement arrays and assemble typed results from explicit coefficient vectors without a `FractureAnalysis` or `Optimization` instance. CJP fitting, line integrals, correction-time Williams optimization in `crack_detection.correction`, legacy result writing, and plotting still consume or expose the older mutable `FractureAnalysis` attribute shape.
 
 ## CJP Fitting
 
