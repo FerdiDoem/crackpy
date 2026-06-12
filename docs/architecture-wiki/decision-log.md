@@ -971,3 +971,44 @@ Consequences:
 - Pydantic fields should continue to use `Field(description=...)`; dataclasses without field metadata need class docstrings or nearby comments that explain important fields.
 - Refactors may intentionally keep small amounts of duplicated structure when extraction would reduce locality or make a method slice harder to understand.
 - Class-based designs should justify their object shape through behavior, invariants, lifecycle, or adapter role rather than style preference.
+
+## 2026-06-13: CJP Fit Is The Next Result/Provenance Slice
+
+Status: accepted for planning
+
+Decision:
+
+The next field-level result/provenance slice after Williams fitting is CJP fitting. The slice covers both current CJP legacy output sections, but it must model them as two method identities rather than as one method with only variant-tagged outputs:
+
+- `crackpy.fracture.cjp_mixed_mode_fit`
+- `crackpy.fracture.cjp_mode_i_fit`
+
+Both methods stay in one CJP implementation slice because current CrackPy runs them from the same optimization-enabled fracture-analysis path and they share the same source input, crack-tip frame, material, fitting-domain parameters, artifact projections, and legacy writer bridge.
+
+The CJP slice must expose both fitted coefficients and derived output quantities. Coefficients are canonical quantities because the formulas deriving `K_F`, `K_R`, `K_S`, `K_II`, `T`, `T_x`, and `T_y` are not trivial enough for the final values alone to provide an auditable scientific result. Mixed-mode coefficients are `A_r`, `B_r`, `B_i`, `C`, and `E`; Mode-I coefficients are `A`, `B`, `C`, `E`, and `F`.
+
+Singular CJP coefficients fitted internally with millimeter-based radial coordinates should be exported canonically in `MPa*m^{1/2}` to match current derived `K_*` output units. Non-singular coefficients and stress terms remain in `MPa`. Raw optimizer coefficients in native `MPa*mm^{1/2}` may remain method-local implementation detail for tests and debugging, but they are not the primary public result quantities.
+
+Formula traceability for this slice should use documented quantity descriptions and tested Python conversion functions. SymPy, Pint, unyt, QUDT, symbolic formula registries, and LaTeX generation are deferred to a future formulas/units ecosystem gate rather than introduced in the CJP slice.
+
+No method trustworthiness, maturity, validation, applicability, or uncertainty fields are added to method metadata for this slice. CJP reliability concerns are real, especially for the mixed-mode extension, but they belong to a future method evidence or validation-profile specification rather than ad hoc fields in the CJP slice.
+
+Rationale:
+
+CJP Mode-I and mixed-mode fitting use different formula systems, coefficient sets, derived outputs, and scientific evidence. Two method IDs improve provenance, references, stale-result checks, and future method-specific review without requiring a package-wide method registry now.
+
+Exposing coefficients makes the CJP result auditable. The coefficient units are prescribed by the stress/displacement formulas and the current length unit used during fitting: terms such as a singular coefficient divided by `sqrt(r)` must produce stress. Because CrackPy's fitting radius is currently in millimeters while public `K_*` results are emitted in `MPa*m^{1/2}`, the canonical public coefficient projection should use the same meter-based stress-intensity unit convention.
+
+Trustworthiness metadata is broader than CJP. It should be designed once for method evidence, validation references, benchmark datasets, applicable regimes, known limitations, and result-level uncertainty instead of being added as CJP-specific method fields.
+
+Consequences:
+
+- A local CJP method module may be planned under `crackpy.fracture_analysis.methods.cjp_fit`.
+- The generic `MethodResultSource` must not gain CJP-specific top-level fields; CJP dimensions use quantity qualifiers such as `variant=mixed_mode` or `variant=mode_i`.
+- The CJP YAML spec is the source of truth for method IDs, schema versions, quantities, aliases, and formula descriptions.
+- Existing `CJP_results` and `CJP_modeI_results` text/current-JSON behavior must remain unchanged.
+- Broader CJP reliability, uncertainty, method-evidence, symbolic-formula, and formal-unit work remains a separate planning gate.
+
+Design artifact:
+
+- [[../superpowers/specs/2026-06-13-cjp-fit-result-provenance-design]]
