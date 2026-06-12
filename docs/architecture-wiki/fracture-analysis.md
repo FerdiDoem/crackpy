@@ -64,6 +64,7 @@ Observed Williams-fit method module:
 - `source_adapter.py`: translates either current `FractureAnalysis` Williams attributes or a typed `WilliamsFitResult` into a `MethodResultSource`.
 - `spec.yaml` and `spec_loader.py`: hold and validate Williams-specific schema versions, method metadata, dependency roles, scalar quantity definitions, and coefficient-series definitions.
 - `builder.py`: wraps the shared provenance builder to produce the first Williams-fit result/provenance envelope.
+- `crackpy.results.write.write_williams_fit_provenance_artifacts()`: writes envelope, compact KG statement bundle, and visualization graph artifacts from a `ResultEnvelope`; `OutputWriter` remains the compatibility bridge from `FractureAnalysis`.
 
 This is a partial deeper module around Williams fitting. CJP fitting, line integrals, correction-time Williams optimization in `crack_detection.correction`, legacy result writing, and plotting still consume or expose the older mutable `FractureAnalysis` attribute shape.
 

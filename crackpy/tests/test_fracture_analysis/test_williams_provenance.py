@@ -29,6 +29,7 @@ from crackpy.fracture_analysis.methods.williams_fit.parameters import (
     WilliamsMaterialParameters,
     WilliamsOptimizationParameters,
 )
+from crackpy.fracture_analysis.methods.williams_fit.result import WilliamsCoefficientSet, WilliamsFitResult
 from crackpy.fracture_analysis.methods.williams_fit import load_williams_fit_spec
 
 
@@ -252,6 +253,7 @@ def test_source_dependency_record_requires_explicit_provenance_identity():
 
 from crackpy.fracture_analysis.methods.williams_fit import (
     build_williams_fit_envelope_from_analysis,
+    build_williams_fit_envelope_from_result,
     source_from_analysis,
 )
 
@@ -324,6 +326,42 @@ def test_build_williams_fit_envelope_maps_current_result_section():
     assert quantities["error_xy"]["legacy_aliases"] == ["Williams_fit_results.error_xy", "Error_xy"]
     assert quantities["a_-1"]["legacy_aliases"] == ["Williams_fit_results.a_-1"]
     assert quantities["c_1"]["value"] is None
+
+
+def _typed_williams_envelope() -> ResultEnvelope:
+    frame = CrackTipFrame(
+        frame_id="crack_tip_frame:demo:right",
+        tip_id="crack_tip:demo:right",
+        origin_mm={"x": 1.5, "y": 2.5},
+        angle_deg=12.0,
+        compatibility_side="right",
+    )
+    parameters = WilliamsFitResultParameters(
+        material=WilliamsMaterialParameters(E_MPa=72000, nu_xy=0.33),
+        optimization=WilliamsOptimizationParameters(angle_gap_deg=20, min_radius_mm=0.2, terms=(-1, 1, 2)),
+    )
+    result = WilliamsFitResult(
+        error_xy=0.1,
+        error_z=float("nan"),
+        K_I=12.5,
+        K_II=-2.0,
+        K_III=float("nan"),
+        T=4.0,
+        coefficients=WilliamsCoefficientSet(
+            a={-1: 0.01, 1: 2.0, 2: 1.0},
+            b={-1: 0.02, 1: -0.5, 2: 0.3},
+            c={-1: float("nan"), 1: float("nan"), 2: float("nan")},
+        ),
+    )
+    return build_williams_fit_envelope_from_result(
+        input_id="input:demo",
+        data_ref="DemoNodemap.txt",
+        source_label="demo",
+        crack_tip_frame=frame,
+        parameters=parameters,
+        result=result,
+        crackpy_version="test-version",
+    )
 
 
 def test_source_dependency_requires_record_or_target_id_exclusively():
@@ -411,6 +449,7 @@ def test_build_williams_fit_envelope_rejects_missing_williams_results():
 
 
 from crackpy.results.write import OutputWriter
+from crackpy.results.write import write_williams_fit_provenance_artifacts
 
 
 def test_output_writer_writes_new_provenance_artifacts_without_changing_legacy_json(tmp_path):
@@ -437,3 +476,15 @@ def test_legacy_williams_fit_provenance_json_writer_keeps_artifact_behavior(tmp_
     written = writer.write_williams_fit_provenance_json(path=tmp_path)
 
     assert "visualization_graph_html" in written
+
+
+def test_williams_provenance_artifact_writer_accepts_explicit_result_envelope(tmp_path):
+    envelope = _typed_williams_envelope()
+
+    written = write_williams_fit_provenance_artifacts(envelope, path=tmp_path, stem="explicit_result")
+
+    assert set(written) == {"envelope", "kg_statement_bundle", "visualization_graph", "visualization_graph_html"}
+    assert written["envelope"].name == "explicit_result_williams_fit_envelope.json"
+    assert written["kg_statement_bundle"].exists()
+    assert written["visualization_graph"].exists()
+    assert written["visualization_graph_html"].exists()

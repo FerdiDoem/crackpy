@@ -8,10 +8,45 @@ from crackpy.fracture_analysis.analysis import FractureAnalysis
 from crackpy.fracture_analysis.crack_tip import unit_of_williams_coefficients
 from crackpy.results.graph_visualization import envelope_to_visualization_graph, write_visualization_graph_html
 from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
-from crackpy.results.result_data import write_json_file
+from crackpy.results.result_data import ResultEnvelope, write_json_file
 from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_analysis
 
 logger = logging.getLogger(__name__)
+
+
+def write_williams_fit_provenance_artifacts(
+    envelope: ResultEnvelope,
+    path: str | Path,
+    stem: str,
+) -> dict[str, Path]:
+    """Write Williams-fit provenance projections from an explicit result envelope.
+
+    `envelope` is the result Interface for this first Williams-fit slice. The
+    legacy `OutputWriter` can still build it from `FractureAnalysis`, but tests
+    and future adapters should be able to exercise artifact projection without
+    constructing the mutable analysis facade.
+    """
+    output_path = Path(path)
+    output_path.mkdir(parents=True, exist_ok=True)
+    kg_statement_bundle = envelope_to_kg_statement_bundle(envelope)
+    visualization_graph = envelope_to_visualization_graph(envelope)
+
+    return {
+        "envelope": write_json_file(envelope.to_dict(), output_path / f"{stem}_williams_fit_envelope.json"),
+        "kg_statement_bundle": write_json_file(
+            kg_statement_bundle.to_dict(),
+            output_path / f"{stem}_williams_fit_kg_statement_bundle.json",
+        ),
+        "visualization_graph": write_json_file(
+            visualization_graph.to_dict(),
+            output_path / f"{stem}_williams_fit_graph.json",
+        ),
+        "visualization_graph_html": write_visualization_graph_html(
+            visualization_graph,
+            output_path / f"{stem}_williams_fit_graph.html",
+            title="Williams Fit Provenance Graph",
+        ),
+    }
 
 
 class OutputWriter:
@@ -660,26 +695,7 @@ class OutputWriter:
         stem = Path(self.filename).stem
 
         envelope = build_williams_fit_envelope_from_analysis(self.analysis)
-        kg_statement_bundle = envelope_to_kg_statement_bundle(envelope)
-        visualization_graph = envelope_to_visualization_graph(envelope)
-
-        written = {
-            "envelope": write_json_file(envelope.to_dict(), output_path / f"{stem}_williams_fit_envelope.json"),
-            "kg_statement_bundle": write_json_file(
-                kg_statement_bundle.to_dict(),
-                output_path / f"{stem}_williams_fit_kg_statement_bundle.json",
-            ),
-            "visualization_graph": write_json_file(
-                visualization_graph.to_dict(),
-                output_path / f"{stem}_williams_fit_graph.json",
-            ),
-            "visualization_graph_html": write_visualization_graph_html(
-                visualization_graph,
-                output_path / f"{stem}_williams_fit_graph.html",
-                title="Williams Fit Provenance Graph",
-            ),
-        }
-        return written
+        return write_williams_fit_provenance_artifacts(envelope, output_path, stem)
 
     def write_williams_fit_provenance_json(self, path=None) -> dict[str, Path]:
         """Compatibility alias for the first provenance artifact writer.

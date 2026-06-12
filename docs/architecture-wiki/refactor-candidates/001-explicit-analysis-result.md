@@ -42,4 +42,4 @@ Accepted OQ-006 boundary: the future result interface should feed the graph-shap
 
 ## Decision State
 
-OQ-005 and OQ-006 planning boundaries accepted. The first Williams-fit result/provenance envelope is partially implemented through `crackpy.results.result_data` and `crackpy.fracture_analysis.methods.williams_fit`, but `FractureAnalysis` still exposes the broad mutable post-run attribute interface and broader analysis-result separation is not approved.
+OQ-005 and OQ-006 planning boundaries accepted. The first Williams-fit result/provenance envelope is partially implemented through `crackpy.results.result_data` and `crackpy.fracture_analysis.methods.williams_fit`. Williams-fit provenance artifact writing can now consume an explicit `ResultEnvelope`, but `FractureAnalysis` still exposes the broad mutable post-run attribute interface and broader analysis-result separation is not approved.

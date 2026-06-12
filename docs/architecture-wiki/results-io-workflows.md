@@ -26,7 +26,7 @@ Observed text tags:
 
 `OutputWriter` knows the shape of `FractureAnalysis` internals directly.
 
-`OutputWriter.write_williams_fit_provenance_json()` is a newer optional output hook. It builds a Williams-fit result/provenance envelope from the current `FractureAnalysis` object and writes three additional JSON artifacts without changing the legacy text or current JSON outputs.
+`OutputWriter.write_williams_fit_provenance_json()` is a newer optional output hook. It builds a Williams-fit result/provenance envelope from the current `FractureAnalysis` object and delegates artifact writing to `write_williams_fit_provenance_artifacts()`, which accepts an explicit `ResultEnvelope`. This keeps legacy text and current JSON outputs unchanged while allowing the Williams-fit provenance artifact projection to be tested without a live `FractureAnalysis` instance.
 
 ### `OutputReader`
 
@@ -59,10 +59,21 @@ Current writer behavior:
 - `_williams_fit_envelope.json`: graph-shaped result/provenance envelope with input, method, configuration, crack-tip frame, crack-tip estimate, analysis run, and result records.
 - `_williams_fit_kg_statement_bundle.json`: compact statement-bundle projection grouped by `related_to` categories.
 - `_williams_fit_graph.json`: visualization projection with nodes and dependency edges.
+- `_williams_fit_graph.html`: standalone SVG graph explorer generated from the visualization projection.
+- The direct artifact writer consumes a `ResultEnvelope`; the `OutputWriter` method remains a compatibility bridge that first derives that envelope from `FractureAnalysis`.
+
+Frontend integration handoff:
+
+- Prefer `_williams_fit_graph.json` as the frontend data contract. It contains `nodes` and `edges` from `VisualizationGraph`; node `type`, `id`, `label`, and `data` are the stable frontend-facing fields for this first slice.
+- C-001 update: frontend integration can request or consume the same artifacts from a prebuilt `ResultEnvelope` via `write_williams_fit_provenance_artifacts(envelope, path, stem)`. A frontend handoff test no longer needs to construct a full `FractureAnalysis` object just to verify graph, KG bundle, or envelope artifact output.
+- Use `_williams_fit_graph.html` as the reference implementation for an inspectable layout and interaction model, not as the long-term application shell. The HTML embeds the graph payload and demonstrates lane-based layout, node-type styling, legend generation, and node detail inspection.
+- If the frontend generates its own view, keep UI state, colors, layout coordinates, filters, expansion state, and RDF namespace choices outside `ResultEnvelope`. Those remain visualization adapter concerns, not canonical provenance fields.
+- The Python entry point for backend/frontend integration is `write_williams_fit_provenance_artifacts(envelope, path, stem)`. Existing legacy flows can continue through `OutputWriter.write_williams_fit_provenance_artifacts()`.
 
 Observed coupling:
 
-- The new provenance source adapter still reads `FractureAnalysis` post-run attributes for the legacy bridge.
+- The provenance source adapter still reads `FractureAnalysis` post-run attributes for the legacy bridge.
+- Williams-fit envelope-to-artifact projection no longer requires the broad `FractureAnalysis` attribute bag once a `ResultEnvelope` is available.
 - Only Williams-fit quantities and aliases are covered by this first slice.
 - CJP results, line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
 - The compact KG projection currently loads the Williams-fit spec by default, so it is not yet a generic exporter for all future result envelopes.
