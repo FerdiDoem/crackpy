@@ -689,6 +689,9 @@ Status: proposed architecture vocabulary
 
 Future result/provenance record describing a generated result artifact, its `result_schema_version`, output identity, hashes where available, producing analysis run, and compact export metadata.
 
+#### ResultEnvelope artifact writer
+Current result I/O Module that writes standard projections from a prebuilt `ResultEnvelope`: envelope JSON, compact KG statement-bundle JSON, visualization graph JSON, and standalone visualization graph HTML. It is separate from `OutputWriter` compatibility bridges so frontend and backend tests can exercise artifact output without a live `FractureAnalysis` object.
+
 #### ProvenanceRecord
 Status: proposed architecture vocabulary
 

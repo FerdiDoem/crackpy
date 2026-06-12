@@ -1,6 +1,6 @@
 # Candidate 001: Explicit Analysis Result
 
-Status: proposed, with Williams-fit result/provenance slice partially implemented
+Status: proposed, with Williams-fit/CJP-fit result-envelope artifact slices partially implemented
 Role: Architecture candidate for separating fracture-analysis computation from result storage and output adapters.
 
 ## Observed Evidence
@@ -42,4 +42,4 @@ Accepted OQ-006 boundary: the future result interface should feed the graph-shap
 
 ## Decision State
 
-OQ-005 and OQ-006 planning boundaries accepted. The first Williams-fit result/provenance envelope is partially implemented through `crackpy.results.result_data` and `crackpy.fracture_analysis.methods.williams_fit`. Williams-fit provenance artifact writing can now consume an explicit `ResultEnvelope`, but `FractureAnalysis` still exposes the broad mutable post-run attribute interface and broader analysis-result separation is not approved.
+OQ-005 and OQ-006 planning boundaries accepted. Williams-fit and CJP-fit result/provenance envelopes are partially implemented through `crackpy.results.result_data`, method-local source adapters, and shared provenance builders. `crackpy.results.envelope_artifacts.write_result_envelope_artifacts()` can now consume an explicit `ResultEnvelope` and write envelope JSON, compact KG statement bundle, graph JSON, and graph HTML without constructing `FractureAnalysis`. `FractureAnalysis` still exposes the broad mutable post-run attribute interface, legacy text/current JSON/CSV/plot outputs still inspect it directly, and broader analysis-result separation is not approved.
