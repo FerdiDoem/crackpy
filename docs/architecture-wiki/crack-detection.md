@@ -11,6 +11,7 @@ Terminology references: see [[glossary]] for stable definitions and [[terminolog
 - `crackpy/crack_detection/pipeline/pipeline.py`
 - `crackpy/crack_detection/line_intercept.py`
 - `crackpy/crack_detection/correction.py`
+- `crackpy/crack_detection/method_metadata.py`
 - `crackpy/crack_detection/model.py`
 - `crackpy/crack_detection/data/*`
 - `crackpy/crack_detection/deep_learning/*`
@@ -51,6 +52,8 @@ Crack-detection network expectations:
 - left-side data is mirrored into the right-side crack convention before detection.
 
 `get_model()` remains the current compatibility function and supports only `ParallelNets` and `UNetPath`. It still combines detector selector, detection task, network architecture, weights artifact, local cache/download policy, and device mapping. C-006 planning now treats those as separate terms before introducing any provider seam.
+
+`method_metadata.py` is the current additive C-006 metadata slice. It declares method-side records for `ParallelNets` crack-tip localization, `UNetPath`/`UNet` crack-path segmentation, and line-intercept crack-tip localization. Each detection record carries the generic `MethodSpec` shape already used by Williams-fit and CJP-fit provenance specs, then adds detection-specific task, implementation-family, network-architecture, and weights-artifact fields. This keeps method metadata consistent across fracture-analysis and detection methods without changing `get_model()` loading, cache creation, download, or device behavior.
 
 Detection-grid coordinate mapping:
 
