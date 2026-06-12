@@ -4,7 +4,6 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
-from crackpy.fracture_analysis.methods.williams_fit.spec_loader import load_williams_fit_spec
 from crackpy.provenance.spec import ProvenanceSliceSpec
 from crackpy.results.result_data import (
     KGStatement,
@@ -31,6 +30,24 @@ def _data_type(value: Any) -> str:
     if isinstance(value, dict):
         return "object"
     return "string"
+
+
+def _kg_bundle_schema_from_envelope(envelope: ResultEnvelope) -> str:
+    """Derive the compact KG bundle schema that belongs to an envelope schema.
+
+    Method-local slice specs remain the source of truth when a caller passes
+    `spec`. The fallback keeps generic artifact projection useful for envelopes
+    that already carry the slice-specific envelope schema, without importing a
+    particular method module such as Williams fitting.
+    """
+    prefix = "crackpy.result_envelope."
+    if not envelope.envelope_schema_version.startswith(prefix):
+        raise ValueError(
+            f"Cannot infer KG statement-bundle schema from envelope schema "
+            f"{envelope.envelope_schema_version!r}."
+        )
+    suffix = envelope.envelope_schema_version.removeprefix(prefix)
+    return f"crackpy.kg_statement_bundle.{suffix}"
 
 
 def _statement(
@@ -67,7 +84,11 @@ def envelope_to_kg_statement_bundle(
     spec: ProvenanceSliceSpec | None = None,
 ) -> KGStatementBundle:
     """Project a canonical envelope into compact grouped KG statements."""
-    spec = spec or load_williams_fit_spec()
+    bundle_schema_version = (
+        spec.schemas.kg_statement_bundle
+        if spec is not None
+        else _kg_bundle_schema_from_envelope(envelope)
+    )
     statements: list[KGStatement] = []
 
     for method in envelope.methods:
@@ -125,7 +146,7 @@ def envelope_to_kg_statement_bundle(
             key="crackpy_analysis_run_id",
             value=run.run_id,
             unit="1",
-            description="Stable ID for one Williams-fit analysis execution.",
+            description="Stable ID for one CrackPy analysis execution.",
             metadata_type="CrackPyAnalysis",
             source="Code",
             related_to="CrackPyAnalysis",
@@ -160,7 +181,7 @@ def envelope_to_kg_statement_bundle(
             key="crackpy_result_id",
             value=result.result_id,
             unit="1",
-            description="Stable ID of the Williams-fit result record.",
+            description="Stable ID of the CrackPy result record.",
             metadata_type="CrackPyAnalysisResult",
             source="Code",
             related_to="CrackPyAnalysisResult",
@@ -171,7 +192,7 @@ def envelope_to_kg_statement_bundle(
             key="crackpy_result_schema_version",
             value=result.result_schema_version,
             unit="1",
-            description="Schema version of the canonical Williams-fit result record.",
+            description="Schema version of the canonical result record.",
             metadata_type="CrackPyAnalysisResult",
             source="Code",
             related_to="CrackPyAnalysisResult",
@@ -183,7 +204,7 @@ def envelope_to_kg_statement_bundle(
                 key="crackpy_quantity_symbol",
                 value=quantity.symbol,
                 unit="1",
-                description="Domain-facing symbol of a Williams-fit result quantity.",
+                description="Domain-facing symbol of a CrackPy result quantity.",
                 metadata_type="ResultQuantity",
                 source=quantity.method_id,
                 related_to="ResultQuantity",
@@ -205,7 +226,7 @@ def envelope_to_kg_statement_bundle(
         groups[statement.related_to].append(statement)
 
     return KGStatementBundle(
-        bundle_schema_version=spec.schemas.kg_statement_bundle,
+        bundle_schema_version=bundle_schema_version,
         uri_policy="local IDs only; URI minting belongs to exporter or KG importer policy",
         descriptor_field_policy="plain statements only; RDF descriptor resources are downstream rendering choices",
         statements=statements,

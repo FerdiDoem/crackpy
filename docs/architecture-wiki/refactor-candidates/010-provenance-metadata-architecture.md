@@ -361,6 +361,8 @@ Concrete Williams slice definitions should have one source of truth. The William
 
 Current implementation note: `ProvenanceSliceSpec` now validates that dependency and quantity mapping keys match their embedded `dependency_name` and `quantity_name` values. `QuantitySpec.allowed_qualifiers` defines the qualifier names accepted for ordinary scalar quantities, and `MethodResultEnvelopeBuilder` rejects undeclared qualifier keys before result projection. This keeps source adapters, builders, graph projections, and frontend consumers aligned on the same spec-defined names instead of allowing YAML key/name drift.
 
+Current KG projection note: `envelope_to_kg_statement_bundle()` now derives the compact bundle schema from `ResultEnvelope.envelope_schema_version` when no explicit slice spec is passed. This keeps CJP envelopes from inheriting the Williams-fit KG schema during direct artifact projection, while leaving grouping, URI minting, RDF namespaces, descriptor resources, and richer method-specific KG profiles as adapter/exporter policy.
+
 Current test-coverage note: the Williams-fit and CJP-fit envelope builders are now covered by direct `MethodResultSource` fixtures. This proves fixture authors can exercise the generic source/slice-spec path without constructing a fake `FractureAnalysis` object when the builder itself is under test.
 
 Current invariant note: `SourceInput` now rejects empty `input_id` and `data_ref` values. This keeps the primary input anchor fail-fast and prevents graph, KG, and frontend projections from receiving anonymous input nodes.

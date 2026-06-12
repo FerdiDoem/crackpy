@@ -76,6 +76,7 @@ Frontend integration handoff:
 - C-008 update: frontend integration should treat `ResultQuantity.symbol` as the display label and `ResultQuantity.legacy_aliases` as compatibility metadata. Backend/frontend tests can use `ResultSchemaIndex.from_envelope(envelope)` to verify aliases such as `Williams_fit_results.K_I` resolve to the expected canonical symbol, unit, and result schema version.
 - C-010 validation update: provenance artifacts are now generated from a slice spec that rejects dependency or quantity key/name drift and undeclared source-quantity qualifier keys. The frontend graph payload shape is unchanged, but integration code can assume `VisualizationGraph` node and edge names came from a validated spec rather than a partially inconsistent YAML mapping.
 - C-010 qualifier update: frontend/backend contract tests can rely on CJP source quantities using the spec-declared `variant` qualifier before they are split into mixed-mode and Mode-I result records. Williams coefficient quantities continue to use the method-local `coefficient_series` and `term_order` qualifiers; these qualifiers are validated before canonical symbols such as `a_1` are projected.
+- C-010 KG schema update: compact KG statement bundles now infer their bundle schema from `ResultEnvelope.envelope_schema_version` when no method spec is passed. Frontend integration can consume CJP KG bundles with `bundle_schema_version=crackpy.kg_statement_bundle.cjp_fit.v1` instead of receiving the Williams-fit bundle schema by default.
 - C-010 fixture update: backend/frontend contract tests can build a Williams-fit envelope from a direct `MethodResultSource` fixture when they need stable graph/schema payloads without a fake `FractureAnalysis` object.
 - C-010 input-anchor update: frontend graph or table tests can assume input nodes have non-empty `input_id` and `data_ref` values because `SourceInput` rejects empty primary input anchors before envelope construction.
 - C-002 update: frontend integration should use `InputRecord.input_id` as the stable input key. `InputRecord.sequence_index` is available only for ordering input series, and source-specific labels such as `stage` belong in `InputRecord.source_metadata`.
@@ -101,7 +102,7 @@ Observed coupling:
 - Williams-fit and CJP-fit quantities and aliases are covered by provenance slices.
 - Williams-fit and CJP-fit provenance builders now reject undeclared `SourceQuantity.qualifiers` before graph, KG, or envelope projection.
 - Line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
-- The compact KG projection currently loads the Williams-fit spec by default, so it is not yet a generic exporter for all future result envelopes.
+- The compact KG projection now derives its schema version from the envelope when no explicit spec is passed, but grouping, URI minting, RDF namespaces, descriptor resources, and method-specific KG profiles remain adapter/exporter policy.
 
 ## User-Facing Scripts
 
