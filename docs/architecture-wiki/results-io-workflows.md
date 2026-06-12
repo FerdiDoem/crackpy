@@ -75,6 +75,7 @@ Frontend integration handoff:
 - C-002 update: frontend integration should use `InputRecord.input_id` as the stable input key. `InputRecord.sequence_index` is available only for ordering input series, and source-specific labels such as `stage` belong in `InputRecord.source_metadata`.
 - C-009 update: detection and fracture-analysis pipeline objects can now expose an `InputMappingResult` named `input_mapping` after nearest-cycle assignment. Frontend integration should treat `input_mapping.input_id_to_representative_input_id` as the durable mapping and keep legacy `stage -> detection_stage` or `stage -> max_force_stage` dictionaries as compatibility labels only.
 - C-005 update: `CrackTipFrame` graph nodes now expose `data.geometry_profile`, currently `surface_planar` for the Williams-fit slice. Frontend integration should display or filter by `geometry_profile` when useful, and treat `data.compatibility_side` as a legacy label rather than the full orientation model.
+- C-007 update: result/provenance payload shape is unchanged. Backend/frontend fixture code may omit `FractureAnalysis` option arguments without sharing mutated default `IntegralProperties` or `OptimizationProperties` across fixture runs; pass `None` explicitly when a fixture should disable line integrals or optimization.
 - Use `_williams_fit_graph.html` as the reference implementation for an inspectable layout and interaction model, not as the long-term application shell. The HTML embeds the graph payload and demonstrates lane-based layout, node-type styling, legend generation, and node detail inspection.
 - If the frontend generates its own view, keep UI state, colors, layout coordinates, filters, expansion state, and RDF namespace choices outside `ResultEnvelope`. Those remain visualization adapter concerns, not canonical provenance fields.
 - The Python entry point for backend/frontend integration is `write_williams_fit_provenance_artifacts(envelope, path, stem)`. Existing legacy flows can continue through `OutputWriter.write_williams_fit_provenance_artifacts()`.
@@ -87,6 +88,7 @@ Observed coupling:
 - Input identity and ordering metadata can now be projected into canonical input records, but `InputData` remains the mutable compatibility carrier.
 - Nearest-cycle assignment in crack-detection and fracture-analysis pipelines now records an ID-based input mapping result while preserving existing stage dictionaries.
 - Williams-fit crack-tip frames now carry explicit geometry-profile metadata while preserving legacy side labels for output compatibility.
+- Fracture-analysis default option objects are now created per analysis/optimizer call for the touched defaults, reducing hidden shared state in provenance fixture construction.
 - Only Williams-fit quantities and aliases are covered by this first slice.
 - CJP results, line-integral results, path statistics, Bueckner-Chen integral outputs, plots, flattened CSVs, and current JSON sections remain on the older writer/reader contract.
 - The compact KG projection currently loads the Williams-fit spec by default, so it is not yet a generic exporter for all future result envelopes.

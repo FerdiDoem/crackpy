@@ -77,13 +77,11 @@ Import side effects:
 
 ## Hidden Shared State
 
-Mutable default object instances appear in public interfaces:
+Mutable default object instances remain in some public interfaces:
 
-- `FractureAnalysis(..., integral_properties=IntegralProperties(), optimization_properties=OptimizationProperties())`;
-- `Optimization(..., material=Material(), options=OptimizationProperties())`;
 - `Nodemap(..., structure=NodemapStructure())`.
 
-These defaults are risky because options are later mutated by default-normalization helpers.
+`FractureAnalysis` now creates fresh per-analysis compatibility defaults for omitted `IntegralProperties` and `OptimizationProperties`, while `None` still disables those method families. `Optimization` now creates fresh default `Material` and `OptimizationProperties` objects when direct callers omit them. The remaining `NodemapStructure` default is still migration debt. These defaults are risky where options are later mutated by default-normalization helpers.
 
 ## Constructor Work
 

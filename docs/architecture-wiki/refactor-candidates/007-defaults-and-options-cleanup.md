@@ -47,4 +47,4 @@ None.
 
 ## Decision State
 
-OQ-010 accepted for planning. No implementation approved.
+OQ-010 accepted for planning. A first narrow implementation slice now exists: `FractureAnalysis` uses per-call default builders for omitted integral and optimization options, preserves `None` as the explicit disable switch, and `Optimization` no longer shares default `Material` or `OptimizationProperties` instances. Broader cleanup of `NodemapStructure`, line-integral path defaults, workflow policy, random optimizer initialization, and normalized configuration builders remains unapproved.

@@ -66,16 +66,22 @@ class Optimization:
 
     def __init__(self,
                  data: InputData,
-                 material: Material = Material(),
-                 options: OptimizationProperties = OptimizationProperties()):
+                 material: Material | None = None,
+                 options: OptimizationProperties | None = None):
         """Initializes Optimization arguments.
 
         Args:
             data: obj of class InputData
-            material: obj of class Material
-            options: obj of class OptimizationProperties
+            material: obj of class Material. If omitted, a fresh default
+                material is created for this optimizer.
+            options: obj of class OptimizationProperties. If omitted, a fresh
+                unresolved options object is created; callers that execute the
+                optimizer still need to provide or resolve result-affecting
+                fields such as radii and Williams terms before use.
 
         """
+        material = material if material is not None else Material()
+        options = options if options is not None else OptimizationProperties()
         self.data = data
         self.material = material
 

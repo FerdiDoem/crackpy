@@ -26,6 +26,8 @@ Terminology references: see [[glossary]] for stable definitions and [[terminolog
 - optional `IntegralProperties`
 - optional `OptimizationProperties`
 
+When these option arguments are omitted, `FractureAnalysis` now creates fresh per-analysis compatibility defaults through `default_integral_properties()` and `default_optimization_properties()`. Passing `None` still disables the corresponding method family. Williams default resolution still mutates the run-local `OptimizationProperties` object before constructing `Optimization`, so crack-length-derived radii and required terms remain explicit on that analysis instance rather than shared across analyses.
+
 It stores results by mutating instance attributes such as:
 
 - `cjp_res_mm`, `cjp_res_m1`, `cjp_coeffs_mm`, `cjp_coeffs_m1`;

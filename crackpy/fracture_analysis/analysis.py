@@ -17,6 +17,33 @@ from crackpy.structure_elements.material import Material
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_INTEGRAL_PROPERTIES = object()
+_DEFAULT_OPTIMIZATION_PROPERTIES = object()
+
+
+def default_integral_properties() -> IntegralProperties:
+    """Create per-analysis line-integral options for the compatibility default.
+
+    Omitting `integral_properties` from `FractureAnalysis` historically enabled
+    line-integral methods. This builder preserves that behavior without sharing
+    a mutable `IntegralProperties` instance across analyses. Passing
+    `integral_properties=None` remains the explicit way to disable line
+    integrals.
+    """
+    return IntegralProperties()
+
+
+def default_optimization_properties() -> OptimizationProperties:
+    """Create per-analysis optimization options for the compatibility default.
+
+    Omitting `optimization_properties` from `FractureAnalysis` historically
+    enabled fitting methods. The returned object is intentionally unresolved:
+    `FractureAnalysis` still resolves crack-length-derived defaults immediately
+    before constructing `Optimization`, which keeps result-affecting defaults
+    local to the run instead of shared at function-definition time.
+    """
+    return OptimizationProperties()
+
 
 class FractureAnalysis:
     """Fracture analysis of a single DIC nodemap.
@@ -45,8 +72,8 @@ class FractureAnalysis:
             nodemap: Union[Nodemap, str],
             data: InputData,
             crack_tip_info: CrackTipInfo,
-            integral_properties: Optional[IntegralProperties] = IntegralProperties(),
-            optimization_properties: Optional[OptimizationProperties] = OptimizationProperties()
+            integral_properties=_DEFAULT_INTEGRAL_PROPERTIES,
+            optimization_properties=_DEFAULT_OPTIMIZATION_PROPERTIES
     ):
         """Initialize FractureAnalysis class arguments.
 
@@ -55,11 +82,13 @@ class FractureAnalysis:
             nodemap: obj of class Nodemap or filename of file with exported Aramis-DIC data
             data: obj of class InputData, imported data from nodemap_file
             crack_tip_info: obj of class CrackTipInfo, crack tip information (i.e. x,y coordinates, angle, etc.)
-            integral_properties: IntegralProperties or None,
-                                 wrapper for specification of line integral properties
-                                 If None, Line Integral Methods are not calculated.
-            optimization_properties: OptimizationProperties or None,
-                                     If None, optimization / fitting is not performed.
+            integral_properties: IntegralProperties, omitted, or None. Omitted
+                                 uses a fresh compatibility default for this
+                                 analysis. None disables line integral methods.
+            optimization_properties: OptimizationProperties, omitted, or None.
+                                     Omitted uses a fresh compatibility default
+                                     resolved against this crack tip. None
+                                     disables optimization / fitting.
         """
         self.material = material
         self.nodemap_file = nodemap.name if isinstance(nodemap, Nodemap) else nodemap
@@ -89,6 +118,8 @@ class FractureAnalysis:
         self.num_of_path_nodes = []
 
         # Initialization of optimization and integral properties
+        if optimization_properties is _DEFAULT_OPTIMIZATION_PROPERTIES:
+            optimization_properties = default_optimization_properties()
         self.optimization_properties = optimization_properties
         if self.optimization_properties is not None:
             Optimization.ensure_defaults_williams(self.optimization_properties, self.crack_tip.crack_tip_x)
@@ -96,6 +127,8 @@ class FractureAnalysis:
                                              options=self.optimization_properties,
                                              material=self.material)
 
+        if integral_properties is _DEFAULT_INTEGRAL_PROPERTIES:
+            integral_properties = default_integral_properties()
         self.integral_properties = integral_properties
         if self.integral_properties is not None:
             LineIntegral.ensure_defaults_buckner_chen(self.integral_properties)
