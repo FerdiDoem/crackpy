@@ -10,6 +10,7 @@ from crackpy.results.graph_visualization import envelope_to_visualization_graph,
 from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
 from crackpy.results.result_data import ResultEnvelope, write_json_file
 from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_analysis
+from crackpy.fracture_analysis.methods.cjp_fit import build_cjp_fit_envelope_from_analysis
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,35 @@ def write_williams_fit_provenance_artifacts(
             visualization_graph,
             output_path / f"{stem}_williams_fit_graph.html",
             title="Williams Fit Provenance Graph",
+        ),
+    }
+
+
+def write_cjp_fit_provenance_artifacts(
+    envelope: ResultEnvelope,
+    path: str | Path,
+    stem: str,
+) -> dict[str, Path]:
+    """Write CJP-fit provenance projections from an explicit result envelope."""
+    output_path = Path(path)
+    output_path.mkdir(parents=True, exist_ok=True)
+    kg_statement_bundle = envelope_to_kg_statement_bundle(envelope)
+    visualization_graph = envelope_to_visualization_graph(envelope)
+
+    return {
+        "envelope": write_json_file(envelope.to_dict(), output_path / f"{stem}_cjp_fit_envelope.json"),
+        "kg_statement_bundle": write_json_file(
+            kg_statement_bundle.to_dict(),
+            output_path / f"{stem}_cjp_fit_kg_statement_bundle.json",
+        ),
+        "visualization_graph": write_json_file(
+            visualization_graph.to_dict(),
+            output_path / f"{stem}_cjp_fit_graph.json",
+        ),
+        "visualization_graph_html": write_visualization_graph_html(
+            visualization_graph,
+            output_path / f"{stem}_cjp_fit_graph.html",
+            title="CJP Fit Provenance Graph",
         ),
     }
 
@@ -706,6 +736,14 @@ class OutputWriter:
         emits a standalone HTML graph explorer.
         """
         return self.write_williams_fit_provenance_artifacts(path=path)
+
+    def write_cjp_fit_provenance_artifacts(self, path=None) -> dict[str, Path]:
+        """Write CJP-fit provenance JSON projections plus the HTML graph viewer."""
+        output_path = self._make_path(path if path is not None else self.path)
+        stem = Path(self.filename).stem
+
+        envelope = build_cjp_fit_envelope_from_analysis(self.analysis)
+        return write_cjp_fit_provenance_artifacts(envelope, output_path, stem)
 
     @staticmethod
     def _make_path(output_path) -> Path:

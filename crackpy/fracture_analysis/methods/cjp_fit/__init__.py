@@ -39,6 +39,9 @@ __all__ = [
     "CjpOptimizer",
     "CjpFitDisplacementField",
     "RESOLVED_OPTIMIZATION_ORIGIN",
+    "build_cjp_fit_envelope_from_analysis",
+    "build_cjp_fit_envelope_from_result",
+    "build_cjp_fit_envelope_from_source",
     "cjp_mode_i_outputs_from_coefficients",
     "cjp_mixed_mode_outputs_from_coefficients",
     "fit_cjp_displacement_field",
@@ -48,6 +51,30 @@ __all__ = [
     "source_from_analysis",
     "source_from_result",
 ]
+
+
+def build_cjp_fit_envelope_from_analysis(*args, **kwargs):
+    from crackpy.fracture_analysis.methods.cjp_fit.builder import (
+        build_cjp_fit_envelope_from_analysis as build_envelope,
+    )
+
+    return build_envelope(*args, **kwargs)
+
+
+def build_cjp_fit_envelope_from_result(*args, **kwargs):
+    from crackpy.fracture_analysis.methods.cjp_fit.builder import (
+        build_cjp_fit_envelope_from_result as build_envelope,
+    )
+
+    return build_envelope(*args, **kwargs)
+
+
+def build_cjp_fit_envelope_from_source(*args, **kwargs):
+    from crackpy.fracture_analysis.methods.cjp_fit.builder import (
+        build_cjp_fit_envelope_from_source as build_envelope,
+    )
+
+    return build_envelope(*args, **kwargs)
 
 
 def load_cjp_fit_spec(*args, **kwargs):
