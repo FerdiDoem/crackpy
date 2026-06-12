@@ -1,10 +1,11 @@
 {
-  "output_dir": "C:\\Users\\Admin\\Documents\\Coding-Projekte\\crackpy\\.scratch\\williams-export-proof",
-  "html": "C:\\Users\\Admin\\Documents\\Coding-Projekte\\crackpy\\.scratch\\williams-export-proof\\williams_fit_provenance_graph.html",
+  "output_dir": ".scratch/williams-export-proof",
+  "html": ".scratch/williams-export-proof/williams_fit_provenance_graph.html",
   "written": {
-    "envelope": "C:\\Users\\Admin\\Documents\\Coding-Projekte\\crackpy\\.scratch\\williams-export-proof\\File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_envelope.json",
-    "kg_statement_bundle": "C:\\Users\\Admin\\Documents\\Coding-Projekte\\crackpy\\.scratch\\williams-export-proof\\File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_kg_statement_bundle.json",
-    "visualization_graph": "C:\\Users\\Admin\\Documents\\Coding-Projekte\\crackpy\\.scratch\\williams-export-proof\\File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_graph.json"
+    "envelope": ".scratch/williams-export-proof/File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_envelope.json",
+    "kg_statement_bundle": ".scratch/williams-export-proof/File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_kg_statement_bundle.json",
+    "visualization_graph": ".scratch/williams-export-proof/File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_graph.json",
+    "visualization_graph_html": ".scratch/williams-export-proof/File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_graph.html"
   },
   "quantity_count": 27,
   "graph_nodes": 35,

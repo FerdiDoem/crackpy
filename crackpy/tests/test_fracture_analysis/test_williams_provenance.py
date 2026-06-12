@@ -417,12 +417,23 @@ def test_output_writer_writes_new_provenance_artifacts_without_changing_legacy_j
     analysis = _fake_analysis()
     writer = OutputWriter(path=tmp_path, fracture_analysis=analysis)
 
-    written = writer.write_williams_fit_provenance_json(path=tmp_path)
+    written = writer.write_williams_fit_provenance_artifacts(path=tmp_path)
 
-    assert set(written) == {"envelope", "kg_statement_bundle", "visualization_graph"}
+    assert set(written) == {"envelope", "kg_statement_bundle", "visualization_graph", "visualization_graph_html"}
     assert written["envelope"].name.endswith("_williams_fit_envelope.json")
     assert written["kg_statement_bundle"].name.endswith("_williams_fit_kg_statement_bundle.json")
     assert written["visualization_graph"].name.endswith("_williams_fit_graph.json")
+    assert written["visualization_graph_html"].name.endswith("_williams_fit_graph.html")
     assert written["envelope"].exists()
     assert written["kg_statement_bundle"].exists()
     assert written["visualization_graph"].exists()
+    assert written["visualization_graph_html"].exists()
+
+
+def test_legacy_williams_fit_provenance_json_writer_keeps_artifact_behavior(tmp_path):
+    analysis = _fake_analysis()
+    writer = OutputWriter(path=tmp_path, fracture_analysis=analysis)
+
+    written = writer.write_williams_fit_provenance_json(path=tmp_path)
+
+    assert "visualization_graph_html" in written

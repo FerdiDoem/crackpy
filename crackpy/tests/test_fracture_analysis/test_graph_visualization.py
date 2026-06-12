@@ -1,4 +1,8 @@
-from crackpy.results.graph_visualization import envelope_to_visualization_graph
+from crackpy.results.graph_visualization import (
+    envelope_to_visualization_graph,
+    render_visualization_graph_html,
+    write_visualization_graph_html,
+)
 from crackpy.fracture_analysis.methods.williams_fit import build_williams_fit_envelope_from_analysis
 from crackpy.tests.test_fracture_analysis.test_williams_provenance import _fake_analysis
 
@@ -50,3 +54,18 @@ def test_visualization_graph_consumes_envelope_records_and_dependency_edges():
     assert ("crack_tip_estimate:DemoNodemap:right", "crackpy.crack_tip.manual_import") in method_edges
 
     assert all("subject_uri" not in node["data"] for node in payload["nodes"])
+
+
+def test_visualization_graph_writes_standalone_html(tmp_path):
+    envelope = build_williams_fit_envelope_from_analysis(_fake_analysis(), crackpy_version="test-version")
+    graph = envelope_to_visualization_graph(envelope)
+
+    html = render_visualization_graph_html(graph, title="Probe <Result>")
+    target = write_visualization_graph_html(graph, tmp_path / "graph.html", title="Probe <Result>")
+
+    assert target.read_text(encoding="utf-8") == html
+    assert "<title>Probe &lt;Result&gt;</title>" in html
+    assert f"Nodes: {len(graph.nodes)}" in html
+    assert f"Edges: {len(graph.edges)}" in html
+    assert "const graph =" in html
+    assert "<script>alert" not in html
