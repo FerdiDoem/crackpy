@@ -7,6 +7,7 @@ These notes intentionally separate proposed future architecture from current sys
 
 For higher-level sequencing across candidates, use [[refactor-roadmap]].
 For goal-sized development targets and Definition Of Done checks, use [[goal-driven-refactoring-plan]].
+For the first draft plan to deepen shared method metadata and reusable result-envelope artifact writing across detection, Williams fit, and CJP fit, see `docs/superpowers/plans/2026-06-13-generic-method-runtime-metadata.md`.
 
 ## Candidate Index
 

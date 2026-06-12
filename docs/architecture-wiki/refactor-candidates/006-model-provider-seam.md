@@ -53,6 +53,20 @@ Future metadata should not rely on the current `model_name` string alone. It sho
 - `weights_id`, such as the current `UNetPath.pth`;
 - aliases for compatibility selectors such as `UNetPath`.
 
+First implemented metadata slice:
+
+- `method_spec`: the shared method metadata shape used by Williams-fit and CJP-fit provenance specs. It carries `method_id`, `display_name`, `kind`, `method_revision`, `implementation_ref`, `aliases`, and `references`. It exists so crack detection does not grow a parallel method registry vocabulary.
+- `method_id`: durable method identity inside `method_spec`, such as `crackpy.detection.parallel_nets_crack_tip_localization`. It exists so future results and frontend views do not depend on a Python import path or legacy selector.
+- `display_name`: human-facing method label inside `method_spec` for reports and UI. It exists so callers do not derive readable names from IDs.
+- `kind`: generic method category inside `method_spec`, such as `crack_tip_estimate` or `crack_path_segmentation`. It exists so detection methods can sit beside analysis methods such as Williams fit or CJP fit.
+- `detection_task`: detection-specific declared method output, such as `crack_tip_localization` or `crack_path_segmentation`. It exists to separate crack-tip localization from crack-path segmentation even when both are neural workflows.
+- `implementation_family`: detection-specific algorithm family, such as `neural_network` or `line_intercept`. It exists so non-neural methods are not forced into network vocabulary.
+- `method_revision`: maintainer-controlled revision of method meaning inside `method_spec`. It exists as the future stale-result and provenance marker for method semantics.
+- `aliases`: current public selectors or aliases inside `method_spec`, such as `ParallelNets`, `UNetPath`, `line_intercept`, or `CrackDetectionLineIntercept`. They exist to keep legacy callers readable during migration.
+- `implementation_ref`: current code location inside `method_spec` for maintainers. It exists for traceability but is not the durable method identity.
+- `network_architecture`: optional detection-specific architecture name, such as `UNet` or `ParallelNets`. It exists only for neural-network methods.
+- `weights_artifact_id`: optional detection-specific artifact name, such as `UNetPath.pth`. It exists only when a pretrained weights artifact affects the implementation.
+
 ## Seams / Interfaces / Adapters
 
 - Seam: crack-detection method metadata and implementation artifact provision.
@@ -73,7 +87,7 @@ Future metadata should not rely on the current `model_name` string alone. It sho
 
 ## Decision State
 
-OQ-009 accepted for planning in [[decision-log#2026-05-14-model-names-bueckner-spelling-and-fixture-keys-use-explicit-naming-boundaries]]. Implementation remains paused until a method-side metadata specification is approved. The first C-006 code slice should start from the method categories above rather than from a generic `ModelProvider`.
+OQ-009 accepted for planning in [[decision-log#2026-05-14-model-names-bueckner-spelling-and-fixture-keys-use-explicit-naming-boundaries]]. The first method-side metadata slice is implemented in `crackpy/crack_detection/method_metadata.py` and deliberately starts from the method categories above rather than from a generic `ModelProvider`. It reuses the shared `MethodSpec` shape already used by Williams-fit and CJP-fit provenance definitions. Provider loading, cache/download policy, and device behavior remain in the legacy `get_model()` compatibility path until a later approved slice.
 
 ## Literature Signals For Naming
 

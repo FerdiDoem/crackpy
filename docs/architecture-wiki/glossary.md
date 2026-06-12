@@ -382,6 +382,9 @@ Loaded PyTorch network used by CrackPy's neural crack-detection workflow. This t
 #### Detection task
 Specific crack-detection output a method is trained or used to produce. Proposed task labels include `crack_tip_localization`, `crack_path_segmentation`, `crack_tip_correction`, and `crack_growth_tracking`.
 
+#### Crack-detection method metadata
+Current additive metadata record in `crackpy.crack_detection.method_metadata` that carries the shared `MethodSpec` shape used by Williams-fit and CJP-fit provenance specs, then adds detection task, implementation family, optional network architecture, and optional weights artifact. It is a method-side record, not a pretrained-network provider and not a loaded PyTorch model.
+
 #### Implementation family
 Algorithm family used to implement a crack-detection or crack-tip-estimation method. Examples include neural network, line intercept, image edge detection, Williams-series fit, symbolic regression, grid search, differential evolution, manual import, or external provider.
 
