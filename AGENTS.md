@@ -4,6 +4,15 @@ This file is the repo-level entrypoint for agents working in CrackPy. Codex read
 
 Codex project configuration belongs in `.codex/config.toml`. Repo-local skills belong in `.agents/skills/`, which is the documented repository skill discovery path. Do not move skills under `.codex/skills/`; that is not a documented skill location. Shared issue-tracker, triage, and domain-doc configuration lives under `docs/agents/`.
 
+## General Guidelines
+
+*When making technical decisions, do not give much weight to development cost. Instead, prefer quality simplicity, robustness, scalability, and long term maintainability.
+* When writing or substanitally editing long Markdown files, put ech full sentence on its own line. Preserve normal markdown structure, but avoid wrapping multiple sentences onto one physical line.
+* When doing bug fixes, always start with reproducing the bug in an E2E setting as closely aligned with how an end user would experience as close as possible. This makes sure you find the real problem so your fix will actually solve it.
+* When end-to-end testing a user-facing product, be picky about the UI/UX you see and be obsessed with pixel and experience perfection.
+* If something is clearly looks or feels off, even if it is not directly related to what you are doing, try to get it fixed along the current task
+* Apply the same highs tadnard to engineering excellence: lint, test failures, and test flakiness. If you see one, even if it is not cause by what your are working on right now, still get it fixed.
+
 ## Current Phase
 
 CrackPy is in architectural mapping and planning. Do not perform real refactoring or restructuring until the general specifications are clearly defined and explicitly approved.

@@ -108,6 +108,7 @@ Primary candidates:
 - C-006: [[refactor-candidates/006-model-provider-seam]]
 - C-007: [[refactor-candidates/007-defaults-and-options-cleanup]]
 - C-010: [[refactor-candidates/010-provenance-metadata-architecture]]
+- C-011: [[refactor-candidates/011-method-module-contract]]
 
 Resolved decisions consolidated here:
 
@@ -121,9 +122,14 @@ Planning direction:
 
 Specify normalized configuration, method metadata, method-reference registry, model metadata, and fingerprint validation together. This keeps stale-result checks tied to resolved result-affecting values rather than to incidental output paths, plotting choices, or Python file locations.
 
+The method-module contract should be specified before migrating additional method families.
+Williams-fit and CJP-fit are the first two contract examples because they prove both single-result and multi-variant result shapes.
+The contract should use protocol-like conformance and build-time verification rather than forcing method modules through a shared base class.
+
 Approval gate:
 
 Do not introduce a method registry or configuration hash into production paths until the normalized configuration boundary is approved, including default-origin recording, hash inclusion/exclusion rules, method lifecycle states, alias rules, successor rules, and dependency-scope validation.
+Do not apply the method-module contract broadly to integral methods until Williams-fit and CJP-fit pass the contract verifier without changing their public result artifact shape.
 
 ## Initiative 5: Domain Workflow Runners And Compatibility Facades
 
@@ -191,6 +197,7 @@ Do not perform broad renames until compatibility aliases, public documentation i
 | Input identity and ordering | C-002, C-009, C-010 | Replace stage-as-internal-ordering with stable input identity and explicit mapping policy. |
 | Crack-tip orientation and estimate flow | C-003, C-005, C-010 | Replace side-coupled internals with crack-tip frames and estimate records. |
 | Configuration and method registry | C-006, C-007, C-010 | Make result-affecting configuration, method identity, references, and model metadata explicit. |
+| Method module contract | C-003, C-010, C-011 | Define method-local seams and build-time verification before copying the pattern to integral methods. |
 | Workflow runners and facades | C-003, C-004, C-006, C-008 | Separate domain sequencing from side-effect adapters while preserving current behavior. |
 | Terminology and compatibility cleanup | C-005, C-006, C-007, C-009 | Rename or deprecate only after compatibility plans exist. |
 

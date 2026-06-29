@@ -23,6 +23,7 @@ For the first draft plan to deepen shared method metadata and reusable result-en
 | C-008 | [[refactor-candidates/008-result-tag-schema]] | proposed | [[results-io-workflows]], [[terminology-report]], [[coupling-map]] | None | Canonical result graph boundary accepted; Williams-fit aliases partially implemented |
 | C-009 | [[refactor-candidates/009-sequence-index-vocabulary]] | proposed | [[glossary]], [[terminology-report]], [[crack-detection]], [[data-model-input]] | None | Planning vocabulary accepted |
 | C-010 | [[refactor-candidates/010-provenance-metadata-architecture]] | proposed | [[data-model-input]], [[results-io-workflows]], [[coupling-map]], provided metadata statement-bundle datapoint JSON, Turtle export, preserved result-spine prototype, and current Williams-fit provenance code | None | First Williams-fit slice partially implemented; broader provenance architecture not approved |
+| C-011 | [[refactor-candidates/011-method-module-contract]] | proposed | `crackpy.fracture_analysis.methods.williams_fit`, `crackpy.fracture_analysis.methods.cjp_fit`, [[results-io-workflows]], [[refactor-candidates/010-provenance-metadata-architecture]] | None | Draft method-module contract documented; implementation not approved |
 
 ## Inspection Prototypes
 

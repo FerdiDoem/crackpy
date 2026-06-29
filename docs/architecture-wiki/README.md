@@ -51,6 +51,7 @@ This directory is an Obsidian-style working memory for CrackPy architecture plan
 - [[goal-driven-refactoring-plan]]: ten goal-sized architecture improvement candidates with Definition Of Done checks.
 - [[refactor-notes]]: index of future architecture candidates.
 - [[refactor-candidates/index]]: detailed future candidate notes.
+- [[refactor-candidates/011-method-module-contract]]: draft method-module contract and build-time verifier concept for Williams-fit, CJP-fit, and future integral methods.
 - [[refactor-candidates/010-provenance-metadata-architecture]]: future provenance and metadata architecture concept for compact RDF/JSON export and optional detailed provenance.
 - [[decision-log]]: accepted planning decisions; no architecture decision records exist yet.
 

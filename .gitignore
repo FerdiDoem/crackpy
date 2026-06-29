@@ -1,5 +1,6 @@
 .idea
 .venv
+.lavish
 .agents/*
 !.agents/skills/
 !.agents/skills/**

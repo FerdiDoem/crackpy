@@ -661,6 +661,21 @@ Status: proposed architecture vocabulary
 
 Deep module that owns one scientific or computational method's typed parameters, typed result object, numerical runner, source adapter, method-specific envelope wrapper, and method-specific spec. Shared utilities such as generic `MethodResultSource`, `MethodResultEnvelopeBuilder`, provenance spec loading, hashing, and export projections may be imported, but method-specific definitions should stay with the method. `crackpy.fracture_analysis.methods.williams_fit` is the first implementation slice for this pattern.
 
+#### Method module contract
+Status: proposed architecture vocabulary
+
+Protocol-like Interface for a method module's required seams, expected files, exported functions, metadata, source adapter behavior, and envelope-building behavior. The contract should be verified by tests or build-time checks instead of forcing method modules to inherit from a shared base class. Williams-fit and CJP-fit are the first planned contract examples because they prove both single-result and multi-variant result shapes.
+
+#### Method contract verifier
+Status: proposed architecture vocabulary
+
+Build-time or test-time Module that checks whether a method module satisfies the [[glossary#Method module contract]]. It should verify spec loading, method IDs, schema versions, quantity metadata, alias uniqueness, contextual symbol lookup, parameter snapshots, source snapshots, envelope construction, and standard artifact writing while leaving numerical implementation method-local.
+
+#### MethodEnvelopePlan
+Status: proposed architecture vocabulary
+
+Optional future value object describing generic envelope-building policy for one method slice. It would carry method key, variant keys, configuration ID policy, run/result ID policy, crack-tip estimate dependency policy, and artifact stem policy so repeated Williams/CJP provenance mechanics can be shared without moving CJP variant rules or numerical formulas out of the method module.
+
 #### Method reference
 Structured reference to a paper, book, DOI, URL, or internal method note associated with a specific registered method. Future method metadata should point to method-reference IDs instead of embedding full bibliography records.
 

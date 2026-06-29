@@ -17,6 +17,7 @@ Goal-sized execution plan: [[goal-driven-refactoring-plan]]
 - [[refactor-candidates/008-result-tag-schema]]
 - [[refactor-candidates/009-sequence-index-vocabulary]]
 - [[refactor-candidates/010-provenance-metadata-architecture]]
+- [[refactor-candidates/011-method-module-contract]]
 
 ## Candidate Template
 

@@ -1,7 +1,7 @@
 # Goal-Driven Refactoring Plan
 
 Status: future architecture plan, not approved implementation
-Role: Turn the ten current refactor candidates into goal-sized development targets with concrete Definition Of Done checks.
+Role: Turn the current refactor candidates into goal-sized development targets with concrete Definition Of Done checks.
 
 Related: [[refactor-roadmap]], [[refactor-notes]], [[refactor-candidates/index]], [[decision-log]], [[coupling-map]]
 
@@ -10,7 +10,7 @@ This plan is the working basis for future goal-driven Codex development. It does
 ## Plan Rules
 
 - Keep observed reality, shared language, and future architecture separate.
-- Use the existing candidate IDs `C-001` through `C-010` as stable goal references.
+- Use the existing candidate IDs `C-001` through `C-011` as stable goal references.
 - Prefer deep Modules: small explicit Interfaces with substantial behavior behind them.
 - Put each new seam where behavior really varies. One adapter means a hypothetical seam; two adapters make it real.
 - Keep legacy behavior working through compatibility facades or adapters until a migration is approved.
@@ -24,15 +24,16 @@ This plan is the working basis for future goal-driven Codex development. It does
 | Order | Candidate | Why this order |
 | --- | --- | --- |
 | 1 | C-010: Provenance Metadata Architecture | The Williams-fit provenance slice already exists; audit it before extending the pattern. |
-| 2 | C-001: Explicit Analysis Result | Result shape is the current high-coupling seam between analysis and outputs. |
-| 3 | C-008: Result Tag Schema | Legacy writers/readers need a schema and alias map before broader output migration. |
-| 4 | C-002: Input Loading Seam | Stable input identity is needed for provenance, mapping policy, and non-file inputs. |
-| 5 | C-009: Sequence Index Vocabulary | Stage-to-input mapping should become explicit after input identity exists. |
-| 6 | C-005: Side Orientation Module | Crack-tip frames need input identity and result/provenance roles to land cleanly. |
-| 7 | C-007: Defaults And Options Cleanup | Normalized configuration should precede method registry, hashing, and runners. |
-| 8 | C-003: Self-Contained Williams Fit Interface | The computational method seam should build on explicit configuration and crack-tip frame vocabulary. |
-| 9 | C-006: Model Provider Seam | Detection methods need explicit model metadata before runner/facade migration. |
-| 10 | C-004: Separate Orchestration From Adapters | Workflow runners compose the earlier result, input, configuration, orientation, and provider seams. |
+| 2 | C-011: Method Module Contract | Williams-fit and CJP-fit now prove enough repeated method-module shape to define a contract before copying it to integral methods. |
+| 3 | C-001: Explicit Analysis Result | Result shape is the current high-coupling seam between analysis and outputs. |
+| 4 | C-008: Result Tag Schema | Legacy writers/readers need a schema and alias map before broader output migration. |
+| 5 | C-002: Input Loading Seam | Stable input identity is needed for provenance, mapping policy, and non-file inputs. |
+| 6 | C-009: Sequence Index Vocabulary | Stage-to-input mapping should become explicit after input identity exists. |
+| 7 | C-005: Side Orientation Module | Crack-tip frames need input identity and result/provenance roles to land cleanly. |
+| 8 | C-007: Defaults And Options Cleanup | Normalized configuration should precede method registry, hashing, and runners. |
+| 9 | C-003: Self-Contained Williams Fit Interface | The computational method seam should build on explicit configuration and crack-tip frame vocabulary. |
+| 10 | C-006: Model Provider Seam | Detection methods need explicit model metadata before runner/facade migration. |
+| 11 | C-004: Separate Orchestration From Adapters | Workflow runners compose the earlier result, input, configuration, orientation, and provider seams. |
 
 ## Global Definition Of Done
 
@@ -430,6 +431,50 @@ The first Williams-fit result/provenance slice exists, but broader provenance ar
 - A second method slice is not started until Williams-fit passes the audit and has a documented extension rule.
 - The limited-context documentation review confirms that fixture authors can construct source snapshots, specs, envelopes, and adapter projections without reading the full stack.
 
+## C-011: Method Module Contract
+
+Candidate note: [[refactor-candidates/011-method-module-contract]]
+
+### Goal
+
+Define a lightweight method-module contract and verifier so Williams-fit, CJP-fit, and later integral methods expose the same essential seams without sharing premature inheritance.
+
+### Main Files
+
+- `crackpy/fracture_analysis/methods/williams_fit/*`
+- `crackpy/fracture_analysis/methods/cjp_fit/*`
+- `crackpy/provenance/source.py`
+- `crackpy/provenance/spec.py`
+- `crackpy/provenance/builder.py`
+- `crackpy/results/result_data.py`
+- `crackpy/results/envelope_artifacts.py`
+- future `crackpy/methods/*` or test-support contract verifier module
+- future `crackpy/tests/test_methods/*`
+
+### Current Friction
+
+Williams-fit and CJP-fit now share method-module shape, but the commonality is implicit.
+Future integral methods could copy the shape inconsistently, especially around metadata, schema versions, aliases, source adapters, and envelope builders.
+CJP shows that a method family may need variants and contextual result-symbol lookup, so a simple base class would be too rigid.
+
+### Target Shape
+
+- A protocol-like method-module Interface describes required files, public seams, spec loading, typed parameters, typed results, source adapters, runners, and envelope builders.
+- A contract verifier checks method slices at test time and later build time.
+- Shared runtime helpers cover configuration/run/result ID policy, imported crack-tip estimate projection, dependency edge construction, and standard artifact writing where Williams and CJP prove true duplication.
+- Method-local modules keep numerical implementation, variant rules, coefficient conversion, quantity extraction, and source adapters.
+
+### Definition Of Done
+
+- The method-module contract is documented with Williams-fit and CJP-fit as examples.
+- Contract tests verify spec loading, unique method IDs, alias uniqueness, quantity metadata, repeated-symbol disambiguation, parameter snapshots, source snapshots, and envelope construction.
+- CJP passes the contract while still producing separate mixed-mode and Mode-I runs/results.
+- Williams passes the contract while still producing one analysis run/result.
+- Shared runtime helpers remove repeated ID/configuration/imported-crack-tip-estimate plumbing without changing public artifact filenames or envelope semantics.
+- The verifier can write standard envelope artifacts from a produced envelope without importing `FractureAnalysis`, plotting, or legacy result writers.
+- No common base class is required for method modules.
+- Integral method migration remains out of scope until the CJP/Williams contract is stable.
+
 ## Ready-To-Start Goal Template
 
 Use this template when turning a candidate into a Codex goal:
@@ -456,4 +501,5 @@ Definition Of Done:
 - C-005 should precede broad correction and detector migration because `side` compatibility must map into `CrackTipFrame` cleanly.
 - C-007 should precede method registry and hash work because hashes are meaningful only after defaults are resolved explicitly.
 - C-003 can proceed as a narrow Williams method slice, but broader correction migration should wait for C-005.
+- C-011 should run after the current provenance slice audit and before using the Williams/CJP method-module shape as the template for integral methods.
 - C-004 should be last among the broad candidates because workflow runners compose results, inputs, orientation, configuration, model providers, and adapters.
