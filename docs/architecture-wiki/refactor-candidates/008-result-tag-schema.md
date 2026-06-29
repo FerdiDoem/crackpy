@@ -1,6 +1,6 @@
 # Candidate 008: Result Tag Schema
 
-Status: proposed, with Williams-fit aliases and contextual CJP symbol lookup partially implemented
+Status: proposed, with Williams-fit/CJP aliases, contextual symbol lookup, and first legacy-section projection partially implemented
 Role: Architecture candidate for centralizing result JSON keys, legacy text tags, and tabular output schema.
 
 ## Observed Evidence
@@ -51,6 +51,28 @@ Accepted OQ-011 boundary: keep current scientific symbols such as `K_I`, `K_II`,
 
 Result schema metadata should align with [[refactor-candidates/010-provenance-metadata-architecture]] so provenance exporters can identify result format versions reliably.
 
+## First Legacy-Section Projection Slice
+
+`crackpy.results.legacy_schema.legacy_result_sections_from_envelope()` is the first implemented adapter from canonical envelopes back to current-style result sections.
+
+The adapter reads dotted aliases from `ResultQuantity.legacy_aliases`.
+
+Aliases shaped as `section.key` become entries in `LegacyResultSections`.
+
+Unscoped aliases remain available through `ResultSchemaIndex`, but they are not enough to decide a legacy section.
+
+`LegacyResultSections.as_legacy_dict()` returns the compact current JSON writer shape with `unit` and `result` values.
+
+`LegacyResultSections.as_schema_dict()` returns the same legacy sections with canonical schema context for each quantity.
+
+The schema-aware shape includes `description`, `method_id`, `result_id`, `quantity_id`, `result_schema_version`, and `envelope_schema_version`.
+
+The first tests cover Williams-fit, CJP mixed-mode, and CJP Mode-I envelopes.
+
+This proves the adapter can preserve current section names while still retaining canonical result identity.
+
+It does not yet migrate `OutputWriter.write_json()`, `OutputWriter.write_results()`, `OutputReader`, CSV flattening, line-integral sections, Bueckner-Chen sections, path sections, or plot result labels.
+
 ## Seams / Interfaces / Adapters
 
 - Interface: result schema, JSON result envelope, and tag/column definitions.
@@ -76,4 +98,12 @@ Result schema metadata should align with [[refactor-candidates/010-provenance-me
 
 ## Decision State
 
-OQ-005, OQ-006, and OQ-011 planning boundaries accepted. The Williams-fit slice now defines scalar quantity aliases in `crackpy.fracture_analysis.methods.williams_fit/spec.yaml`, projects them into canonical result quantities, and exposes an envelope-derived `ResultSchemaIndex` for resolving canonical symbols, units, descriptions, schema versions, and legacy aliases. The CJP slice now proves that a scientific symbol is not a stable global key by itself: `error` appears in both mixed-mode and Mode-I result records, so `ResultSchemaIndex` supports one-to-many symbol lookup plus contextual lookup by `result_id` or `method_id`. The broader concrete schema still needs future design, validation rules, and compatibility strategy for current JSON sections, text tags, CSV output, line-integral, Bueckner-Chen, path, and plot result families.
+OQ-005, OQ-006, and OQ-011 planning boundaries accepted.
+
+The Williams-fit slice now defines scalar quantity aliases in `crackpy.fracture_analysis.methods.williams_fit/spec.yaml`, projects them into canonical result quantities, and exposes an envelope-derived `ResultSchemaIndex` for resolving canonical symbols, units, descriptions, schema versions, and legacy aliases.
+
+The CJP slice now proves that a scientific symbol is not a stable global key by itself: `error` appears in both mixed-mode and Mode-I result records, so `ResultSchemaIndex` supports one-to-many symbol lookup plus contextual lookup by `result_id` or `method_id`.
+
+The first legacy-section projection can derive `Williams_fit_results`, `CJP_results`, and `CJP_modeI_results` section dictionaries from canonical envelopes while retaining schema metadata for frontend/backend adapters.
+
+The broader concrete schema still needs future design, validation rules, and compatibility strategy for current writer migration, text tags, CSV output, line-integral, Bueckner-Chen, path, and plot result families.

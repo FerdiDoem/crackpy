@@ -65,6 +65,7 @@ Observed files and modules:
 - `crackpy/provenance/spec.py`: Pydantic slice-spec models loaded from YAML.
 - `crackpy/provenance/builder.py`: shared `MethodResultEnvelopeBuilder` that projects source snapshots and slice specs into result records.
 - `crackpy/results/envelope_artifacts.py`: explicit `ResultEnvelope` artifact writer. It writes envelope JSON, compact KG statement-bundle JSON, frontend graph JSON, and standalone graph HTML without importing `FractureAnalysis`.
+- `crackpy/results/legacy_schema.py`: envelope-derived legacy result-section projection. It maps dotted quantity aliases such as `Williams_fit_results.K_I`, `CJP_results.error`, and `CJP_modeI_results.error` into current-style nested result sections without importing `FractureAnalysis`.
 - `crackpy/results/kg_statement_bundle.py`: compact grouped KG statement-bundle projection from a `ResultEnvelope`.
 - `crackpy/results/graph_visualization.py`: graph visualization projection from a `ResultEnvelope`.
 - `crackpy/fracture_analysis/methods/williams_fit/spec.yaml`: first Williams-fit slice definitions for schema versions, method metadata, dependency roles, scalar quantities, aliases, and coefficient-series definitions.
@@ -106,6 +107,11 @@ Frontend integration handoff:
   Each `MethodEnvelopeArtifactPlan` keeps the method key, `ResultEnvelope`, artifact stem, and graph title explicit.
   `write_analysis_result_artifacts()` returns `AnalysisResultArtifactPaths`, whose `as_dict()` method is a nested map from method key to the existing artifact keys: `envelope`, `kg_statement_bundle`, `visualization_graph`, and `visualization_graph_html`.
   This adds a workflow-level handoff for Williams/CJP-style method envelopes without changing graph JSON node or edge shape.
+- C-008 legacy-schema update: frontend/backend integration can use `crackpy.results.legacy_schema.legacy_result_sections_from_envelope(envelope)` when it needs current-style result sections from canonical envelopes.
+  `LegacyResultSections.as_legacy_dict()` returns nested sections shaped like current JSON result sections, for example `{"Williams_fit_results": {"K_I": {"unit": "...", "result": ...}}}`.
+  `LegacyResultSections.as_schema_dict()` keeps `description`, `method_id`, `result_id`, `quantity_id`, `result_schema_version`, and `envelope_schema_version` beside the same unit/result values.
+  CJP duplicate display symbols such as `error` stay disambiguated by section and method metadata.
+  This adapter does not change the graph payload, current writer output, or legacy text/CSV readers.
 - C-010 fixture update: backend/frontend contract tests can build a Williams-fit envelope from a direct `MethodResultSource` fixture when they need stable graph/schema payloads without a fake `FractureAnalysis` object.
 - C-010 input-anchor update: frontend graph or table tests can assume input nodes have non-empty `input_id` and `data_ref` values because `SourceInput` rejects empty primary input anchors before envelope construction.
 - C-002 update: frontend integration should use `InputRecord.input_id` as the stable input key. `InputRecord.sequence_index` is available only for ordering input series, and source-specific labels such as `stage` belong in `InputRecord.source_metadata`.
@@ -124,6 +130,7 @@ Observed coupling:
 - The provenance source adapter still reads `FractureAnalysis` post-run attributes for the legacy bridge.
 - Williams-fit and CJP-fit envelope-to-artifact projection no longer require the broad `FractureAnalysis` attribute bag once a `ResultEnvelope` is available.
 - Williams-fit and CJP-fit schema lookup can now be derived from the canonical envelope. Repeated quantity symbols are represented as one-to-many lookup results until callers provide result or method context. Legacy text, current JSON, and CSV readers still keep their existing string contracts.
+- Williams-fit and CJP-fit legacy result sections can now be projected from canonical envelopes for adapter tests, but `OutputWriter.write_json()`, `OutputWriter.write_results()`, `OutputReader`, flattened CSV, line-integral outputs, and plot outputs still keep their older direct contracts.
 - Input identity and ordering metadata can now be projected into canonical input records, but `InputData` remains the mutable compatibility carrier.
 - Nearest-cycle assignment in crack-detection and fracture-analysis pipelines now records an ID-based input mapping result while preserving existing stage dictionaries.
 - Williams-fit crack-tip frames now carry explicit geometry-profile metadata while preserving legacy side labels for output compatibility.

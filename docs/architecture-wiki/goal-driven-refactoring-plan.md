@@ -342,6 +342,9 @@ Centralize result schema, legacy text tags, JSON keys, CSV columns, units, and a
 
 Result tags and sections are stringly typed across writer, reader, plotter, tests, and scripts. Current files lack a consistent explicit result schema version. Williams-fit aliases are the first partial slice, but other result families remain implicit.
 
+Current implementation note: `crackpy.results.legacy_schema` can project Williams-fit and CJP current-style result sections from canonical envelopes.
+It is an additive adapter for schema-backed tests and frontend/backend handoff, not a migration of legacy writers or readers.
+
 ### Target Shape
 
 - Schema definitions carry schema version, result family, canonical quantity symbols, descriptions, units, legacy aliases, and adapter projection rules.
@@ -351,7 +354,8 @@ Result tags and sections are stringly typed across writer, reader, plotter, test
 ### Definition Of Done
 
 - Every currently written legacy scalar tag in the touched result family is listed in one schema or alias map with a description and unit policy.
-- Writer and reader tests fail if a tag is renamed without updating the schema.
+- Envelope-backed legacy-section tests fail if a touched Williams/CJP alias is renamed without updating the schema.
+- Writer and reader migration remains broader C-008 work because legacy text/current JSON and CSV still use older direct contracts.
 - CSV flattening uses schema-backed columns for the touched result family.
 - Compatibility tests prove old fixtures still read or have an explicit migration path.
 - Schema versions appear in new canonical output artifacts.
