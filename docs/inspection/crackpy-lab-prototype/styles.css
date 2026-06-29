@@ -376,11 +376,60 @@ input {
   color: #0b4d48;
 }
 
+.workflow-lanes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.workflow-lanes article {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .9);
+}
+
+.workflow-lanes article[data-lane="detection"] {
+  border-color: #b8d5c3;
+  background: #f2f9f4;
+}
+
+.workflow-lanes article[data-lane="analysis"] {
+  border-color: #b7cfe4;
+  background: #f2f7fb;
+}
+
+.workflow-lanes article[data-lane="provenance"] {
+  border-color: #d6c5a1;
+  background: #fbf7ec;
+}
+
+.workflow-lanes strong,
+.workflow-lanes p {
+  display: block;
+  min-width: 0;
+}
+
+.workflow-lanes strong {
+  margin-top: 2px;
+  font-size: .9rem;
+}
+
+.workflow-lanes p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: .74rem;
+  line-height: 1.35;
+}
+
 .lab-grid {
   display: grid;
   grid-template-columns: minmax(280px, .75fr) minmax(420px, 1.42fr) minmax(300px, .9fr);
   grid-template-areas:
     "setup field results"
+    "analysis-setup field results"
     "timeline timeline timeline"
     "provenance provenance provenance"
     "debug debug debug";
@@ -397,6 +446,7 @@ input {
 }
 
 .setup-panel { grid-area: setup; }
+.analysis-setup-panel { grid-area: analysis-setup; }
 .field-panel { grid-area: field; }
 .result-panel { grid-area: results; }
 .timeline-panel { grid-area: timeline; }
@@ -510,6 +560,46 @@ input {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.settings-group {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.setup-panel > .settings-group {
+  margin: 14px;
+}
+
+.analysis-setup-panel > .input-grid {
+  grid-template-columns: 1fr;
+}
+
+.settings-group > .input-grid {
+  margin: 10px 0 0;
+}
+
+.settings-group-head strong {
+  display: block;
+  margin-top: 2px;
+  font-size: .86rem;
+  line-height: 1.25;
+}
+
+.settings-wide {
+  grid-column: 1 / -1;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.settings-wide input {
+  margin-top: 5px;
+  font-family: var(--mono);
 }
 
 .numeric {
@@ -1514,27 +1604,35 @@ input {
   line-height: 1.45;
 }
 
-[data-view-filter="setup"] .field-panel,
-[data-view-filter="setup"] .provenance-panel {
+[data-view-filter="detection"] .analysis-setup-panel,
+[data-view-filter="detection"] .result-panel,
+[data-view-filter="detection"] .timeline-panel,
+[data-view-filter="detection"] .provenance-panel {
   opacity: .62;
 }
 
-[data-view-filter="field"] .setup-panel,
-[data-view-filter="field"] .provenance-panel {
+[data-view-filter="analysis"] .setup-panel,
+[data-view-filter="analysis"] .provenance-panel {
   opacity: .62;
 }
 
-[data-view-filter="methods"] .setup-panel,
-[data-view-filter="methods"] .timeline-panel {
+[data-view-filter="results"] .setup-panel,
+[data-view-filter="results"] .analysis-setup-panel,
+[data-view-filter="results"] .field-panel,
+[data-view-filter="results"] .provenance-panel {
   opacity: .62;
 }
 
 [data-view-filter="provenance"] .setup-panel,
-[data-view-filter="provenance"] .field-panel {
+[data-view-filter="provenance"] .analysis-setup-panel,
+[data-view-filter="provenance"] .field-panel,
+[data-view-filter="provenance"] .result-panel,
+[data-view-filter="provenance"] .timeline-panel {
   opacity: .62;
 }
 
 [data-view-filter="debug"] .setup-panel,
+[data-view-filter="debug"] .analysis-setup-panel,
 [data-view-filter="debug"] .field-panel,
 [data-view-filter="debug"] .result-panel,
 [data-view-filter="debug"] .timeline-panel,
@@ -1559,6 +1657,7 @@ input {
     grid-template-columns: minmax(280px, .8fr) minmax(420px, 1.2fr);
     grid-template-areas:
       "setup field"
+      "analysis-setup field"
       "results field"
       "timeline timeline"
       "provenance provenance"

@@ -73,24 +73,42 @@
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M8 5v14l11-7z" />
           </svg>
-          <span>Start Experiment</span>
+          <span>Replay Fixture Frames</span>
         </button>
       </header>
 
       <section class="tab-strip" aria-label="Feature demonstration tabs">
-        <button type="button" class="tab is-active" data-view="setup">Setup</button>
-        <button type="button" class="tab" data-view="field">Field</button>
-        <button type="button" class="tab" data-view="methods">Methods</button>
+        <button type="button" class="tab is-active" data-view="detection">Detection</button>
+        <button type="button" class="tab" data-view="analysis">Analysis</button>
+        <button type="button" class="tab" data-view="results">Results</button>
         <button type="button" class="tab" data-view="provenance">Provenance</button>
         <button type="button" class="tab" data-view="debug">Debug</button>
+      </section>
+
+      <section class="workflow-lanes" aria-label="CrackPy workflow lanes" data-feature="workflow-lanes" data-testid="workflow-lanes">
+        <article data-lane="detection">
+          <span class="section-label">lane 1</span>
+          <strong>Crack-tip detection</strong>
+          <p>Nodemap source, side convention, crack-tip estimate, correction delta, and detection window.</p>
+        </article>
+        <article data-lane="analysis">
+          <span class="section-label">lane 2</span>
+          <strong>Fracture analysis</strong>
+          <p>Williams annulus, line-integral paths, result quantities, path stability, and term evidence.</p>
+        </article>
+        <article data-lane="provenance">
+          <span class="section-label">lane 3</span>
+          <strong>Provenance contract</strong>
+          <p>Separate proof graph artifacts, frontend-facing nodes, source scopes, and export snippet.</p>
+        </article>
       </section>
 
       <section class="lab-grid" aria-live="polite">
         <section class="setup-panel panel" aria-labelledby="setupTitle" data-feature="setup-panel" data-testid="setup-panel">
           <div class="panel-head">
             <div>
-              <span class="section-label">experiment setup</span>
-              <h1 id="setupTitle">Nodemap analysis plan</h1>
+              <span class="section-label">crack-tip detection</span>
+              <h1 id="setupTitle">Detection input contract</h1>
             </div>
             <button class="icon-button" id="resetButton" type="button" title="Reset run state" aria-label="Reset run state">
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -123,37 +141,41 @@
             <strong>actual fixture output minus crack_info_by_nodemap</strong>
           </section>
 
-          <div class="input-grid">
-            <label class="numeric">
-              <span>min radius</span>
-              <input id="minRadius" type="number" min="0.05" max="20" step="0.05" value="5">
-              <small>mm</small>
-            </label>
-            <label class="numeric">
-              <span>max radius</span>
-              <input id="maxRadius" type="number" min="0.1" max="30" step="0.1" value="10">
-              <small>mm</small>
-            </label>
-            <label class="numeric">
-              <span>angle gap</span>
-              <input id="angleGap" type="number" min="0" max="80" step="1" value="20">
-              <small>deg</small>
-            </label>
-            <label class="numeric">
-              <span>integral paths</span>
-              <input id="pathCount" type="number" min="1" max="12" step="1" value="9">
-              <small>paths</small>
-            </label>
-          </div>
-
-          <section class="config-lenses" id="configLenses" aria-label="Live visualization configuration" data-feature="config-lenses" data-testid="config-lenses"></section>
+          <section class="settings-group" data-feature="detection-settings" data-testid="detection-settings">
+            <div class="settings-group-head">
+              <span class="section-label">CrackDetectionSetup</span>
+              <strong>Detection window and angle estimation</strong>
+            </div>
+            <div class="input-grid">
+              <label class="numeric">
+                <span>window extent</span>
+                <input id="detectionWindowSize" type="number" min="5" max="120" step="1" value="40">
+                <small>mm square</small>
+              </label>
+              <label class="numeric">
+                <span>input resolution</span>
+                <input id="detectionInputResolution" type="number" min="32" max="1024" step="1" value="256">
+                <small>px</small>
+              </label>
+              <label class="numeric">
+                <span>angle radius</span>
+                <input id="angleDetectionRadius" type="number" min="1" max="50" step="0.5" value="10">
+                <small>mm</small>
+              </label>
+              <label class="numeric">
+                <span>grid spacing</span>
+                <input id="detectionGridSpacing" type="number" readonly>
+                <small>mm/px</small>
+              </label>
+            </div>
+          </section>
         </section>
 
         <section class="field-panel panel" aria-labelledby="fieldTitle" data-feature="field-panel" data-testid="field-panel">
           <div class="panel-head">
             <div>
-              <span class="section-label">dic field inspection</span>
-              <h2 id="fieldTitle">Setup geometry on actual nodemap</h2>
+              <span class="section-label">live nodemap geometry</span>
+              <h2 id="fieldTitle">Detection and analysis overlays</h2>
             </div>
             <div class="field-toolbar" role="group" aria-label="Nodemap field">
               <button type="button" class="tool is-active" data-overlay="eps_eqv">eps_eqv</button>
@@ -206,12 +228,13 @@
                 <span>detection window</span>
               </label>
               <label class="compact-control">
-                <span>setup overlay</span>
+                <span>geometry lane</span>
                 <select id="setupOverlayMode">
-                  <option value="combined">combined</option>
-                  <option value="annulus">annulus only</option>
+                  <option value="combined">all overlays</option>
+                  <option value="detection-window">detection only</option>
+                  <option value="analysis">analysis overlays</option>
+                  <option value="annulus">Williams annulus only</option>
                   <option value="integrals">integrals only</option>
-                  <option value="detection-window">detection window only</option>
                 </select>
               </label>
               <label class="compact-control">
@@ -269,17 +292,96 @@
                 <strong id="fieldScaleReadout">auto</strong>
               </div>
               <div>
-                <span class="section-label">setup overlay</span>
+                <span class="section-label">geometry lane</span>
                 <strong id="setupGeometryReadout">combined</strong>
               </div>
             </div>
           </div>
         </section>
 
+        <section class="analysis-setup-panel panel" aria-labelledby="analysisSetupTitle" data-feature="analysis-setup-panel" data-testid="analysis-setup-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-label">fracture-analysis setup</span>
+              <h2 id="analysisSetupTitle">Williams and integral geometry</h2>
+            </div>
+          </div>
+
+          <div class="input-grid">
+            <section class="settings-group" data-feature="optimization-settings" data-testid="optimization-settings">
+              <div class="settings-group-head">
+                <span class="section-label">OptimizationProperties</span>
+                <strong>Williams/CJP fitting domain</strong>
+              </div>
+              <div class="input-grid">
+                <label class="numeric">
+                  <span>min radius</span>
+                  <input id="minRadius" type="number" min="0.05" max="20" step="0.05" value="5">
+                  <small>mm</small>
+                </label>
+                <label class="numeric">
+                  <span>max radius</span>
+                  <input id="maxRadius" type="number" min="0.1" max="30" step="0.1" value="10">
+                  <small>mm</small>
+                </label>
+                <label class="numeric">
+                  <span>angle gap</span>
+                  <input id="angleGap" type="number" min="0" max="80" step="1" value="20">
+                  <small>deg</small>
+                </label>
+                <label class="numeric">
+                  <span>fit tick size</span>
+                  <input id="optimizationTickSize" type="number" min="0.001" max="1" step="0.001" value="0.01">
+                  <small>mm</small>
+                </label>
+                <label class="control settings-wide">
+                  <span>Williams terms</span>
+                  <input id="williamsTerms" type="text" value="-1, 1, 2, 3, 4, 5">
+                </label>
+              </div>
+            </section>
+
+            <section class="settings-group" data-feature="integral-settings" data-testid="integral-settings">
+              <div class="settings-group-head">
+                <span class="section-label">IntegralProperties</span>
+                <strong>Line-integral path family</strong>
+              </div>
+              <div class="input-grid">
+                <label class="numeric">
+                  <span>paths</span>
+                  <input id="pathCount" type="number" min="1" max="12" step="1" value="9">
+                  <small>contours</small>
+                </label>
+                <label class="numeric">
+                  <span>integral tick</span>
+                  <input id="integralTickSize" type="number" min="0.001" max="5" step="0.001" value="0.01">
+                  <small>mm</small>
+                </label>
+                <label class="numeric">
+                  <span>nodes</span>
+                  <input id="integralNodeCount" type="number" min="4" max="1000" step="1" value="100">
+                  <small>per path</small>
+                </label>
+                <label class="numeric">
+                  <span>mask tolerance</span>
+                  <input id="maskTolerance" type="number" min="0" max="20" step="0.5" value="2">
+                  <small>facets</small>
+                </label>
+                <label class="control settings-wide">
+                  <span>Bueckner-Chen Williams terms</span>
+                  <input id="buecknerWilliamsTerms" type="text" value="1, 2, 3, 4, 5">
+                </label>
+              </div>
+            </section>
+          </div>
+
+          <section class="config-lenses" id="configLenses" aria-label="Live visualization configuration" data-feature="config-lenses" data-testid="config-lenses"></section>
+        </section>
+
         <aside class="result-panel panel" aria-labelledby="resultTitle" data-feature="result-panel" data-testid="result-panel">
           <div class="panel-head">
             <div>
-              <span class="section-label">result inspector</span>
+              <span class="section-label">fracture-analysis results</span>
               <h2 id="resultTitle">Frame <span id="activeFrameLabel">52</span></h2>
             </div>
             <span id="qualityBadge" class="badge is-good">fixture ok</span>
@@ -313,7 +415,7 @@
         <section class="timeline-panel panel" aria-labelledby="timelineTitle" data-feature="frame-table" data-testid="frame-table-panel">
           <div class="panel-head">
             <div>
-              <span class="section-label">experiment sequence</span>
+              <span class="section-label">result sequence</span>
               <h2 id="timelineTitle">Result frames and feature surface</h2>
             </div>
             <button class="ghost-action" id="exportButton" type="button">Export provenance</button>
@@ -325,7 +427,7 @@
                 <tr>
                   <th>frame</th>
                   <th>cycles</th>
-                  <th>a</th>
+                  <th>crack-tip x</th>
                   <th>K_I source</th>
                   <th>K_II source</th>
                   <th>J</th>
@@ -341,7 +443,7 @@
         <section class="provenance-panel panel" aria-labelledby="provenanceTitle" data-feature="provenance-panel" data-testid="provenance-panel">
           <div class="panel-head">
             <div>
-              <span class="section-label">provenance demonstrator</span>
+              <span class="section-label">provenance contract</span>
               <h2 id="provenanceTitle">Frame results and separate proof graph</h2>
             </div>
             <span class="badge" id="provenanceBadge">separate proof graph</span>

@@ -6,7 +6,14 @@ test("CrackPy Lab prototype uses actual data and exposes test controls", async (
   await page.goto(prototypePath);
 
   await expect(page.getByTestId("field-panel")).toBeVisible();
+  await expect(page.getByTestId("workflow-lanes")).toContainText("Crack-tip detection");
+  await expect(page.getByTestId("workflow-lanes")).toContainText("Fracture analysis");
+  await expect(page.getByTestId("workflow-lanes")).toContainText("Provenance contract");
+  await expect(page.getByTestId("detection-settings")).toContainText("CrackDetectionSetup");
+  await expect(page.getByTestId("analysis-setup-panel")).toContainText("OptimizationProperties");
+  await expect(page.getByTestId("analysis-setup-panel")).toContainText("IntegralProperties");
   await expect(page.getByTestId("frame-table-panel")).toContainText("Williams fit");
+  await expect(page.getByTestId("frame-table-panel")).toContainText("crack-tip x");
   await expect(page.getByTestId("source-evidence")).toContainText("results_auto_integral_probs.csv");
   await expect(page.getByTestId("source-evidence")).toContainText("separate Williams proof export");
   await expect(page.getByTestId("method-evidence")).toContainText("a_n");
@@ -48,11 +55,22 @@ test("CrackPy Lab prototype uses actual data and exposes test controls", async (
   expect(fieldState.fieldScalePreset).toBe("manual");
   expect(fieldState.fieldVmin).toBeCloseTo(-0.01, 4);
   expect(fieldState.fieldVmax).toBeCloseTo(0.02, 4);
+  expect(fieldState.detectionSettings.spacing).toBeCloseTo(fieldState.detectionSettings.windowSize / (fieldState.detectionSettings.resolution - 1), 8);
 
   const transformBefore = await page.locator("#fieldCanvas").evaluate((el) => getComputedStyle(el).transform);
   await page.locator("#fieldZoom").fill("2");
   const transformAfter = await page.locator("#fieldCanvas").evaluate((el) => getComputedStyle(el).transform);
   expect(transformBefore).not.toEqual(transformAfter);
+
+  await page.locator("#setupOverlayMode").selectOption("detection-window");
+  await expect(page.locator('[data-feature="detection-window"]')).toBeVisible();
+  await expect(page.locator('[data-feature="annulus-overlay"]')).toHaveCount(0);
+  await expect(page.locator('[data-feature="line-integral-paths"]')).toHaveCount(0);
+
+  await page.locator("#setupOverlayMode").selectOption("analysis");
+  await expect(page.locator('[data-feature="annulus-overlay"]')).toBeVisible();
+  await expect(page.locator('[data-feature="line-integral-paths"]')).toBeVisible();
+  await expect(page.locator('[data-feature="detection-window"]')).toHaveCount(0);
 
   await page.locator("#setupOverlayMode").selectOption("annulus");
   await expect(page.locator('[data-feature="annulus-overlay"]')).toBeVisible();
@@ -79,11 +97,11 @@ test("CrackPy Lab prototype uses actual data and exposes test controls", async (
   await expect(page.getByTestId("debug-assertion-status")).toContainText("PASS");
 });
 
-test("start experiment advances through real fixture frames", async ({ page }) => {
+test("fixture replay advances through real result frames", async ({ page }) => {
   await page.goto(prototypePath);
 
   const before = await page.evaluate(() => window.CrackPyLabDebug.getState());
-  await page.getByRole("button", { name: "Start Experiment" }).click();
+  await page.getByRole("button", { name: "Replay Fixture Frames" }).click();
   await expect(page.locator("#runBadge")).toContainText("running");
   await expect.poll(async () => page.evaluate(() => window.CrackPyLabDebug.getState().frame), { timeout: 2000 }).not.toBe(before.frame);
   const after = await page.evaluate(() => window.CrackPyLabDebug.getState());

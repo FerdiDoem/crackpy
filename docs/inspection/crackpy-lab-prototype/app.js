@@ -110,11 +110,16 @@
 
   const featureDefinitions = [
     ["setup-panel", "Setup panel"],
+    ["workflow-lanes", "Workflow lanes"],
+    ["detection-settings", "Detection settings"],
     ["field-panel", "Field panel"],
+    ["analysis-setup-panel", "Analysis setup panel"],
     ["result-panel", "Result panel"],
     ["frame-table", "Frame table"],
     ["provenance-panel", "Provenance panel"],
     ["config-lenses", "Setup lenses"],
+    ["optimization-settings", "Optimization settings"],
+    ["integral-settings", "Integral settings"],
     ["field-image", "Nodemap base image"],
     ["mesh-overlay", "Nodemap mesh"],
     ["line-integral-paths", "Line integral paths"],
@@ -162,6 +167,8 @@
 
   const defaultPathCount = data.visualizationConfig?.lineIntegralDefaults?.number_of_paths || 9;
   const defaultWilliams = data.visualizationConfig?.williamsDefaults || {};
+  const defaultDetection = data.visualizationConfig?.crackDetectionDefaults || {};
+  const defaultIntegrals = data.visualizationConfig?.lineIntegralDefaults || {};
 
   const els = {
     experimentSelect: $("#experimentSelect"),
@@ -210,6 +217,16 @@
     showAnnulus: $("#showAnnulus"),
     showDetectionWindow: $("#showDetectionWindow"),
     setupOverlayMode: $("#setupOverlayMode"),
+    detectionWindowSize: $("#detectionWindowSize"),
+    detectionInputResolution: $("#detectionInputResolution"),
+    angleDetectionRadius: $("#angleDetectionRadius"),
+    detectionGridSpacing: $("#detectionGridSpacing"),
+    optimizationTickSize: $("#optimizationTickSize"),
+    williamsTerms: $("#williamsTerms"),
+    integralTickSize: $("#integralTickSize"),
+    integralNodeCount: $("#integralNodeCount"),
+    maskTolerance: $("#maskTolerance"),
+    buecknerWilliamsTerms: $("#buecknerWilliamsTerms"),
     fieldColoring: $("#fieldColoring"),
     fieldScalePreset: $("#fieldScalePreset"),
     fieldSigma: $("#fieldSigma"),
@@ -471,8 +488,42 @@
         : kind === "integrals" ? state.showLinePaths
           : state.showDetectionWindow;
     }
+    if (state.setupOverlayMode === "analysis") {
+      return kind === "annulus" ? state.showAnnulus
+        : kind === "integrals" ? state.showLinePaths
+          : false;
+    }
     return state.setupOverlayMode === kind
       && (kind === "annulus" ? state.showAnnulus : kind === "integrals" ? state.showLinePaths : state.showDetectionWindow);
+  }
+
+  function detectionSettings() {
+    const windowSize = Number(els.detectionWindowSize.value || defaultDetection.detection_window_size_mm || 40);
+    const resolution = Number(els.detectionInputResolution.value || defaultDetection.detection_input_resolution_px || 256);
+    const angleRadius = Number(els.angleDetectionRadius.value || defaultDetection.angle_detection_radius_mm || 10);
+    const spacing = resolution > 1 ? windowSize / (resolution - 1) : 0;
+    els.detectionGridSpacing.value = formatNumber(spacing, 3);
+    return { windowSize, resolution, angleRadius, spacing };
+  }
+
+  function optimizationSettings() {
+    return {
+      minRadius: Number($("#minRadius").value || defaultWilliams.min_radius_mm || 5),
+      maxRadius: Number($("#maxRadius").value || defaultWilliams.max_radius_mm || 10),
+      angleGap: Number($("#angleGap").value || defaultWilliams.angle_gap_deg || 20),
+      tickSize: Number(els.optimizationTickSize.value || defaultWilliams.tick_size_mm || 0.01),
+      terms: els.williamsTerms.value || (defaultWilliams.terms || []).join(", ")
+    };
+  }
+
+  function integralSettings() {
+    return {
+      pathCount: Number($("#pathCount").value || defaultIntegrals.number_of_paths || 9),
+      tickSize: Number(els.integralTickSize.value || defaultIntegrals.integral_tick_size_mm || 0.01),
+      nodeCount: Number(els.integralNodeCount.value || defaultIntegrals.number_of_nodes || 100),
+      maskTolerance: Number(els.maskTolerance.value || defaultIntegrals.mask_tolerance || 2),
+      terms: els.buecknerWilliamsTerms.value || (defaultIntegrals.buckner_williams_terms || []).join(", ")
+    };
   }
 
   function polarScreenPoint(center, radius, angleRad) {
@@ -526,15 +577,15 @@
       x: tip.x - Math.sin(angleRad) * axisLength * 0.55,
       y: tip.y - Math.cos(angleRad) * axisLength * 0.55
     };
-    const minRadius = Number($("#minRadius").value || 0.35);
-    const maxRadius = Number($("#maxRadius").value || 2.8);
-    const angleGap = Number($("#angleGap").value || 20);
-    const pathCount = Number($("#pathCount").value || 6);
-    const detection = data.visualizationConfig?.crackDetectionDefaults || {};
-    const detectionSize = Number(detection.detection_window_size_mm || 40);
-    const detectionRadius = Number(detection.angle_detection_radius_mm || 10);
-    const windowSize = mmToScreen(detectionSize);
-    const angleRadius = mmToScreen(detectionRadius);
+    const optimization = optimizationSettings();
+    const integrals = integralSettings();
+    const detection = detectionSettings();
+    const minRadius = optimization.minRadius;
+    const maxRadius = optimization.maxRadius;
+    const angleGap = optimization.angleGap;
+    const pathCount = integrals.pathCount;
+    const windowSize = mmToScreen(detection.windowSize);
+    const angleRadius = mmToScreen(detection.angleRadius);
 
     const markers = `
       <g data-feature="crack-tip-markers">
@@ -582,44 +633,44 @@
   }
 
   function renderConfigLenses() {
-    const minRadius = Number($("#minRadius").value || 0);
-    const maxRadius = Number($("#maxRadius").value || 0);
-    const angleGap = Number($("#angleGap").value || 0);
-    const pathCount = Number($("#pathCount").value || 0);
-    const lineDefaults = data.visualizationConfig?.lineIntegralDefaults || {};
-    const detection = data.visualizationConfig?.crackDetectionDefaults || {};
+    const detection = detectionSettings();
+    const optimization = optimizationSettings();
+    const integrals = integralSettings();
 
     els.configLenses.innerHTML = `
       <article class="config-lens" data-testid="detection-lens">
         <div>
-          <span class="section-label">crack detection lens</span>
-          <strong>${detection.detection_window_size_mm || 40} mm window</strong>
+          <span class="section-label">CrackDetectionSetup</span>
+          <strong>${formatNumber(detection.windowSize, 1)} mm square detection crop</strong>
         </div>
         <dl>
-          <dt>resolution</dt><dd>${detection.detection_input_resolution_px || 256} px</dd>
-          <dt>angle r.</dt><dd>${detection.angle_detection_radius_mm || 10} mm</dd>
+          <dt>resolution</dt><dd>${detection.resolution} x ${detection.resolution} px</dd>
+          <dt>grid</dt><dd>${formatNumber(detection.spacing, 4)} mm/px, endpoint-inclusive</dd>
+          <dt>angle r.</dt><dd>${formatNumber(detection.angleRadius, 1)} mm</dd>
           <dt>side</dt><dd>${activeExperiment().id.includes("-left") ? "left" : "right"}</dd>
         </dl>
       </article>
       <article class="config-lens" data-testid="annulus-lens">
         <div>
-          <span class="section-label">Williams annulus lens</span>
-          <strong>${formatNumber(minRadius, 2)}-${formatNumber(maxRadius, 2)} mm</strong>
+          <span class="section-label">OptimizationProperties</span>
+          <strong>${formatNumber(optimization.minRadius, 2)}-${formatNumber(optimization.maxRadius, 2)} mm polar fit domain</strong>
         </div>
         <dl>
-          <dt>angle gap</dt><dd>${angleGap} deg</dd>
-          <dt>purpose</dt><dd>fit domain only</dd>
+          <dt>angle gap</dt><dd>${formatNumber(optimization.angleGap, 0)} deg crack-path exclusion</dd>
+          <dt>tick</dt><dd>${formatNumber(optimization.tickSize, 4)} mm sampling grid</dd>
+          <dt>terms</dt><dd>${optimization.terms}</dd>
         </dl>
       </article>
       <article class="config-lens" data-testid="integral-lens">
         <div>
-          <span class="section-label">line integral lens</span>
-          <strong>${pathCount} contour paths</strong>
+          <span class="section-label">IntegralProperties</span>
+          <strong>${integrals.pathCount} rectangular/open contour paths</strong>
         </div>
         <dl>
-          <dt>nodes</dt><dd>${lineDefaults.number_of_nodes || 100}</dd>
-          <dt>tick</dt><dd>${lineDefaults.integral_tick_size_mm || 0.01} mm</dd>
-          <dt>mask tol.</dt><dd>${lineDefaults.mask_tolerance || 2}</dd>
+          <dt>nodes</dt><dd>${integrals.nodeCount}</dd>
+          <dt>tick</dt><dd>${formatNumber(integrals.tickSize, 4)} mm</dd>
+          <dt>mask tol.</dt><dd>${formatNumber(integrals.maskTolerance, 1)}</dd>
+          <dt>B-C terms</dt><dd>${integrals.terms}</dd>
         </dl>
       </article>
     `;
@@ -1024,7 +1075,7 @@
     if (state.running) {
       els.runBadge.textContent = "running";
       els.runBadge.className = "badge is-running";
-      els.runMessage.textContent = "Advancing through actual CrackPy fixture result frames";
+      els.runMessage.textContent = "Replaying actual CrackPy fixture result frames";
     } else {
       els.runBadge.textContent = "ready";
       els.runBadge.className = "badge is-ready";
@@ -1078,6 +1129,9 @@
 
   function debugSnapshot() {
     const frame = activeFrame();
+    const detection = detectionSettings();
+    const optimization = optimizationSettings();
+    const integrals = integralSettings();
     return {
       experimentId: state.experimentId,
       frame: state.frame,
@@ -1089,6 +1143,9 @@
       fieldVmax: Number(els.fieldCanvas.dataset.vmax),
       fieldZoom: Number(state.fieldZoom),
       setupOverlayMode: state.setupOverlayMode,
+      detectionSettings: detection,
+      optimizationSettings: optimization,
+      integralSettings: integrals,
       methodEvidenceMode: state.methodEvidenceMode,
       graphArtifactId: state.graphArtifactId,
       showLinePaths: state.showLinePaths,
@@ -1113,6 +1170,8 @@
       ["method evidence is source-backed", () => (activeFrame().raw?.methodEvidence?.williamsTerms || []).length > 0],
       ["node surface matrix is rendered", () => els.nodeSurfaceMatrix.textContent.includes("ResultQuantity")],
       ["setup geometry renders visible nodes", () => els.setupGeometryLayer.children.length > 0],
+      ["settings groups are split by domain", () => Boolean(els.detectionWindowSize.value) && Boolean(els.optimizationTickSize.value) && Boolean(els.integralTickSize.value)],
+      ["detection grid spacing uses endpoint-inclusive mapping", () => Math.abs(detectionSettings().spacing - detectionSettings().windowSize / (detectionSettings().resolution - 1)) < 1e-9],
       ["graph is marked as separate proof", () => String(activeGraphSummary()?.scope || "").includes("separate")],
       ["graph artifact selector is wired", () => graphArtifacts().length >= 1 && Boolean(state.graphArtifactId)],
       ["debug API is exposed", () => Boolean(window.CrackPyLabDebug?.getState)]
@@ -1153,6 +1212,16 @@
     $("#minRadius").value = defaultWilliams.min_radius_mm || 5;
     $("#maxRadius").value = defaultWilliams.max_radius_mm || 10;
     $("#angleGap").value = defaultWilliams.angle_gap_deg || 20;
+    els.optimizationTickSize.value = defaultWilliams.tick_size_mm || 0.01;
+    els.williamsTerms.value = (defaultWilliams.terms || [-1, 1, 2, 3, 4, 5]).join(", ");
+    els.detectionWindowSize.value = defaultDetection.detection_window_size_mm || 40;
+    els.detectionInputResolution.value = defaultDetection.detection_input_resolution_px || 256;
+    els.angleDetectionRadius.value = defaultDetection.angle_detection_radius_mm || 10;
+    els.integralTickSize.value = defaultIntegrals.integral_tick_size_mm || 0.01;
+    els.integralNodeCount.value = defaultIntegrals.number_of_nodes || 100;
+    els.maskTolerance.value = defaultIntegrals.mask_tolerance || 2;
+    els.buecknerWilliamsTerms.value = (defaultIntegrals.buckner_williams_terms || [1, 2, 3, 4, 5]).join(", ");
+    detectionSettings();
 
     $$(".nav-item").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1161,8 +1230,8 @@
           workspace: ".setup-panel",
           experiments: ".timeline-panel",
           detection: ".field-panel",
-          analysis: ".result-panel",
-          results: ".timeline-panel",
+          analysis: ".analysis-setup-panel",
+          results: ".result-panel",
           provenance: ".provenance-panel"
         };
         const target = $(targets[button.dataset.panel] || ".setup-panel");
@@ -1230,6 +1299,15 @@
       $("#minRadius").value = defaultWilliams.min_radius_mm || 5;
       $("#maxRadius").value = defaultWilliams.max_radius_mm || 10;
       $("#angleGap").value = defaultWilliams.angle_gap_deg || 20;
+      els.optimizationTickSize.value = defaultWilliams.tick_size_mm || 0.01;
+      els.williamsTerms.value = (defaultWilliams.terms || [-1, 1, 2, 3, 4, 5]).join(", ");
+      els.detectionWindowSize.value = defaultDetection.detection_window_size_mm || 40;
+      els.detectionInputResolution.value = defaultDetection.detection_input_resolution_px || 256;
+      els.angleDetectionRadius.value = defaultDetection.angle_detection_radius_mm || 10;
+      els.integralTickSize.value = defaultIntegrals.integral_tick_size_mm || 0.01;
+      els.integralNodeCount.value = defaultIntegrals.number_of_nodes || 100;
+      els.maskTolerance.value = defaultIntegrals.mask_tolerance || 2;
+      els.buecknerWilliamsTerms.value = (defaultIntegrals.buckner_williams_terms || [1, 2, 3, 4, 5]).join(", ");
       els.showLinePaths.checked = state.showLinePaths;
       els.showAnnulus.checked = state.showAnnulus;
       els.showDetectionWindow.checked = state.showDetectionWindow;
@@ -1268,7 +1346,21 @@
       });
     });
 
-    ["#pathCount", "#minRadius", "#maxRadius", "#angleGap"].forEach((selector) => {
+    [
+      "#pathCount",
+      "#minRadius",
+      "#maxRadius",
+      "#angleGap",
+      "#detectionWindowSize",
+      "#detectionInputResolution",
+      "#angleDetectionRadius",
+      "#optimizationTickSize",
+      "#williamsTerms",
+      "#integralTickSize",
+      "#integralNodeCount",
+      "#maskTolerance",
+      "#buecknerWilliamsTerms"
+    ].forEach((selector) => {
       $(selector).addEventListener("input", () => {
         renderContours();
         renderConfigLenses();
@@ -1455,6 +1547,15 @@
       state.methodEvidenceMode = "williamsTerms";
       state.graphArtifactId = graphArtifacts()[0]?.id || "legacy-graph";
       state.selectedGraphNode = "InputRecord";
+      els.detectionWindowSize.value = defaultDetection.detection_window_size_mm || 40;
+      els.detectionInputResolution.value = defaultDetection.detection_input_resolution_px || 256;
+      els.angleDetectionRadius.value = defaultDetection.angle_detection_radius_mm || 10;
+      els.optimizationTickSize.value = defaultWilliams.tick_size_mm || 0.01;
+      els.williamsTerms.value = (defaultWilliams.terms || [-1, 1, 2, 3, 4, 5]).join(", ");
+      els.integralTickSize.value = defaultIntegrals.integral_tick_size_mm || 0.01;
+      els.integralNodeCount.value = defaultIntegrals.number_of_nodes || 100;
+      els.maskTolerance.value = defaultIntegrals.mask_tolerance || 2;
+      els.buecknerWilliamsTerms.value = (defaultIntegrals.buckner_williams_terms || [1, 2, 3, 4, 5]).join(", ");
       state.running = false;
       resetFeatureFlags();
       return debugSnapshot();
