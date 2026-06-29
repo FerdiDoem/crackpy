@@ -9,6 +9,10 @@ from crackpy.fracture_analysis.methods.williams_fit.parameters import (
     WilliamsMaterialParameters,
     WilliamsOptimizationParameters,
 )
+from crackpy.fracture_analysis.methods.parameter_snapshots import (
+    material_parameters_from_analysis_material,
+    optimization_parameters_from_analysis_options,
+)
 from crackpy.fracture_analysis.methods.williams_fit.result import WilliamsCoefficientSet, WilliamsFitResult
 from crackpy.fracture_analysis.methods.williams_fit.spec_loader import WilliamsFitSliceSpec, load_williams_fit_spec
 from crackpy.provenance import (
@@ -58,21 +62,11 @@ def source_from_analysis(analysis: Any) -> MethodResultSource:
         source_label=stem,
         crack_tip_frame=frame,
         parameters=WilliamsFitResultParameters(
-            material=WilliamsMaterialParameters(
-                name=material.name,
-                E_MPa=material.E,
-                nu_xy=material.nu_xy,
-                sig_yield_MPa=material.sig_yield,
-                plane_strain=material.plane_strain,
-                G_MPa=material.G,
-                kappa=material.kappa,
-            ),
-            optimization=WilliamsOptimizationParameters(
-                angle_gap_deg=options.angle_gap,
-                min_radius_mm=options.min_radius,
-                max_radius_mm=options.max_radius,
-                tick_size_mm=options.tick_size,
-                terms=tuple(options.terms),
+            material=material_parameters_from_analysis_material(material, WilliamsMaterialParameters),
+            optimization=optimization_parameters_from_analysis_options(
+                options,
+                WilliamsOptimizationParameters,
+                extra_values={"terms": tuple(options.terms)},
             ),
         ),
         result=result,

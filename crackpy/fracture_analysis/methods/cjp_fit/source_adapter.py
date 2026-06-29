@@ -9,6 +9,10 @@ from crackpy.fracture_analysis.methods.cjp_fit.parameters import (
     CjpMaterialParameters,
     CjpOptimizationParameters,
 )
+from crackpy.fracture_analysis.methods.parameter_snapshots import (
+    material_parameters_from_analysis_material,
+    optimization_parameters_from_analysis_options,
+)
 from crackpy.fracture_analysis.methods.cjp_fit.result import (
     CjpFitResult,
     cjp_mode_i_outputs_from_coefficients,
@@ -55,21 +59,8 @@ def source_from_analysis(analysis: Any) -> MethodResultSource:
         source_label=stem,
         crack_tip_frame=frame,
         parameters=CjpFitResultParameters(
-            material=CjpMaterialParameters(
-                name=material.name,
-                E_MPa=material.E,
-                nu_xy=material.nu_xy,
-                sig_yield_MPa=material.sig_yield,
-                plane_strain=material.plane_strain,
-                G_MPa=material.G,
-                kappa=material.kappa,
-            ),
-            optimization=CjpOptimizationParameters(
-                angle_gap_deg=options.angle_gap,
-                min_radius_mm=options.min_radius,
-                max_radius_mm=options.max_radius,
-                tick_size_mm=options.tick_size,
-            ),
+            material=material_parameters_from_analysis_material(material, CjpMaterialParameters),
+            optimization=optimization_parameters_from_analysis_options(options, CjpOptimizationParameters),
         ),
         result=result,
     )

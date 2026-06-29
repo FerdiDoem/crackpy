@@ -86,6 +86,8 @@ Frontend integration handoff:
   `build_manual_crack_tip_estimate()` projects a `CrackTipFrame` into the same imported-crack-tip estimate shape already used by current provenance envelopes.
   `build_method_run_dependencies()` combines the standard builder-derived run dependencies with method-specific runtime dependencies such as the imported crack-tip estimate.
   Williams-fit and CJP-fit builders now delegate ID construction, manual crack-tip estimate projection, and common dependency-edge assembly to these helpers while preserving existing envelope payloads and filenames.
+- Generic fracture-parameter snapshot update: Williams-fit and CJP-fit source adapters now use `crackpy.fracture_analysis.methods.parameter_snapshots` to map legacy `FractureAnalysis.material` and `optimization_properties` attributes into method-local Pydantic parameter snapshots.
+  The resulting `NormalizedConfiguration.result_parameters` payload shape is unchanged; frontend/backend tests can continue to read `material` and `optimization` sections from Williams/CJP envelopes.
 - C-010 fixture update: backend/frontend contract tests can build a Williams-fit envelope from a direct `MethodResultSource` fixture when they need stable graph/schema payloads without a fake `FractureAnalysis` object.
 - C-010 input-anchor update: frontend graph or table tests can assume input nodes have non-empty `input_id` and `data_ref` values because `SourceInput` rejects empty primary input anchors before envelope construction.
 - C-002 update: frontend integration should use `InputRecord.input_id` as the stable input key. `InputRecord.sequence_index` is available only for ordering input series, and source-specific labels such as `stage` belong in `InputRecord.source_metadata`.
