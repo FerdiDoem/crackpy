@@ -698,12 +698,14 @@ def test_result_schema_index_exposes_williams_legacy_aliases_from_envelope():
     schema_index = ResultSchemaIndex.from_envelope(envelope)
     k_i = schema_index.entry_for_legacy_alias("Williams_fit_results.K_I")
     coefficient = schema_index.entry_for_symbol("a_-1")
+    coefficient_by_result = schema_index.entry_for_symbol_in_result("a_-1", coefficient.result_id)
 
     assert k_i.symbol == "K_I"
     assert k_i.unit == "MPa*m^{1/2}"
     assert k_i.result_schema_version == "crackpy.result_record.williams_fit.v1"
     assert k_i.envelope_schema_version == "crackpy.result_envelope.williams_fit.v1"
     assert coefficient.legacy_aliases == ("Williams_fit_results.a_-1",)
+    assert coefficient_by_result == coefficient
 
 
 def test_result_schema_index_rejects_duplicate_legacy_aliases():

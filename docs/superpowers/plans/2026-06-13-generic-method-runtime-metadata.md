@@ -17,6 +17,7 @@
 - `MethodResultSource` already describes runtime source snapshots generically: primary inputs, dependencies, resolved parameters, and source quantities.
 - `MethodResultEnvelopeBuilder` already projects `MethodResultSource` plus `ProvenanceSliceSpec` into generic records.
 - `ResultEnvelope`, `AnalysisRun`, `MethodMetadata`, `NormalizedConfiguration`, `ResultRecord`, and `ResultQuantity` already model the "what ran, with which method, on which inputs, with which configuration, producing which result" structure.
+- `ResultSchemaIndex` now proves why reusable method metadata must carry context instead of relying on display labels: CJP has repeated `error` symbols across mixed-mode and Mode-I result records, while Williams currently has unique coefficient and SIF labels.
 - Williams-fit and CJP-fit currently duplicate configuration ID generation from parameter hash, run/result ID construction, dependency-edge assembly, and manual/imported crack-tip estimate projection.
 - Williams-fit and CJP-fit also duplicate material and optimization parameter snapshot patterns, but method-specific parameters such as Williams terms or CJP variants should remain method-local until more methods prove the shared shape.
 - Artifact writing is still duplicated by method-family wrappers: Williams and CJP have separate entry points that produce envelope, KG statement bundle, graph JSON, and graph HTML artifacts.
@@ -719,6 +720,7 @@ git commit -m "docs: describe reusable method metadata seam"
 - Detection, Williams-fit, and CJP-fit method metadata all expose the same `MethodSpec` core.
 - A generic `MethodDefinition` helper exists and is imported by detection metadata without moving numerical method code.
 - A generic method-runtime helper owns deterministic configuration/run/result ID construction and manual crack-tip estimate projection for Williams/CJP-style envelopes.
+- Result and quantity metadata lookup treats `symbol` as a readable method/result label and uses `quantity_id`, `result_id`, or `method_id` for stable identity and disambiguation.
 - Generic envelope artifact writing exists in one Module and Williams/CJP public wrappers delegate to it without changing public artifact filenames.
 - Tests prove the generic method metadata shape across detection, Williams, and CJP.
 - Tests prove method-run identity and manual crack-tip estimate projection without constructing a full `FractureAnalysis` object.

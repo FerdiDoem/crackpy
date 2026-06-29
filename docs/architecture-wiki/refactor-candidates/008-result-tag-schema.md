@@ -1,6 +1,6 @@
 # Candidate 008: Result Tag Schema
 
-Status: proposed, with Williams-fit aliases partially implemented
+Status: proposed, with Williams-fit aliases and contextual CJP symbol lookup partially implemented
 Role: Architecture candidate for centralizing result JSON keys, legacy text tags, and tabular output schema.
 
 ## Observed Evidence
@@ -76,4 +76,4 @@ Result schema metadata should align with [[refactor-candidates/010-provenance-me
 
 ## Decision State
 
-OQ-005, OQ-006, and OQ-011 planning boundaries accepted. The Williams-fit slice now defines scalar quantity aliases in `crackpy.fracture_analysis.methods.williams_fit/spec.yaml`, projects them into canonical result quantities, and exposes an envelope-derived `ResultSchemaIndex` for resolving canonical symbols, units, descriptions, schema versions, and legacy aliases. The broader concrete schema still needs future design, validation rules, and compatibility strategy for current JSON sections, text tags, CSV output, CJP, line-integral, Bueckner-Chen, path, and plot result families.
+OQ-005, OQ-006, and OQ-011 planning boundaries accepted. The Williams-fit slice now defines scalar quantity aliases in `crackpy.fracture_analysis.methods.williams_fit/spec.yaml`, projects them into canonical result quantities, and exposes an envelope-derived `ResultSchemaIndex` for resolving canonical symbols, units, descriptions, schema versions, and legacy aliases. The CJP slice now proves that a scientific symbol is not a stable global key by itself: `error` appears in both mixed-mode and Mode-I result records, so `ResultSchemaIndex` supports one-to-many symbol lookup plus contextual lookup by `result_id` or `method_id`. The broader concrete schema still needs future design, validation rules, and compatibility strategy for current JSON sections, text tags, CSV output, line-integral, Bueckner-Chen, path, and plot result families.
