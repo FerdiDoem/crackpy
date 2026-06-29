@@ -1,7 +1,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from crackpy.results.result_data import CrackTipFrame, ResultEnvelope
+from crackpy.results.result_data import CrackTipFrame, ResultEnvelope, ResultSchemaIndex
 
 
 def _typed_cjp_inputs():
@@ -99,6 +99,52 @@ def test_build_cjp_fit_envelope_splits_quantities_by_variant():
     assert "T_y" not in mixed_symbols
     assert {"A", "F", "K_F", "T_y"} <= mode_i_symbols
     assert "K_II" not in mode_i_symbols
+
+
+def test_result_schema_index_resolves_cjp_duplicate_symbols_with_context():
+    from crackpy.fracture_analysis.methods.cjp_fit import build_cjp_fit_envelope_from_result
+
+    frame, parameters, _ = _typed_cjp_inputs()
+    envelope = build_cjp_fit_envelope_from_result(
+        input_id="input:demo",
+        data_ref="DemoNodemap.txt",
+        source_label="demo",
+        crack_tip_frame=frame,
+        parameters=parameters,
+        result=_typed_cjp_result(),
+        crackpy_version="test-version",
+    )
+
+    schema_index = ResultSchemaIndex.from_envelope(envelope)
+    error_entries = schema_index.entries_for_symbol("error")
+    mixed_error = schema_index.entry_for_symbol_for_method("error", "crackpy.fracture.cjp_mixed_mode_fit")
+    mode_i_error = schema_index.entry_for_legacy_alias("CJP_modeI_results.error")
+
+    assert len(error_entries) == 2
+    assert mixed_error.legacy_aliases == ("CJP_results.error", "CJP_results.Error")
+    assert mode_i_error.method_id == "crackpy.fracture.cjp_mode_i_fit"
+    assert mode_i_error.result_id != mixed_error.result_id
+
+
+def test_result_schema_index_requires_context_for_ambiguous_cjp_symbol():
+    import pytest
+    from crackpy.fracture_analysis.methods.cjp_fit import build_cjp_fit_envelope_from_result
+
+    frame, parameters, _ = _typed_cjp_inputs()
+    envelope = build_cjp_fit_envelope_from_result(
+        input_id="input:demo",
+        data_ref="DemoNodemap.txt",
+        source_label="demo",
+        crack_tip_frame=frame,
+        parameters=parameters,
+        result=_typed_cjp_result(),
+        crackpy_version="test-version",
+    )
+
+    schema_index = ResultSchemaIndex.from_envelope(envelope)
+
+    with pytest.raises(ValueError, match="ambiguous.*result IDs"):
+        schema_index.entry_for_symbol("error")
 
 
 def test_build_cjp_fit_envelope_accepts_direct_source_fixture():

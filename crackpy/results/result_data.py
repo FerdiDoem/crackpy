@@ -399,20 +399,21 @@ class ResultSchemaIndex:
 
     The index is intentionally built from `ResultEnvelope` records instead of
     writer code. That keeps the schema seam independent from `FractureAnalysis`,
-    plotting, filesystem policy, and legacy text/CSV adapters.
+    plotting, filesystem policy, and legacy text/CSV adapters. A quantity symbol
+    can appear more than once in an envelope, for example CJP mixed-mode and
+    Mode-I `error` quantities. Use `entry_for_symbol()` only for symbols that
+    are unique in this envelope, or provide `result_id`/`method_id` context.
     """
 
     entries: tuple[ResultSchemaEntry, ...]
-    _by_symbol: Mapping[str, ResultSchemaEntry] = field(init=False, repr=False)
+    _by_symbol: Mapping[str, tuple[ResultSchemaEntry, ...]] = field(init=False, repr=False)
     _by_legacy_alias: Mapping[str, ResultSchemaEntry] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        by_symbol: dict[str, ResultSchemaEntry] = {}
+        by_symbol: dict[str, list[ResultSchemaEntry]] = {}
         by_legacy_alias: dict[str, ResultSchemaEntry] = {}
         for entry in self.entries:
-            if entry.symbol in by_symbol:
-                raise ValueError(f"Duplicate result symbol in schema index: {entry.symbol!r}")
-            by_symbol[entry.symbol] = entry
+            by_symbol.setdefault(entry.symbol, []).append(entry)
 
             for alias in entry.legacy_aliases:
                 if alias in by_legacy_alias:
@@ -420,12 +421,16 @@ class ResultSchemaIndex:
                 by_legacy_alias[alias] = entry
 
         # The maps are derived from entries so callers cannot bypass index invariants.
-        object.__setattr__(self, "_by_symbol", by_symbol)
+        object.__setattr__(
+            self,
+            "_by_symbol",
+            {symbol: tuple(symbol_entries) for symbol, symbol_entries in by_symbol.items()},
+        )
         object.__setattr__(self, "_by_legacy_alias", by_legacy_alias)
 
     @classmethod
     def from_envelope(cls, envelope: ResultEnvelope) -> "ResultSchemaIndex":
-        """Build an index and reject ambiguous symbol or alias mappings."""
+        """Build an index and reject duplicate legacy alias mappings."""
         entries: list[ResultSchemaEntry] = []
 
         for result in envelope.results:
@@ -447,11 +452,47 @@ class ResultSchemaIndex:
         return cls(entries=tuple(entries))
 
     def entry_for_symbol(self, symbol: str) -> ResultSchemaEntry:
-        """Return the schema entry for a canonical result symbol."""
+        """Return the schema entry for a symbol that is unique in this envelope.
+
+        Raises:
+            KeyError: If the symbol is unknown.
+            ValueError: If the symbol exists in multiple result contexts. Use
+                `entry_for_symbol_in_result()` or `entry_for_symbol_for_method()`
+                when the symbol is intentionally reused.
+        """
+        entries = self.entries_for_symbol(symbol)
+        if len(entries) > 1:
+            result_ids = ", ".join(entry.result_id for entry in entries)
+            raise ValueError(
+                f"Result symbol {symbol!r} is ambiguous across result IDs: {result_ids}. "
+                "Use result_id or method_id context."
+            )
+        return entries[0]
+
+    def entries_for_symbol(self, symbol: str) -> tuple[ResultSchemaEntry, ...]:
+        """Return all schema entries for a canonical result symbol."""
         try:
             return self._by_symbol[symbol]
         except KeyError as exc:
             raise KeyError(f"Unknown result symbol: {symbol!r}") from exc
+
+    def entry_for_symbol_in_result(self, symbol: str, result_id: str) -> ResultSchemaEntry:
+        """Return the schema entry for `symbol` inside one result record."""
+        matches = [entry for entry in self.entries_for_symbol(symbol) if entry.result_id == result_id]
+        if not matches:
+            raise KeyError(f"Unknown result symbol {symbol!r} for result_id {result_id!r}")
+        if len(matches) > 1:
+            raise ValueError(f"Duplicate result symbol {symbol!r} for result_id {result_id!r}")
+        return matches[0]
+
+    def entry_for_symbol_for_method(self, symbol: str, method_id: str) -> ResultSchemaEntry:
+        """Return the schema entry for `symbol` produced by one method."""
+        matches = [entry for entry in self.entries_for_symbol(symbol) if entry.method_id == method_id]
+        if not matches:
+            raise KeyError(f"Unknown result symbol {symbol!r} for method_id {method_id!r}")
+        if len(matches) > 1:
+            raise ValueError(f"Duplicate result symbol {symbol!r} for method_id {method_id!r}")
+        return matches[0]
 
     def entry_for_legacy_alias(self, alias: str) -> ResultSchemaEntry:
         """Return the schema entry for a legacy writer or reader alias."""
