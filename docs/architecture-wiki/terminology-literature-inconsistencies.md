@@ -224,8 +224,28 @@ No findings closed yet.
 - Result: no new source-backed terminology inconsistency was found. Existing FINDING-20260514-001 remains the only open conflict. The current CJP slice is source-compatible if `CJP Mixed-Mode Fit` and `CJP Mode-I Fit` stay separate CrackPy method identities, CJP coefficient symbols and `K_*`/`T_*` outputs stay explicitly method-specific result quantities, singular coefficient unit conversion is kept visible, and `CJP_results` / `CJP_modeI_results` remain legacy alias scopes rather than literature names.
 - Follow-up for the regular architecture agent: align planning status notes for the now-implemented CJP/provenance slices, clarify which provenance glossary terms are partially implemented versus future generalization, add a supersession note for detection metadata names if the `MethodSpec`-based vocabulary is now canonical, and clean stale blocker/status entries in `refactor-notes.md`.
 
+### 2026-06-29T19:53:41+02:00
+
+- Checked range: `3e8ee668b7d7db2ccf0f85a440bf7c1ba22f498c..63196551fd54f8b1703bee1d875e8eded3156210`; no uncommitted architecture-wiki hunks were present. Unrelated dirty files outside the checked corpus were `.gitignore`, `skills-lock.json`, and `.agents/skills/lavish/`.
+- Changed terminology focus: only the prior terminology-watch ledger entry changed in the bounded corpus. It carried forward CJP method identity and coefficient vocabulary, CJP unit conversion, crack-detection `MethodSpec` metadata, input identity mapping, provenance/export vocabulary, DIC/FEM nodemap wording, and standing high-risk fracture-mechanics terms.
+- Read-only subagent checks:
+  - Diff extraction found that the only changed architecture-wiki file was this ledger and that the changed hunk added the previous watch run plus automation-state marker.
+  - Glossary comparison found no new source-backed conflict. It preserved existing follow-up gaps around ASCII `Rethore` versus the diacritic source spelling, minimal HOST/HORT explanation, interaction-integral alias boundaries, CJP/provenance planning-status drift, and detection metadata supersession notes.
+  - Literature scoping found no new hard conflict. The accented source spelling of `Rethore` is a diacritic/ASCII variant rather than a scientific conflict; `nodemap` and `FEM nodemap` remain CrackPy or exporter compatibility vocabulary unless a stronger official source defines them more broadly.
+- Sources consulted:
+  - H. F. Bueckner, "A novel principle for the computation of stress intensity factors", 1970, ZAMM 50(9), 529-546, stable record `https://jglobal.jst.go.jp/en/detail?JGLOBAL_ID=201602019999784704`; basis: canonical `Bueckner` spelling.
+  - Y. Z. Chen, "New path independent integrals in linear elastic fracture mechanics", 1985, DOI `10.1016/0013-7944(85)90131-6`; basis: path-independent integral context for Bueckner-Chen coefficient recovery.
+  - David Melching and Eric Breitbarth, "Advanced crack tip field characterization using conjugate work integrals", 2023, DOI `10.1016/j.ijfatigue.2023.107501`; basis: Bueckner-Chen, Williams coefficients, SIFs, T-stress, HOST/HORT context.
+  - Julien Rethore, Anthony Gravouil, Fabrice Morestin, and Alain Combescure, "Estimation of mixed-mode stress intensity factors using digital image correlation and an interaction integral", 2005, DOI `10.1007/s10704-004-8141-4`; basis: DIC displacement-field interaction-integral terminology and author diacritic variant.
+  - C. J. Christopher, M. N. James, E. A. Patterson, and K. F. Tee, "Towards a new model of crack tip stress fields", 2007/2008, DOI `10.1007/s10704-008-9209-3`; basis: CJP model name and crack-tip stress-field context.
+  - J. R. Rice, "A Path Independent Integral and the Approximate Analysis of Strain Concentration by Notches and Cracks", 1968, DOI `10.1115/1.3601206`; basis: J-integral terminology.
+  - M. Stern, E. B. Becker, and R. S. Dunham, "A contour integral computation of mixed-mode stress intensity factors", 1976, DOI `10.1007/BF00032831`; basis: interaction-integral mixed-mode SIF terminology.
+  - ZEISS, "Digital Image Correlation", accessed 2026-06-29, `https://www.zeiss.com/metrology/en/explore/topics/digital-image-correlation.html`; basis: DIC coordinates, displacement, strain, and source-system vocabulary.
+  - DLR-WF, `aramis-data-exporter`, accessed 2026-06-29, `https://github.com/dlr-wf/aramis-data-exporter`; basis: ARAMIS/GOM-style exported mesh, displacement, strain, and metadata wording around nodemap-like ASCII data.
+- Result: no new source-backed terminology inconsistency was found. Existing FINDING-20260514-001 remains the only open conflict. The regular architecture agent should keep the already flagged documentation follow-ups separate from this literature ledger: CJP/provenance implementation-status cleanup, detection metadata supersession wording, interaction-integral result alias boundaries, and optional ASCII/diacritic policy for author-name terms such as `Rethore`.
+
 ## Automation State
 
-- Last checked commit: `3e8ee668b7d7db2ccf0f85a440bf7c1ba22f498c`
-- Last checked range: `68d58f92b2164662f4ddba44d6106735b56d4b6b..3e8ee668b7d7db2ccf0f85a440bf7c1ba22f498c`; no uncommitted wiki hunks were present
-- Last run: `2026-06-28T22:25:31+02:00`
+- Last checked commit: `63196551fd54f8b1703bee1d875e8eded3156210`
+- Last checked range: `3e8ee668b7d7db2ccf0f85a440bf7c1ba22f498c..63196551fd54f8b1703bee1d875e8eded3156210`; no uncommitted architecture-wiki hunks were present
+- Last run: `2026-06-29T19:53:41+02:00`
