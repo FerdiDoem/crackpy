@@ -10,10 +10,10 @@ from crackpy.fracture_analysis.methods.cjp_fit.parameters import CjpFitResultPar
 from crackpy.fracture_analysis.methods.cjp_fit.result import CjpFitResult
 from crackpy.fracture_analysis.methods.cjp_fit.source_adapter import source_from_analysis, source_from_result
 from crackpy.fracture_analysis.methods.cjp_fit.spec_loader import CjpFitSliceSpec, load_cjp_fit_spec
+from crackpy.methods.runtime import MethodRunIdentityPolicy, build_manual_crack_tip_estimate
 from crackpy.provenance import MethodResultEnvelopeBuilder, MethodResultSource
 from crackpy.results.result_data import (
     AnalysisRun,
-    CrackTipEstimateResult,
     CrackTipFrame,
     DependencyEdge,
     ResultEnvelope,
@@ -53,27 +53,24 @@ def build_cjp_fit_envelope_from_source(
         raise ValueError("CJP-fit envelope requires source_label or data_ref with a filename stem.")
 
     adapter_policy = {**spec.adapter_policy, **dict(source.parameters.adapter_policy)}
+    identity_policy = MethodRunIdentityPolicy(method_key="cjp_fit")
     provisional_configuration = builder.normalized_configuration(
         "configuration:cjp_fit:pending",
         adapter_policy=adapter_policy,
     )
-    short_hash = provisional_configuration.parameter_hash.removeprefix("sha256:")[:12]
+    short_hash = identity_policy.short_hash(provisional_configuration.parameter_hash)
     configuration = builder.normalized_configuration(
-        f"configuration:cjp_fit:{short_hash}",
+        identity_policy.configuration_id(provisional_configuration.parameter_hash),
         adapter_policy=adapter_policy,
     )
 
-    estimate_id = f"crack_tip_estimate:{stem}:{side}"
-    estimate = CrackTipEstimateResult(
-        estimate_id=estimate_id,
+    estimate = build_manual_crack_tip_estimate(
+        stem=stem,
+        side=side,
         input_id=primary_input.input_id,
         method_id=spec.methods["crack_tip_import"].method_id,
         configuration_id=configuration.configuration_id,
-        frame_id=frame.frame_id,
-        source="manual import",
-        observed_mm=frame.origin_mm,
-        corrected_mm=frame.origin_mm,
-        correction_delta_mm={"x": 0.0, "y": 0.0},
+        frame=frame,
     )
     crack_tip_estimate_dependency = spec.dependencies["crack_tip_estimate"]
 
@@ -81,8 +78,18 @@ def build_cjp_fit_envelope_from_source(
     results = []
     for variant, method_name in VARIANT_METHOD_NAMES.items():
         analysis_method = spec.methods[method_name]
-        run_id = f"run:cjp_fit:{variant}:{stem}:{side}:{short_hash}"
-        result_id = f"result:cjp_fit:{variant}:{stem}:{side}:{short_hash}"
+        run_id = identity_policy.run_id(
+            stem=stem,
+            side=side,
+            short_hash=short_hash,
+            variant=variant,
+        )
+        result_id = identity_policy.result_id(
+            stem=stem,
+            side=side,
+            short_hash=short_hash,
+            variant=variant,
+        )
         dependencies = builder.dependency_edges(run_id, configuration.configuration_id)
         dependencies.append(
             DependencyEdge(
