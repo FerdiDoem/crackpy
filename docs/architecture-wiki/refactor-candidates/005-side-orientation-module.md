@@ -44,3 +44,8 @@ The planning target is a general frame concept with declared geometry profiles. 
 ## Decision State
 
 Planning direction accepted for OQ-001 and OQ-020. A first narrow implementation slice now exists in the Williams-fit provenance path: `CrackTipFrame.from_legacy_side()` centralizes legacy side-to-frame projection, preserves the current side label as compatibility metadata, and records `geometry_profile` with the default `surface_planar`. Broader detection, correction, plotting, training, and fracture-analysis migration away from raw side strings is not approved.
+
+The first C-004 workflow-runner slice adds the same direction at the runner seam.
+`FractureWorkflowInput` requires `crack_tip_id` and keeps `compatibility_side` separate.
+Current legacy crack-info rows can still provide only `Side`; the adapter then derives a temporary deterministic crack-tip ID.
+This is a compatibility step toward crack-tip identity rather than a full replacement of current left/right detector, plot, and result naming behavior.

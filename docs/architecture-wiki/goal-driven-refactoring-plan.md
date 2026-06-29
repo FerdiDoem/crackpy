@@ -193,6 +193,11 @@ Split domain workflow runners from adapter policy. CrackPy should own scientific
 
 The batch pipelines combine input selection, file reads, transformations, method execution, output writing, plotting, progress, directory creation, and multiprocessing. Reusing CrackPy from a CLI, MCP tool, notebook workflow, or graph orchestrator currently means inheriting these adapter policies.
 
+Current implementation note: the first `crackpy.fracture_analysis.workflow` slice can run one fracture-analysis nodemap through an explicit `FractureWorkflowInput` and return `FractureWorkflowResult` without writing files, plotting, creating output folders, or selecting multiprocessing policy.
+The existing `single_run()` pipeline job is now a compatibility facade over that runner and still applies legacy writer and plotter policy.
+`FractureWorkflowInput` requires `crack_tip_id`, while `compatibility_side` keeps current `left`/`right` handoff behavior.
+This is an additive runner seam, not a broad migration of `FractureAnalysisPipeline` or crack detection.
+
 ### Target Shape
 
 - Domain workflow runners return structured records and artifacts with minimal side effects.

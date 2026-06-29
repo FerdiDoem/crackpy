@@ -10,9 +10,9 @@ from typing import MutableMapping, Any
 import pandas as pd
 from rich import progress as progress_rich
 
-from crackpy.fracture_analysis.analysis import FractureAnalysis
 from crackpy.fracture_analysis.line_integration import IntegralProperties
 from crackpy.fracture_analysis.optimization import OptimizationProperties
+from crackpy.fracture_analysis.workflow import FractureWorkflowInput, run_fracture_analysis_workflow
 from crackpy.input.crack_tip_info import CrackTipInfo
 from crackpy.input.input_data import InputData
 from crackpy.input.input_mapping import map_stage_cycles_to_representative_stages
@@ -54,47 +54,24 @@ def single_run(
         task_id: task id of progress bar
 
     """
-    # get crack tip info from data
-    crack_tip = CrackTipInfo(
-        crack_tip_x=data['Crack Tip x [mm]'],
-        crack_tip_y=data['Crack Tip y [mm]'],
-        crack_tip_angle=data['Crack Angle'],
-        left_or_right=data['Side']
-    )
-
-    # import and transform data
-    nodemap = Nodemap(data['Filename'], nodemap_path, structure=nodemap_structure)
-    input_data = InputData(nodemap)
-    input_data.calc_stresses(material)
-    input_data.transform_data(crack_tip.crack_tip_x, crack_tip.crack_tip_y, crack_tip.crack_tip_angle)
-
-    # set integral properties
-    if index in integral_props_by_nodemap.keys():
-        int_props = integral_props_by_nodemap[index]
-    else:
-        int_props = None
-
-    # run fracture analysis
-    analysis = FractureAnalysis(
+    workflow_input = FractureWorkflowInput.from_legacy_pipeline_row(
+        data,
         material=material,
-        nodemap=nodemap,
-        data=input_data,
-        crack_tip_info=crack_tip,
-        integral_properties=int_props,
-        optimization_properties=opt_props
+        nodemap_folder=nodemap_path,
+        nodemap_structure=nodemap_structure,
+        integral_properties=integral_props_by_nodemap.get(index),
+        optimization_properties=opt_props,
     )
-    analysis.run(prog, task_id)
+    workflow_result = run_fracture_analysis_workflow(workflow_input, progress=prog, task_id=task_id)
 
-    # write output to txt file
     base = Path(output_path)
-    writer = OutputWriter(path=base / 'txt-files', fracture_analysis=analysis)
+    writer = OutputWriter(path=base / 'txt-files', fracture_analysis=workflow_result.analysis)
     writer.write_header()
     writer.write_results()
     writer.write_json(path=base / 'json')
 
-    # plot paths and results_df
     if plot_sets is not None:
-        plotter = Plotter(path=base / 'plots', fracture_analysis=analysis, plot_sets=plot_sets)
+        plotter = Plotter(path=base / 'plots', fracture_analysis=workflow_result.analysis, plot_sets=plot_sets)
         plotter.plot()
 
 

@@ -158,17 +158,25 @@ The file contains direct methodological references to Kuna formulas, Christopher
 
 `FractureAnalysisPipeline` reads an input CSV, constructs per-row crack-tip info, loads nodemap data, computes stresses, transforms coordinates, runs `FractureAnalysis`, then writes text, JSON, and optional plots.
 
+`crackpy.fracture_analysis.workflow` is the first side-effect-light runner seam under the pipeline.
+`FractureWorkflowInput` resolves one nodemap run with `nodemap_name`, `nodemap_folder`, `nodemap_structure`, `material`, crack-tip coordinates, `crack_tip_id`, optional `compatibility_side`, and optional integral or optimization properties.
+`crack_tip_id` is the workflow identity for the crack tip.
+`compatibility_side` exists only to feed current `CrackTipInfo.left_or_right`, result filenames, and plot labels while legacy `left`/`right` outputs remain supported.
+`FractureWorkflowInput.from_legacy_pipeline_row()` adapts the current crack-info CSV columns into that explicit input shape.
+If a row contains `Crack Tip ID`, the adapter keeps it.
+If it does not, the adapter derives `crack_tip:<filename-stem>:<side>` as a deterministic compatibility ID so new callers do not have to use `Side` as durable identity.
+`run_fracture_analysis_workflow()` owns the scientific single-nodemap order: create the `Nodemap`, load `InputData`, calculate stresses, transform to crack-tip-centered coordinates, construct `FractureAnalysis`, and call `run()`.
+The runner deliberately does not write text or JSON files, create plots, create output folders, select multiprocessing policy, or own progress UI.
+`single_run()` in the pipeline is now a compatibility facade that delegates to this runner and then applies legacy writer and plotter adapter policy.
+
 `find_max_force_stages()` still returns the legacy `stage -> max_force_stage` dictionary. Internally it now uses `map_stage_cycles_to_representative_stages()` and stores the ID-based `InputMappingResult` as `input_mapping`, so max-force propagation has an explicit `input_id -> representative_input_id` policy result without changing existing stage-based calls.
 
-`single_run()` combines several responsibilities:
+`single_run()` still owns legacy adapter policy around one nodemap job:
 
-- CSV row to `CrackTipInfo`;
-- nodemap load;
-- stress computation;
-- coordinate transformation;
-- analysis execution;
 - text/JSON writing;
 - plotting.
+
+The CSV-row adaptation, nodemap load, stress computation, coordinate transformation, and analysis execution now live behind `run_fracture_analysis_workflow()`.
 
 The pipeline supports multiprocessing with `ProcessPoolExecutor` and tracks progress using `rich` plus a `multiprocessing.Manager().dict()`.
 
