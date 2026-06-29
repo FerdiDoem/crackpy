@@ -1,7 +1,9 @@
 import copy
 import itertools
 import logging
+from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -10,6 +12,66 @@ from scipy import optimize
 from crackpy.fracture_analysis.optimization import Optimization, OptimizationProperties
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class CrackTipCorrectionResult:
+    """Explicit crack-tip correction output.
+
+    `initial_mm` stores the source crack-tip coordinates in millimetres.
+    `corrected_mm` stores the absolute corrected crack-tip estimate.
+    `correction_delta_mm` stores the relative shift used by legacy CrackPy
+    correction callers. `angle_deg` is the source crack-tip angle, and
+    `angle_delta_deg` records angular correction when a correction method
+    reports one. `method` identifies the correction method that produced the
+    record.
+    """
+
+    method: str
+    initial_mm: tuple[float, float]
+    corrected_mm: tuple[float, float]
+    correction_delta_mm: tuple[float, float]
+    angle_deg: float | None = None
+    angle_delta_deg: float = 0.0
+
+    def __post_init__(self) -> None:
+        if not self.method:
+            raise ValueError("CrackTipCorrectionResult requires a non-empty method.")
+
+    @classmethod
+    def from_delta(
+            cls,
+            *,
+            method: str,
+            initial_crack_tip: Sequence[float],
+            correction_delta: Sequence[float],
+            angle_deg: float | None = None,
+    ) -> "CrackTipCorrectionResult":
+        """Build an explicit correction result from a legacy correction delta.
+
+        Legacy correction methods return relative x/y shifts and sometimes a
+        third angular shift. This constructor keeps that compatibility value as
+        audit metadata while making the absolute corrected estimate primary.
+        """
+        if len(initial_crack_tip) < 2:
+            raise ValueError("Initial crack-tip coordinates require x and y values.")
+        if len(correction_delta) < 2:
+            raise ValueError("Correction delta requires dx and dy values.")
+
+        initial_x = float(initial_crack_tip[0])
+        initial_y = float(initial_crack_tip[1])
+        delta_x = float(correction_delta[0])
+        delta_y = float(correction_delta[1])
+        angle_delta_deg = float(correction_delta[2]) if len(correction_delta) > 2 else 0.0
+
+        return cls(
+            method=method,
+            initial_mm=(initial_x, initial_y),
+            corrected_mm=(initial_x + delta_x, initial_y + delta_y),
+            correction_delta_mm=(delta_x, delta_y),
+            angle_deg=angle_deg,
+            angle_delta_deg=angle_delta_deg,
+        )
 
 
 def run_williams_optimization(data, material, opt_props):
@@ -191,6 +253,44 @@ class CrackTipCorrection:
 
         return ct_corr
 
+    def correct_crack_tip_result(
+            self,
+            opt_props,
+            max_iter=100,
+            step_tol=1e-3,
+            damper=1,
+            method='rethore',
+            plot_intermediate_results=False,
+            cd=None,
+            folder=None,
+            d_x_str=None,
+            d_y_str=None,
+    ) -> CrackTipCorrectionResult:
+        """Return an explicit correction record for the iterative methods.
+
+        This is the C-003 compatibility seam for Rethore, symbolic-regression,
+        and custom-function correction. The existing `correct_crack_tip()`
+        method still returns the legacy relative delta.
+        """
+        correction_delta = self.correct_crack_tip(
+            opt_props=opt_props,
+            max_iter=max_iter,
+            step_tol=step_tol,
+            damper=damper,
+            method=method,
+            plot_intermediate_results=plot_intermediate_results,
+            cd=cd,
+            folder=folder,
+            d_x_str=d_x_str,
+            d_y_str=d_y_str,
+        )
+        return CrackTipCorrectionResult.from_delta(
+            method=method,
+            initial_crack_tip=self.crack_tip,
+            correction_delta=correction_delta,
+            angle_deg=self.crack_angle,
+        )
+
     def correct_crack_tip_optimization(
             self,
             opt_props: OptimizationProperties,
@@ -230,6 +330,29 @@ class CrackTipCorrection:
                      res.fun)
 
         return ct_corr
+
+    def correct_crack_tip_optimization_result(
+            self,
+            opt_props: OptimizationProperties,
+            objective: str = 'error',
+            tol: float = 0.01,
+    ) -> CrackTipCorrectionResult:
+        """Return an explicit correction record for error optimization.
+
+        The wrapped legacy method still returns `[dx, dy, dphi]`; this method
+        exposes the absolute corrected crack-tip estimate as the primary value.
+        """
+        correction_delta = self.correct_crack_tip_optimization(
+            opt_props=opt_props,
+            objective=objective,
+            tol=tol,
+        )
+        return CrackTipCorrectionResult.from_delta(
+            method=f"optimization:{objective}",
+            initial_crack_tip=self.crack_tip,
+            correction_delta=correction_delta,
+            angle_deg=self.crack_angle,
+        )
 
     def correct_crack_tip_differential_evolution(
             self,
@@ -276,6 +399,37 @@ class CrackTipCorrection:
         logger.info("Final crack tip correction (diff-evolution): dx = %+4.4f, dy = %+4.4f", ct_corr[0], ct_corr[1])
 
         return ct_corr
+
+    def correct_crack_tip_differential_evolution_result(
+            self,
+            opt_props: OptimizationProperties,
+            x_min: float = -2,
+            x_max: float = 2,
+            y_min: float = -2,
+            y_max: float = 2,
+            tol: float = 0.01,
+            workers: int = 8,
+            maxiter: int = 3,
+            popsize: int = 4,
+    ) -> CrackTipCorrectionResult:
+        """Return an explicit correction record for differential evolution."""
+        correction_delta = self.correct_crack_tip_differential_evolution(
+            opt_props=opt_props,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            tol=tol,
+            workers=workers,
+            maxiter=maxiter,
+            popsize=popsize,
+        )
+        return CrackTipCorrectionResult.from_delta(
+            method="differential_evolution",
+            initial_crack_tip=self.crack_tip,
+            correction_delta=correction_delta,
+            angle_deg=self.crack_angle,
+        )
 
     def _rotate_data(self, dx, dy):
         """Rotate data with the crack tip angle.
@@ -429,6 +583,38 @@ class CrackTipCorrectionGridSearch:
 
         logger.info(f"Final crack tip correction (grid search): dx = {ct_corr[0]:+.4f}, dy = {ct_corr[1]:+.4f}")
         return ct_corr, df
+
+    def correct_crack_tip_grid_search_result(
+            self,
+            opt_props: OptimizationProperties,
+            x_min: float,
+            x_max: float,
+            y_min: float,
+            y_max: float,
+            x_step: float,
+            y_step: float,
+            workers: int = 1,
+    ) -> tuple[CrackTipCorrectionResult, pd.DataFrame]:
+        """Return an explicit correction record and the grid-search audit table."""
+        correction_delta, grid_results = self.correct_crack_tip_grid_search(
+            opt_props=opt_props,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            x_step=x_step,
+            y_step=y_step,
+            workers=workers,
+        )
+        return (
+            CrackTipCorrectionResult.from_delta(
+                method="grid_search",
+                initial_crack_tip=self.crack_tip,
+                correction_delta=correction_delta,
+                angle_deg=self.crack_angle,
+            ),
+            grid_results,
+        )
 
     def _parallel_grid_search(self, shift_x_y, delta_phi, opt_props):
         """Process a single point in the grid search.
@@ -593,3 +779,34 @@ class CustomCorrection(CrackTipCorrection):
         ct_corr = [crack_tip_x - self.crack_tip[0], crack_tip_y - self.crack_tip[1]]
         logger.info(f"Final crack tip correction (custom): dx = {ct_corr[0]:+.4f}, dy = {ct_corr[1]:+.4f}")
         return ct_corr
+
+    def custom_correct_crack_tip_result(
+            self,
+            opt_props,
+            dx_lambdified,
+            dy_lambdified,
+            max_iter=100,
+            step_tol=1e-3,
+            damper=1,
+            plot_intermediate_results=False,
+            cd=None,
+            folder=None,
+    ) -> CrackTipCorrectionResult:
+        """Return an explicit correction record for lambdified custom correction."""
+        correction_delta = self.custom_correct_crack_tip(
+            opt_props=opt_props,
+            dx_lambdified=dx_lambdified,
+            dy_lambdified=dy_lambdified,
+            max_iter=max_iter,
+            step_tol=step_tol,
+            damper=damper,
+            plot_intermediate_results=plot_intermediate_results,
+            cd=cd,
+            folder=folder,
+        )
+        return CrackTipCorrectionResult.from_delta(
+            method="custom_lambdified",
+            initial_crack_tip=self.crack_tip,
+            correction_delta=correction_delta,
+            angle_deg=self.crack_angle,
+        )

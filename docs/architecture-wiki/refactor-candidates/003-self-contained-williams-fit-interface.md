@@ -1,6 +1,6 @@
 # Candidate 003: Self-Contained Williams Fit Interface
 
-Status: proposed, with typed runner partially implemented
+Status: proposed, with typed runner and correction-result wrapper partially implemented
 Role: Architecture candidate for exposing Williams fitting as an explicit computational interface.
 
 ## Observed Evidence
@@ -41,4 +41,8 @@ Correction interfaces built on this fitting layer should emit an absolute correc
 
 ## Decision State
 
-Planning vocabulary accepted. A typed Williams-fit runner, result model, parameter model, source adapter, and provenance builder wrapper now exist under `crackpy.fracture_analysis.methods.williams_fit`. The runner now includes an explicit array-based slice: `WilliamsFitDisplacementField` carries resolved crack-tip-centered displacement grids and material data, `fit_williams_displacement_field()` performs the least-squares fit without constructing `Optimization`, and `run_williams_fit_from_coefficients()` assembles typed results from explicit coefficient vectors. The full candidate remains open because crack-tip correction still uses its own Williams optimization bridge and the production `FractureAnalysis` path still enters through the legacy optimizer adapter.
+Planning vocabulary accepted.
+A typed Williams-fit runner, result model, parameter model, source adapter, and provenance builder wrapper now exist under `crackpy.fracture_analysis.methods.williams_fit`.
+The runner now includes an explicit array-based slice: `WilliamsFitDisplacementField` carries resolved crack-tip-centered displacement grids and material data, `fit_williams_displacement_field()` performs the least-squares fit without constructing `Optimization`, and `run_williams_fit_from_coefficients()` assembles typed results from explicit coefficient vectors.
+The first crack-tip-correction slice now exposes `CrackTipCorrectionResult` wrappers so correction callers can consume an absolute corrected crack-tip estimate plus the legacy correction delta.
+The full candidate remains open because crack-tip correction still uses its own Williams optimization bridge internally and the production `FractureAnalysis` path still enters through the legacy optimizer adapter.

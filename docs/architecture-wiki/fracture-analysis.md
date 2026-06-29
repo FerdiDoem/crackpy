@@ -68,7 +68,10 @@ Observed Williams-fit method module:
 - `builder.py`: wraps the shared provenance builder to produce the first Williams-fit result/provenance envelope.
 - `crackpy.results.write.write_williams_fit_provenance_artifacts()`: writes envelope, compact KG statement bundle, and visualization graph artifacts from a `ResultEnvelope`; `OutputWriter` remains the compatibility bridge from `FractureAnalysis`.
 
-This is a partial deeper module around Williams fitting. The runner can now fit explicit crack-tip-centered displacement arrays and assemble typed results from explicit coefficient vectors without a `FractureAnalysis` or `Optimization` instance. Line integrals, correction-time Williams optimization in `crack_detection.correction`, legacy result writing, and plotting still consume or expose the older mutable `FractureAnalysis` attribute shape.
+This is a partial deeper module around Williams fitting.
+The runner can now fit explicit crack-tip-centered displacement arrays and assemble typed results from explicit coefficient vectors without a `FractureAnalysis` or `Optimization` instance.
+Crack-tip correction now has explicit `CrackTipCorrectionResult` wrappers that expose absolute corrected crack-tip estimates while preserving legacy delta returns.
+Correction-time Williams optimization still calls the legacy `Optimization` adapter internally, and line integrals, legacy result writing, and plotting still consume or expose the older mutable `FractureAnalysis` attribute shape.
 
 ## CJP Fitting
 
