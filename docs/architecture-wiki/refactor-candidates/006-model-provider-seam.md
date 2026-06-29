@@ -67,6 +67,15 @@ First implemented metadata slice:
 - `network_architecture`: optional detection-specific architecture name, such as `UNet` or `ParallelNets`. It exists only for neural-network methods.
 - `weights_artifact_id`: optional detection-specific artifact name, such as `UNetPath.pth`. It exists only when a pretrained weights artifact affects the implementation.
 
+First generic method-definition slice:
+
+- `MethodDefinition`: importable wrapper around `MethodSpec`, a package domain, method-level tasks, and declared artifact roles.
+It exists so detection methods can be listed beside Williams-fit and CJP-fit metadata without moving numerical runners or source adapters into a registry.
+- `MethodArtifactDefinition`: declared method artifact dependency or output, currently used by detection metadata for pretrained weights such as `ParallelNets.pth` or `UNetPath.pth`.
+It records artifact role and requiredness without loading files, choosing devices, creating cache folders, or downloading from Zenodo.
+- `known_crack_detection_method_definitions()`: detection adapter that returns the current detection metadata in the generic `MethodDefinition` shape.
+It is not a provider seam and does not replace `get_model()`.
+
 ## Seams / Interfaces / Adapters
 
 - Seam: crack-detection method metadata and implementation artifact provision.
@@ -87,7 +96,11 @@ First implemented metadata slice:
 
 ## Decision State
 
-OQ-009 accepted for planning in [[decision-log#2026-05-14-model-names-bueckner-spelling-and-fixture-keys-use-explicit-naming-boundaries]]. The first method-side metadata slice is implemented in `crackpy/crack_detection/method_metadata.py` and deliberately starts from the method categories above rather than from a generic `ModelProvider`. It reuses the shared `MethodSpec` shape already used by Williams-fit and CJP-fit provenance definitions. Provider loading, cache/download policy, and device behavior remain in the legacy `get_model()` compatibility path until a later approved slice.
+OQ-009 accepted for planning in [[decision-log#2026-05-14-model-names-bueckner-spelling-and-fixture-keys-use-explicit-naming-boundaries]].
+The first method-side metadata slice is implemented in `crackpy/crack_detection/method_metadata.py` and deliberately starts from the method categories above rather than from a generic `ModelProvider`.
+It reuses the shared `MethodSpec` shape already used by Williams-fit and CJP-fit provenance definitions.
+Detection metadata can now also be exported as generic `MethodDefinition` records through `known_crack_detection_method_definitions()`.
+Provider loading, cache/download policy, and device behavior remain in the legacy `get_model()` compatibility path until a later approved slice.
 
 ## Literature Signals For Naming
 

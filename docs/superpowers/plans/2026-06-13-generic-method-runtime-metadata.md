@@ -18,6 +18,7 @@
 - `MethodResultEnvelopeBuilder` already projects `MethodResultSource` plus `ProvenanceSliceSpec` into generic records.
 - `ResultEnvelope`, `AnalysisRun`, `MethodMetadata`, `NormalizedConfiguration`, `ResultRecord`, and `ResultQuantity` already model the "what ran, with which method, on which inputs, with which configuration, producing which result" structure.
 - `ResultSchemaIndex` now proves why reusable method metadata must carry context instead of relying on display labels: CJP has repeated `error` symbols across mixed-mode and Mode-I result records, while Williams currently has unique coefficient and SIF labels.
+- The first generic method-definition slice now exists: `crackpy.methods.definition` defines `MethodDefinition` and `MethodArtifactDefinition`, and detection metadata can export generic definitions through `known_crack_detection_method_definitions()`.
 - Williams-fit and CJP-fit currently duplicate configuration ID generation from parameter hash, run/result ID construction, dependency-edge assembly, and manual/imported crack-tip estimate projection.
 - Williams-fit and CJP-fit also duplicate material and optimization parameter snapshot patterns, but method-specific parameters such as Williams terms or CJP variants should remain method-local until more methods prove the shared shape.
 - Artifact writing is still duplicated by method-family wrappers: Williams and CJP have separate entry points that produce envelope, KG statement bundle, graph JSON, and graph HTML artifacts.
@@ -53,6 +54,10 @@ Postpone these until more method slices exist:
 - Modify `docs/architecture-wiki/glossary.md`: add or refine "MethodDefinition" and "Method artifact writer" terms if implementation lands.
 
 ### Task 1: Characterize The Existing Shared Method Metadata Shape
+
+Status: completed by `codex/generic-method-definitions`.
+
+Implementation note: Williams-fit and CJP-fit intentionally share the `crackpy.crack_tip.manual_import` `MethodSpec`, so the completed characterization requires repeated method IDs to have identical specs rather than requiring every loaded slice to own globally unique IDs.
 
 **Files:**
 - Create: `crackpy/tests/test_methods/test_definition.py`
@@ -117,6 +122,8 @@ git commit -m "test: characterize shared method metadata shape"
 ```
 
 ### Task 2: Introduce A Generic MethodDefinition Helper
+
+Status: completed by `codex/generic-method-definitions`.
 
 **Files:**
 - Create: `crackpy/methods/__init__.py`
@@ -253,6 +260,8 @@ git commit -m "feat: add generic method definitions"
 ```
 
 ### Task 3: Let Detection Metadata Export Generic MethodDefinitions
+
+Status: completed by `codex/generic-method-definitions`.
 
 **Files:**
 - Modify: `crackpy/crack_detection/method_metadata.py`
