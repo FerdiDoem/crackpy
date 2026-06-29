@@ -274,6 +274,10 @@ def test_cjp_provenance_artifact_writer_accepts_explicit_result_envelope(tmp_pat
 
     assert set(written) == {"envelope", "kg_statement_bundle", "visualization_graph", "visualization_graph_html"}
     assert written["envelope"].name == "explicit_result_cjp_fit_envelope.json"
+    assert written["kg_statement_bundle"].name == "explicit_result_cjp_fit_kg_statement_bundle.json"
+    assert written["visualization_graph"].name == "explicit_result_cjp_fit_graph.json"
+    assert written["visualization_graph_html"].name == "explicit_result_cjp_fit_graph.html"
+    assert written["envelope"].exists()
     assert written["kg_statement_bundle"].exists()
     assert written["visualization_graph"].exists()
     assert written["visualization_graph_html"].exists()
