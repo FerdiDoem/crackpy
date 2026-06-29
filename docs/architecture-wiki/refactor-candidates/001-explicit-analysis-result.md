@@ -1,6 +1,6 @@
 # Candidate 001: Explicit Analysis Result
 
-Status: proposed, with Williams-fit/CJP-fit result-envelope artifact slices partially implemented
+Status: proposed, with Williams-fit/CJP-fit result-envelope artifact slices and the first explicit analysis-result artifact slice partially implemented
 Role: Architecture candidate for separating fracture-analysis computation from result storage and output adapters.
 
 ## Observed Evidence
@@ -18,6 +18,26 @@ Role: Architecture candidate for separating fracture-analysis computation from r
 Introduce an explicit result module that records optimization results, line-integral results, path metadata, method availability, and provenance links. `OutputWriter` and `Plotter` would consume the result interface rather than a live `FractureAnalysis` object.
 
 Accepted OQ-006 boundary: the future result interface should feed the graph-shaped main JSON result/provenance model described in [[refactor-candidates/008-result-tag-schema]] and [[refactor-candidates/010-provenance-metadata-architecture]]. Legacy text, current JSON sections, CSV, and plots are adapters over this result interface.
+
+## First Explicit Analysis-Result Slice
+
+`crackpy.results.analysis_result.AnalysisResult` is the first implemented result Interface above method-level envelopes.
+
+It currently collects named `ResultEnvelope` records through `MethodEnvelopeArtifactPlan`.
+
+`MethodEnvelopeArtifactPlan.method_key` is the stable local key used by callers and frontend handoff code.
+
+`MethodEnvelopeArtifactPlan.envelope` is the canonical method result/provenance payload.
+
+`MethodEnvelopeArtifactPlan.artifact_stem` is explicit because filename policy belongs to the adapter.
+
+`MethodEnvelopeArtifactPlan.graph_title` is explicit because display labels should not be inferred from method IDs.
+
+`write_analysis_result_artifacts()` projects each method envelope into the existing standard artifact set without importing `FractureAnalysis`.
+
+This proves a workflow-level output adapter can depend on an explicit result Interface while legacy writer behavior remains untouched.
+
+The slice does not yet model line-integral results, path metadata, plot artifacts, or legacy text/current JSON compatibility sections.
 
 ## Seams / Interfaces / Adapters
 
@@ -42,4 +62,12 @@ Accepted OQ-006 boundary: the future result interface should feed the graph-shap
 
 ## Decision State
 
-OQ-005 and OQ-006 planning boundaries accepted. Williams-fit and CJP-fit result/provenance envelopes are partially implemented through `crackpy.results.result_data`, method-local source adapters, and shared provenance builders. `crackpy.results.envelope_artifacts.write_result_envelope_artifacts()` can now consume an explicit `ResultEnvelope` and write envelope JSON, compact KG statement bundle, graph JSON, and graph HTML without constructing `FractureAnalysis`. `FractureAnalysis` still exposes the broad mutable post-run attribute interface, legacy text/current JSON/CSV/plot outputs still inspect it directly, and broader analysis-result separation is not approved.
+OQ-005 and OQ-006 planning boundaries accepted.
+
+Williams-fit and CJP-fit result/provenance envelopes are partially implemented through `crackpy.results.result_data`, method-local source adapters, and shared provenance builders.
+
+`crackpy.results.envelope_artifacts.write_result_envelope_artifacts()` can consume an explicit `ResultEnvelope` and write envelope JSON, compact KG statement bundle, graph JSON, and graph HTML without constructing `FractureAnalysis`.
+
+`crackpy.results.analysis_result.write_analysis_result_artifacts()` can now consume an explicit `AnalysisResult` and write the same standard artifact set for multiple named method envelopes.
+
+`FractureAnalysis` still exposes the broad mutable post-run attribute interface, legacy text/current JSON/CSV/plot outputs still inspect it directly, and broader analysis-result separation is not approved.
