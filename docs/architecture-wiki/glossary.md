@@ -24,6 +24,10 @@ Domain object representing a crack tip or crack-front location believed to exist
 #### CrackTipEstimateResult
 Computational result or observation that estimates a crack-tip position, frame, direction, and optional uncertainty. It may come from neural detection, line-intercept detection, correction, manual import, or a future fusion method. Correction-derived estimates should expose the absolute [[glossary#Corrected crack-tip estimate]] as the primary result, retain [[glossary#Correction delta]] for audit, and link to the source estimate where available. Downstream fracture-analysis results should treat crack-tip estimates as input or intermediate result dependencies, not as configuration only.
 
+#### CrackTipCorrectionResult
+Current implementation record in `crackpy.crack_detection.correction` that exposes both the absolute corrected crack-tip estimate and the legacy correction delta for one correction method.
+It is a compatibility step toward correction-derived [[glossary#CrackTipEstimateResult]] records, not the full provenance model.
+
 #### CrackTipEstimateConfiguration
 Configuration used to produce a [[glossary#CrackTipEstimateResult]], such as detector model, model weights, detection window, threshold settings, correction method, manual/import source handling, side-compatibility adapter, or coordinate convention.
 
