@@ -11,6 +11,17 @@ test("CrackPy Lab prototype uses actual data and exposes test controls", async (
   await expect(page.getByTestId("source-evidence")).toContainText("separate Williams proof export");
   await expect(page.getByTestId("method-evidence")).toContainText("a_n");
   await expect(page.getByTestId("node-surface-matrix")).toContainText("ResultQuantity");
+  await expect(page.getByTestId("graph-artifact-controls")).toContainText("Williams proof export");
+
+  const graphOptions = await page.locator("#graphArtifactSelect option").allTextContents();
+  expect(graphOptions.some((option) => option.includes("CJP"))).toBe(true);
+  await page.locator("#graphArtifactSelect").selectOption("method-fit-cjp");
+  await expect(page.getByTestId("source-evidence")).toContainText("_cjp_fit_graph.json");
+  await expect(page.locator("#provenanceBadge")).toContainText("CJP fit");
+  await expect(page.locator("#provenanceSnippet")).toContainText('"graph_artifact": "method-fit-cjp"');
+  const cjpGraphState = await page.evaluate(() => window.CrackPyLabDebug.getState());
+  expect(cjpGraphState.graphArtifactId).toBe("method-fit-cjp");
+  expect(cjpGraphState.graphArtifactPath).toContain("_cjp_fit_graph.json");
 
   const initialState = await page.evaluate(() => window.CrackPyLabDebug.getState());
   expect(initialState.activeSources.nodemap).toContain("test_data/crack_detection/Nodemaps");

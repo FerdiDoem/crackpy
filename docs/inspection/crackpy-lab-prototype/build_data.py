@@ -30,6 +30,29 @@ ENVELOPE_JSON = (
     / "williams-export-proof"
     / "File_F_10000.0_a_0.5_B_200.0_H_200.0_right_Output_williams_fit_envelope.json"
 )
+GRAPH_ARTIFACT_SPECS = [
+    {
+        "id": "williams-proof-export",
+        "label": "Williams proof export",
+        "method": "Williams fit",
+        "path": GRAPH_JSON,
+        "scope": "separate Williams proof export, not the selected Dummy2 fixture frame graph",
+    },
+    {
+        "id": "method-fit-williams",
+        "label": "Method-fit demo Williams graph",
+        "method": "Williams fit",
+        "path": ROOT / ".scratch" / "method_fit_usage_demo" / "method_fit_demo_williams_williams_fit_graph.json",
+        "scope": "separate method-fit Williams graph artifact produced by the current method demo",
+    },
+    {
+        "id": "method-fit-cjp",
+        "label": "Method-fit demo CJP graph",
+        "method": "CJP fit",
+        "path": ROOT / ".scratch" / "method_fit_usage_demo" / "method_fit_demo_cjp_cjp_fit_graph.json",
+        "scope": "separate method-fit CJP graph artifact produced by the current method demo",
+    },
+]
 
 
 def safe_float(value: str | None) -> float | None:
@@ -207,11 +230,12 @@ def load_result_rows() -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def load_graph_data() -> tuple[list[str], list[dict[str, str]], dict[str, dict[str, object]], dict[str, object]]:
-    if not GRAPH_JSON.exists():
-        return [], [], {}, {}
+def load_graph_artifact(spec: dict[str, object]) -> dict[str, object] | None:
+    graph_path = spec["path"]
+    if not isinstance(graph_path, Path) or not graph_path.exists():
+        return None
 
-    graph = json.loads(GRAPH_JSON.read_text(encoding="utf-8"))
+    graph = json.loads(graph_path.read_text(encoding="utf-8"))
     nodes = graph.get("nodes", [])
     node_by_id = {node["id"]: node for node in nodes}
     ordered_types = []
@@ -227,13 +251,14 @@ def load_graph_data() -> tuple[list[str], list[dict[str, str]], dict[str, dict[s
         "ResultQuantity": "#b45309",
         "ArtifactRef": "#374151",
     }
+    method_label = str(spec["method"])
     roles = {
-        "InputRecord": "Actual nodemap input record from the exported Williams provenance graph.",
-        "MethodMetadata": "Actual method identity node from the exported Williams provenance graph.",
-        "NormalizedConfiguration": "Actual resolved Williams configuration and hashes from the exported graph.",
+        "InputRecord": f"Actual input record from the exported {method_label} visualization graph.",
+        "MethodMetadata": f"Actual method identity node from the exported {method_label} visualization graph.",
+        "NormalizedConfiguration": f"Actual resolved {method_label} configuration and hashes from the exported graph.",
         "CrackTipFrame": "Actual crack-tip frame node linking origin, angle, and side.",
-        "CrackTipEstimateResult": "Actual crack-tip estimate dependency consumed by the Williams run.",
-        "AnalysisRun": "Actual Williams analysis activity node with method, input, configuration, and crack-tip dependencies.",
+        "CrackTipEstimateResult": f"Actual crack-tip estimate dependency consumed by the {method_label} run.",
+        "AnalysisRun": f"Actual {method_label} analysis activity node with method, input, configuration, and crack-tip dependencies.",
         "ResultRecord": "Actual generated result envelope node.",
         "ResultQuantity": "Actual scalar quantity node generated from the result envelope.",
         "ArtifactRef": "Exported artifact reference node.",
@@ -277,14 +302,37 @@ def load_graph_data() -> tuple[list[str], list[dict[str, str]], dict[str, dict[s
         })
 
     summary = {
-        "path": str(GRAPH_JSON.relative_to(ROOT)).replace("\\", "/"),
+        "id": str(spec["id"]),
+        "label": str(spec["label"]),
+        "method": method_label,
+        "path": str(graph_path.relative_to(ROOT)).replace("\\", "/"),
         "nodeCount": len(nodes),
         "edgeCount": len(graph.get("edges", [])),
         "types": ordered_types,
-        "fixture": GRAPH_JSON.stem.replace("_Output_williams_fit_graph", ""),
-        "scope": "separate Williams proof export, not the selected Dummy2 fixture frame graph",
+        "fixture": graph_path.stem,
+        "scope": str(spec["scope"]),
     }
-    return ordered_types, list(type_edges.values()), details, summary
+    return {
+        "id": str(spec["id"]),
+        "label": str(spec["label"]),
+        "method": method_label,
+        "path": summary["path"],
+        "nodeCount": summary["nodeCount"],
+        "edgeCount": summary["edgeCount"],
+        "nodeTypes": ordered_types,
+        "edges": list(type_edges.values()),
+        "nodeDetails": details,
+        "summary": summary,
+    }
+
+
+def load_graph_artifacts() -> list[dict[str, object]]:
+    artifacts = [
+        artifact
+        for spec in GRAPH_ARTIFACT_SPECS
+        if (artifact := load_graph_artifact(spec)) is not None
+    ]
+    return artifacts
 
 
 def generate_nodemap_asset() -> dict[str, object]:
@@ -445,7 +493,12 @@ def build_payload() -> dict[str, object]:
     rows = load_result_rows()
     frames_by_side = build_frames(rows, crack_info)
     nodemap_asset = generate_nodemap_asset()
-    graph_types, graph_edges, graph_details, graph_summary = load_graph_data()
+    graph_artifacts = load_graph_artifacts()
+    primary_graph = graph_artifacts[0] if graph_artifacts else {}
+    graph_types = primary_graph.get("nodeTypes", [])
+    graph_edges = primary_graph.get("edges", [])
+    graph_details = primary_graph.get("nodeDetails", {})
+    graph_summary = primary_graph.get("summary", {})
 
     analysis_methods = [
         {
@@ -470,6 +523,15 @@ def build_payload() -> dict[str, object]:
             "units": {},
         },
     ]
+    if any(artifact["id"] == "method-fit-cjp" for artifact in graph_artifacts):
+        analysis_methods.append({
+            "id": "cjp-provenance-export",
+            "label": "CJP provenance graph export",
+            "methodSource": "actual .scratch/method_fit_usage_demo graph JSON",
+            "outputLabels": ["InputRecord", "MethodMetadata", "AnalysisRun", "ResultQuantity"],
+            "units": {},
+        })
+    graph_source_paths = [artifact["path"] for artifact in graph_artifacts]
 
     return {
         "schemaVersion": "0.2.0",
@@ -488,7 +550,7 @@ def build_payload() -> dict[str, object]:
             str(RESULTS_CSV.relative_to(ROOT)).replace("\\", "/"),
             str(CRACK_INFO.relative_to(ROOT)).replace("\\", "/"),
             str(NODemap_DIR.relative_to(ROOT)).replace("\\", "/"),
-            str(GRAPH_JSON.relative_to(ROOT)).replace("\\", "/") if GRAPH_JSON.exists() else None,
+            *graph_source_paths,
             str(ENVELOPE_JSON.relative_to(ROOT)).replace("\\", "/") if ENVELOPE_JSON.exists() else None,
         ],
         "visualizationConfig": {
@@ -531,6 +593,7 @@ def build_payload() -> dict[str, object]:
         "graphEdges": graph_edges,
         "graphNodeDetails": graph_details,
         "actualGraphSummary": graph_summary,
+        "graphArtifacts": graph_artifacts,
         "experimentPresets": [
             {
                 "id": f"dummy2-dic-{side}",
@@ -582,8 +645,8 @@ def build_payload() -> dict[str, object]:
             },
             {
                 "id": "read-provenance-graph",
-                "label": "Read separate Williams provenance proof graph",
-                "detail": "Frontend-facing graph nodes and type-level edges are derived from the exported graph JSON under .scratch/williams-export-proof; this is a separate proof artifact, not the selected Dummy2 frame graph.",
+                "label": "Read separate provenance graph artifacts",
+                "detail": "Frontend-facing graph nodes and type-level edges are derived from exported graph JSON artifacts under .scratch/williams-export-proof and .scratch/method_fit_usage_demo; these are separate proof artifacts, not the selected Dummy2 frame graph.",
             },
         ],
         "warnings": [

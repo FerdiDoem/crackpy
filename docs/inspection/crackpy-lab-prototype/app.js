@@ -93,6 +93,7 @@
       graphNodeTypes: raw.graphNodeTypes || [],
       graphEdges: raw.graphEdges || [],
       graphNodeDetails: raw.graphNodeDetails || {},
+      graphArtifacts: raw.graphArtifacts || [],
       visualizationConfig: raw.visualizationConfig || {},
       actualDataSources: (raw.actualDataSources || []).filter(Boolean),
       actualGraphSummary: raw.actualGraphSummary || {},
@@ -126,6 +127,7 @@
     ["method-evidence", "Method evidence"],
     ["method-stack", "Method stack"],
     ["scientific-warnings", "Scientific warnings"],
+    ["graph-artifact-controls", "Graph artifact controls"],
     ["analysis-graph", "Analysis graph"],
     ["source-evidence", "Source evidence"],
     ["node-surface-matrix", "Node surface matrix"],
@@ -152,6 +154,7 @@
     showAnnulus: true,
     showDetectionWindow: true,
     methodEvidenceMode: "williamsTerms",
+    graphArtifactId: (data.graphArtifacts && data.graphArtifacts[0]?.id) || "legacy-graph",
     selectedGraphNode: "InputRecord",
     running: false,
     featureFlags
@@ -188,6 +191,8 @@
     warningList: $("#warningList"),
     frameRows: $("#frameRows"),
     configLenses: $("#configLenses"),
+    graphArtifactSelect: $("#graphArtifactSelect"),
+    graphArtifactSummary: $("#graphArtifactSummary"),
     analysisGraph: $("#analysisGraph"),
     sourceEvidence: $("#sourceEvidence"),
     nodeSurfaceMatrix: $("#nodeSurfaceMatrix"),
@@ -231,6 +236,41 @@
     return data.experiments.flatMap((experiment) => (
       experiment.frames.map((frame) => ({ experiment, frame }))
     ));
+  }
+
+  function graphArtifacts() {
+    if (Array.isArray(data.graphArtifacts) && data.graphArtifacts.length) {
+      return data.graphArtifacts;
+    }
+    return [{
+      id: "legacy-graph",
+      label: "Williams proof export",
+      method: "Williams fit",
+      path: data.actualGraphSummary?.path || "",
+      nodeCount: data.actualGraphSummary?.nodeCount || (data.graphNodeTypes || []).length,
+      edgeCount: data.actualGraphSummary?.edgeCount || (data.graphEdges || []).length,
+      nodeTypes: data.graphNodeTypes || [],
+      edges: data.graphEdges || [],
+      nodeDetails: data.graphNodeDetails || {},
+      summary: data.actualGraphSummary || {}
+    }];
+  }
+
+  function activeGraphArtifact() {
+    const artifacts = graphArtifacts();
+    return artifacts.find((artifact) => artifact.id === state.graphArtifactId) || artifacts[0];
+  }
+
+  function activeGraphNodeTypes() {
+    return activeGraphArtifact()?.nodeTypes || [];
+  }
+
+  function activeGraphNodeDetails() {
+    return activeGraphArtifact()?.nodeDetails || {};
+  }
+
+  function activeGraphSummary() {
+    return activeGraphArtifact()?.summary || data.actualGraphSummary || {};
   }
 
   function formatNumber(value, digits) {
@@ -733,21 +773,63 @@
     }).join("");
   }
 
+  function renderGraphArtifactControls() {
+    const artifacts = graphArtifacts();
+    const active = activeGraphArtifact();
+    if (!artifacts.some((artifact) => artifact.id === state.graphArtifactId)) {
+      state.graphArtifactId = active.id;
+    }
+    if (!activeGraphNodeTypes().includes(state.selectedGraphNode)) {
+      state.selectedGraphNode = activeGraphNodeTypes()[0] || "InputRecord";
+    }
+    els.graphArtifactSelect.innerHTML = artifacts.map((artifact) => {
+      const selected = artifact.id === state.graphArtifactId ? " selected" : "";
+      return `<option value="${artifact.id}"${selected}>${artifact.label}</option>`;
+    }).join("");
+    els.graphArtifactSummary.innerHTML = `
+      <strong>${active.method || "method graph"}</strong>
+      <span>${active.nodeCount || activeGraphNodeTypes().length} nodes, ${active.edgeCount || (active.edges || []).length} edges</span>
+      <code>${active.path || activeGraphSummary().path || "graph JSON not available"}</code>
+    `;
+  }
+
   function renderAnalysisGraph() {
-    const nodes = data.graphNodeTypes || [];
-    const details = data.graphNodeDetails || {};
-    const edges = data.graphEdges || [];
-    const positions = {
-      InputRecord: [70, 82],
-      MethodMetadata: [70, 204],
-      NormalizedConfiguration: [70, 326],
-      CrackTipEstimateResult: [270, 82],
-      CrackTipFrame: [270, 204],
-      AnalysisRun: [470, 204],
-      ResultRecord: [650, 204],
-      ResultQuantity: [850, 128],
-      ArtifactRef: [850, 280]
-    };
+    const artifact = activeGraphArtifact();
+    const nodes = activeGraphNodeTypes();
+    const details = activeGraphNodeDetails();
+    const edges = artifact?.edges || [];
+    const laneOrder = [
+      "InputRecord",
+      "MethodMetadata",
+      "NormalizedConfiguration",
+      "CrackTipEstimateResult",
+      "CrackTipFrame",
+      "AnalysisRun",
+      "ResultRecord",
+      "ResultQuantity",
+      "ArtifactRef"
+    ];
+    const columns = [
+      ["InputRecord", "MethodMetadata", "NormalizedConfiguration"],
+      ["CrackTipEstimateResult", "CrackTipFrame"],
+      ["AnalysisRun"],
+      ["ResultRecord"],
+      ["ResultQuantity", "ArtifactRef"]
+    ];
+    const positions = {};
+    columns.forEach((column, columnIndex) => {
+      const visible = column.filter((nodeType) => nodes.includes(nodeType));
+      visible.forEach((nodeType, rowIndex) => {
+        const y = 100 + rowIndex * 106 + Math.max(0, 2 - visible.length) * 24;
+        positions[nodeType] = [70 + columnIndex * 195, y];
+      });
+    });
+    nodes
+      .filter((nodeType) => !positions[nodeType])
+      .sort((a, b) => laneOrder.indexOf(a) - laneOrder.indexOf(b))
+      .forEach((nodeType, index) => {
+        positions[nodeType] = [70 + (index % 5) * 195, 84 + Math.floor(index / 5) * 112];
+      });
     const edgeMarkup = edges.map((edge) => {
       const from = positions[edge.from];
       const to = positions[edge.to];
@@ -757,7 +839,7 @@
       const midY = (from[1] + to[1]) / 2;
       return `
         <path class="graph-edge${active ? " is-active" : ""}" d="M${from[0] + 70} ${from[1]} C${midX} ${from[1]}, ${midX} ${to[1]}, ${to[0] - 70} ${to[1]}" />
-        <text class="graph-edge-label" x="${midX}" y="${midY - 7}">${edge.label}</text>
+        ${active ? `<text class="graph-edge-label" x="${midX}" y="${midY - 7}">${edge.label}</text>` : ""}
       `;
     }).join("");
     const nodeMarkup = nodes.map((nodeType) => {
@@ -777,7 +859,7 @@
     }).join("");
 
     els.analysisGraph.innerHTML = `
-      <svg viewBox="0 0 940 390" role="img" aria-label="Separate exported Williams proof graph node types">
+      <svg viewBox="0 0 940 390" role="img" aria-label="${artifact?.label || "Separate proof graph"} node types">
         <defs>
           <marker id="graphArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
             <path d="M0 0 10 5 0 10z" fill="#7a8b94"></path>
@@ -788,6 +870,7 @@
         <text class="graph-band-label" x="265" y="44">crack-tip frame</text>
         <text class="graph-band-label" x="465" y="44">method execution</text>
         <text class="graph-band-label" x="648" y="44">result envelope</text>
+        <text class="graph-artifact-label" x="42" y="364">${artifact?.label || "proof graph"} - ${artifact?.nodeCount || nodes.length} nodes - ${artifact?.edgeCount || edges.length} edges</text>
         <g>${edgeMarkup}</g>
         <g>${nodeMarkup}</g>
       </svg>
@@ -797,7 +880,8 @@
   function renderSourceEvidence() {
     const frame = activeFrame();
     const paths = frame.raw?.sourcePaths || {};
-    const graph = data.actualGraphSummary || {};
+    const graph = activeGraphSummary();
+    const artifact = activeGraphArtifact();
     const entries = [
       ["nodemap", paths.nodemap || "not available"],
       ["result CSV", paths.resultCsv || "not available"],
@@ -808,7 +892,7 @@
       <div>
         <span class="section-label">two source scopes</span>
         <strong>${data.dataPolicy || "actual CrackPy data"}</strong>
-        <p class="scope-note">Frame values come from Dummy2 fixture outputs. The graph below is a separate Williams proof export and is shown only as a frontend-facing node demonstrator.</p>
+        <p class="scope-note">Frame values come from Dummy2 fixture outputs. The selected ${artifact?.method || "method"} graph is a separate proof artifact and is shown only as a frontend-facing node demonstrator.</p>
       </div>
       <dl>
         ${entries.map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join("")}
@@ -828,11 +912,12 @@
       ResultQuantity: "metric cards + method evidence",
       ArtifactRef: "provenance JSON snippet"
     };
-    const nodes = data.graphNodeTypes || [];
+    const nodes = activeGraphNodeTypes();
+    const artifact = activeGraphArtifact();
     els.nodeSurfaceMatrix.innerHTML = `
       <div>
         <span class="section-label">frontend-facing nodes</span>
-        <strong>${nodes.length} graph node classes represented in the UI</strong>
+        <strong>${nodes.length} graph node classes represented for ${artifact?.label || "the active proof graph"}</strong>
       </div>
       <div class="node-surface-grid">
         ${nodes.map((nodeType) => `
@@ -846,6 +931,7 @@
   }
 
   function renderProvenance() {
+    renderGraphArtifactControls();
     renderAnalysisGraph();
     renderSourceEvidence();
     renderNodeSurfaceMatrix();
@@ -860,8 +946,8 @@
       </article>
     `).join("");
 
-    els.graphNodeChips.innerHTML = (data.graphNodeTypes || []).map((nodeType) => {
-      const detail = data.graphNodeDetails[nodeType] || {};
+    els.graphNodeChips.innerHTML = activeGraphNodeTypes().map((nodeType) => {
+      const detail = activeGraphNodeDetails()[nodeType] || {};
       const active = nodeType === state.selectedGraphNode ? " is-active" : "";
       const style = nodeType === state.selectedGraphNode && detail.color
         ? ` style="background:${detail.color};border-color:${detail.color}"`
@@ -874,7 +960,7 @@
     const methodId = frame.kiSource === "Bueckner-Chen"
       ? "crackpy.fracture.bueckner_chen_integral"
       : "crackpy.fracture.williams_fit";
-    els.provenanceBadge.textContent = "separate graph proof";
+    els.provenanceBadge.textContent = activeGraphArtifact()?.method || "separate graph proof";
     const snippet = {
       method_id: methodId,
       data_ref: els.nodemapSelect.value,
@@ -892,14 +978,15 @@
         correction_delta_mm: frame.raw ? [frame.raw.correctionDelta.dx, frame.raw.correctionDelta.dy] : null
       },
       actual_sources: frame.raw?.sourcePaths || {},
-      graph_note: data.actualGraphSummary?.scope || "Graph panel is a separate proof export, not the selected frame graph."
+      graph_artifact: activeGraphArtifact()?.id || null,
+      graph_note: activeGraphSummary()?.scope || "Graph panel is a separate proof export, not the selected frame graph."
     };
     els.provenanceSnippet.textContent = JSON.stringify(snippet, null, 2);
   }
 
   function renderNodeInspector() {
     const nodeType = state.selectedGraphNode;
-    const detail = data.graphNodeDetails[nodeType] || {
+    const detail = activeGraphNodeDetails()[nodeType] || {
       surface: "graph node",
       role: "No details available.",
       keyFields: [],
@@ -911,7 +998,8 @@
       ["example", detail.example || nodeType],
       ["fields", (detail.keyFields || []).join(", ")],
       ["node count", detail.actualNodeCount || 1],
-      ["scope", data.actualGraphSummary?.scope || "separate Williams proof graph"]
+      ["scope", activeGraphSummary()?.scope || "separate proof graph"],
+      ["artifact", activeGraphArtifact()?.label || "proof graph"]
     ];
     els.nodeInspectorFields.innerHTML = fields.map(([term, value]) => (
       `<dt>${term}</dt><dd>${value}</dd>`
@@ -1002,6 +1090,7 @@
       fieldZoom: Number(state.fieldZoom),
       setupOverlayMode: state.setupOverlayMode,
       methodEvidenceMode: state.methodEvidenceMode,
+      graphArtifactId: state.graphArtifactId,
       showLinePaths: state.showLinePaths,
       showAnnulus: state.showAnnulus,
       showDetectionWindow: state.showDetectionWindow,
@@ -1009,7 +1098,9 @@
       running: state.running,
       featureFlags: { ...state.featureFlags },
       activeSources: frame.raw?.sourcePaths || {},
-      graphScope: data.actualGraphSummary?.scope || null
+      graphScope: activeGraphSummary()?.scope || null,
+      graphArtifactPath: activeGraphArtifact()?.path || null,
+      graphArtifactCount: graphArtifacts().length
     };
   }
 
@@ -1022,7 +1113,8 @@
       ["method evidence is source-backed", () => (activeFrame().raw?.methodEvidence?.williamsTerms || []).length > 0],
       ["node surface matrix is rendered", () => els.nodeSurfaceMatrix.textContent.includes("ResultQuantity")],
       ["setup geometry renders visible nodes", () => els.setupGeometryLayer.children.length > 0],
-      ["graph is marked as separate proof", () => String(data.actualGraphSummary?.scope || "").includes("separate")],
+      ["graph is marked as separate proof", () => String(activeGraphSummary()?.scope || "").includes("separate")],
+      ["graph artifact selector is wired", () => graphArtifacts().length >= 1 && Boolean(state.graphArtifactId)],
       ["debug API is exposed", () => Boolean(window.CrackPyLabDebug?.getState)]
     ];
     const results = checks.map(([label, predicate]) => {
@@ -1132,6 +1224,7 @@
       state.fieldSigma = 2;
       state.fieldVmin = null;
       state.fieldVmax = null;
+      state.graphArtifactId = graphArtifacts()[0]?.id || "legacy-graph";
       state.selectedGraphNode = "InputRecord";
       $("#pathCount").value = defaultPathCount;
       $("#minRadius").value = defaultWilliams.min_radius_mm || 5;
@@ -1145,6 +1238,7 @@
       els.fieldColoring.value = state.fieldColoring;
       els.fieldScalePreset.value = state.fieldScalePreset;
       els.fieldSigma.value = state.fieldSigma;
+      els.graphArtifactSelect.value = state.graphArtifactId;
       $$(".segment").forEach((button) => button.classList.toggle("is-active", button.dataset.correction === "symbolic"));
       renderAll();
     });
@@ -1254,6 +1348,14 @@
       applyFeatureVisibility();
     });
 
+    els.graphArtifactSelect.addEventListener("change", (event) => {
+      state.graphArtifactId = event.target.value;
+      state.selectedGraphNode = activeGraphNodeTypes()[0] || "InputRecord";
+      renderProvenance();
+      renderDebugPanel();
+      applyFeatureVisibility();
+    });
+
     els.analysisGraph.addEventListener("click", (event) => {
       const node = event.target.closest("[data-node-type]");
       if (!node) return;
@@ -1351,6 +1453,8 @@
       state.showAnnulus = true;
       state.showDetectionWindow = true;
       state.methodEvidenceMode = "williamsTerms";
+      state.graphArtifactId = graphArtifacts()[0]?.id || "legacy-graph";
+      state.selectedGraphNode = "InputRecord";
       state.running = false;
       resetFeatureFlags();
       return debugSnapshot();
