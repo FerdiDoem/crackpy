@@ -1,5 +1,6 @@
 """Provenance source snapshots and spec models for result adapters."""
 from crackpy.provenance.builder import MethodResultEnvelopeBuilder
+from crackpy.provenance.input_records import input_record_from_source_input, input_records_from_source_inputs
 from crackpy.provenance.source import (
     MethodResultSource,
     ProvenanceIdentified,
@@ -30,5 +31,7 @@ __all__ = [
     "SourceInput",
     "SourceParameters",
     "SourceQuantity",
+    "input_record_from_source_input",
+    "input_records_from_source_inputs",
     "load_provenance_slice_spec",
 ]

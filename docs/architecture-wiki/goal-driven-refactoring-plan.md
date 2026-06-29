@@ -114,6 +114,9 @@ Separate input loading and metadata extraction from the mutable numerical data c
 
 `InputData` mixes file reading, metadata parsing, mutable field storage, mechanics helpers, transforms, masks, validation, and VTK export. Its Interface includes hidden call order: load, compute strains or stresses, transform coordinates, then analyze.
 
+Current implementation note: `InputData.source_input()` projects current input identity into `SourceInput`, and `crackpy.provenance.input_records` projects those snapshots into canonical `InputRecord` values.
+This gives result/provenance and frontend/backend tests a reusable input-record adapter while keeping `InputData` as the compatibility carrier.
+
 ### Target Shape
 
 - An `InputRecord` planning shape carries `input_id`, source label, optional `sequence_index`, source metadata, source reference, and optional source hash.
@@ -127,7 +130,7 @@ Separate input loading and metadata extraction from the mutable numerical data c
 - `require_fields()` and shape validation have tests for missing fields, unequal array lengths, and optional fields.
 - `transform_data()` tests prove which fields mutate when stresses exist and that missing optional stress fields do not crash.
 - A future input adapter can provide data without pretending to be a `Nodemap` file.
-- Input identity fields are available to provenance/result code without parsing `stage` from filenames.
+- Input identity fields are available to provenance/result code through `SourceInput` and `InputRecord` projection without parsing `stage` from filenames.
 - Existing nodemap parsing and metadata behavior remain covered by legacy tests.
 
 ## C-003: Self-Contained Williams Fit Interface

@@ -112,6 +112,10 @@ Frontend integration handoff:
   `LegacyResultSections.as_schema_dict()` keeps `description`, `method_id`, `result_id`, `quantity_id`, `result_schema_version`, and `envelope_schema_version` beside the same unit/result values.
   CJP duplicate display symbols such as `error` stay disambiguated by section and method metadata.
   This adapter does not change the graph payload, current writer output, or legacy text/CSV readers.
+- C-002 input-record adapter update: backend/frontend integration can use `crackpy.provenance.input_record_from_source_input()` when it needs to project a primary source anchor into the canonical `InputRecord` payload without building a full method envelope.
+  `input_records_from_source_inputs()` preserves `input_id`, `data_ref`, `source_metadata`, `source_label`, `sequence_index`, and `source_hash`, and it rejects duplicate `input_id` values before graph or table payloads are produced.
+  `MethodResultEnvelopeBuilder.input_records()` uses the same adapter, so standalone input fixtures and method envelopes now share the projection rules.
+  This does not change current graph node shape; it only centralizes how `InputRecord` nodes are created from `SourceInput` snapshots.
 - C-010 fixture update: backend/frontend contract tests can build a Williams-fit envelope from a direct `MethodResultSource` fixture when they need stable graph/schema payloads without a fake `FractureAnalysis` object.
 - C-010 input-anchor update: frontend graph or table tests can assume input nodes have non-empty `input_id` and `data_ref` values because `SourceInput` rejects empty primary input anchors before envelope construction.
 - C-002 update: frontend integration should use `InputRecord.input_id` as the stable input key. `InputRecord.sequence_index` is available only for ordering input series, and source-specific labels such as `stage` belong in `InputRecord.source_metadata`.

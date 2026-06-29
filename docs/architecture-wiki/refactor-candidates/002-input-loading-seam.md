@@ -1,6 +1,6 @@
 # Candidate 002: Input Loading Seam
 
-Status: proposed
+Status: proposed, with first SourceInput and InputRecord projection slices implemented
 Role: Future architecture candidate for separating file loading from the central mutable data carrier.
 
 ## Observed Evidence
@@ -45,4 +45,10 @@ Candidate adapters:
 
 ## Decision State
 
-The first narrow implementation slice is now present: `InputData.source_input()` projects already-loaded input identity and source metadata into a `SourceInput`, and `SourceInput`/`InputRecord` carry optional `sequence_index` as an ordering hint. This does not approve a broader `InputData` rewrite; nodemap parsing, manual data injection, transforms, mechanics helpers, VTK export, masking, and legacy stage handling remain compatibility behavior.
+The first narrow implementation slice is now present: `InputData.source_input()` projects already-loaded input identity and source metadata into a `SourceInput`, and `SourceInput`/`InputRecord` carry optional `sequence_index` as an ordering hint.
+
+The second narrow implementation slice is now present: `crackpy.provenance.input_records.input_record_from_source_input()` converts `SourceInput` snapshots into canonical `InputRecord` records, and `input_records_from_source_inputs()` rejects duplicate primary input IDs.
+
+`MethodResultEnvelopeBuilder.input_records()` delegates to this adapter so method envelopes, graph payloads, KG bundles, and frontend/backend fixtures share the same input-record projection rules.
+
+This does not approve a broader `InputData` rewrite; nodemap parsing, manual data injection, transforms, mechanics helpers, VTK export, masking, and legacy stage handling remain compatibility behavior.
