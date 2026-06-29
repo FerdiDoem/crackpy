@@ -7,6 +7,7 @@ from typing import Any, TypeVar
 
 from crackpy.provenance.source import MethodResultSource, ProvenanceIdentified, SourceQuantity
 from crackpy.provenance.spec import DependencySpec, ProvenanceSliceSpec, QuantitySpec
+from crackpy.provenance.input_records import input_records_from_source_inputs
 from crackpy.results.result_data import (
     DependencyEdge,
     InputRecord,
@@ -84,17 +85,7 @@ class MethodResultEnvelopeBuilder:
             self.quantity_spec(source_quantity)
 
     def input_records(self) -> list[InputRecord]:
-        return [
-            InputRecord(
-                input_id=source_input.input_id,
-                data_ref=source_input.data_ref,
-                source_metadata=source_input.source_metadata,
-                source_label=source_input.source_label,
-                sequence_index=source_input.sequence_index,
-                source_hash=source_input.source_hash,
-            )
-            for source_input in self.source.inputs
-        ]
+        return list(input_records_from_source_inputs(self.source.inputs))
 
     def method_metadata(self, method_name: str) -> MethodMetadata:
         method_spec = self.spec.methods[method_name]

@@ -35,6 +35,7 @@ Important methods:
 - `set_connection_file()`: reads element connectivity, removes invalid rows, and remaps node IDs.
 - `set_data_manually()`: injects in-memory arrays instead of a nodemap file.
 - `source_input()`: projects the current input identity, source reference, non-empty header metadata, optional `sequence_index`, and optional source hash into a provenance `SourceInput` without reading files or changing arrays.
+- `crackpy.provenance.input_records.input_record_from_source_input()`: projects a `SourceInput` into the canonical `InputRecord` shape used by result/provenance envelopes, graph payloads, KG bundles, and frontend adapters.
 - `transform_data()`: mutates coordinates, displacements, strains, and any existing stresses into a crack-tip-centered coordinate frame.
 - `calc_eps_vm()`: computes equivalent strain.
 - `calc_stresses(material)`: computes linear-elastic stresses.
@@ -61,6 +62,14 @@ This order is implicit. Many downstream modules assume `sig_x`, `sig_y`, `sig_xy
 ## Input Identity Projection
 
 `InputData.source_input()` is the first narrow input-loading seam. It keeps `InputData` as the compatibility carrier and derives a `SourceInput` from the already-known nodemap file and header metadata. The projection uses `input_id` as the stable result/provenance identity, keeps header values such as force or cycles in `source_metadata`, and treats `sequence_index` only as an ordering hint. It does not make `stage` a durable identity and it does not change file loading, manual data injection, transforms, stress calculation, VTK export, or masking behavior.
+
+`crackpy.provenance.input_records` is the second narrow input-identity adapter slice.
+
+It converts `SourceInput` snapshots into canonical `InputRecord` records and rejects duplicate `input_id` values before envelope, graph, KG, or frontend payloads are built.
+
+`MethodResultEnvelopeBuilder.input_records()` now delegates to this adapter so method-envelope builders and external input-identity tests use the same projection rules.
+
+This still does not replace `InputData` loading, nodemap parsing, manual data injection, transform behavior, masking, VTK export, or legacy stage handling.
 
 ## Input Mapping Policies
 
