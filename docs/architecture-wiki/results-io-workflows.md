@@ -28,6 +28,18 @@ Observed text tags:
 
 `OutputWriter.write_williams_fit_provenance_json()` is a newer optional output hook. It builds a Williams-fit result/provenance envelope from the current `FractureAnalysis` object and delegates artifact writing to `write_williams_fit_provenance_artifacts()`, which accepts an explicit `ResultEnvelope`. `OutputWriter.write_cjp_fit_provenance_artifacts()` now provides the same additive artifact bridge for CJP results. These hooks keep legacy text and current JSON outputs unchanged while allowing provenance artifact projection to be tested without a live `FractureAnalysis` instance.
 
+### `AnalysisResult`
+
+`crackpy/results/analysis_result.py` is the first explicit analysis-result Module above individual method envelopes.
+
+It defines `AnalysisResult`, `MethodEnvelopeArtifactPlan`, `AnalysisResultArtifactPaths`, and `write_analysis_result_artifacts()`.
+
+`AnalysisResult` currently collects named method-level `ResultEnvelope` records and validates that method keys and artifact stems are unambiguous.
+
+`write_analysis_result_artifacts()` writes the standard envelope JSON, KG statement-bundle JSON, frontend graph JSON, and graph HTML artifacts for each method envelope without importing `FractureAnalysis`, plotting, or legacy result writers.
+
+This is an additive C-001 slice and does not replace legacy text, current JSON, CSV, or plot outputs.
+
 ### `OutputReader`
 
 `crackpy/results/read.py` parses tagged text files into pandas DataFrames and writes flattened CSV outputs.
@@ -90,6 +102,10 @@ Frontend integration handoff:
   The resulting `NormalizedConfiguration.result_parameters` payload shape is unchanged; frontend/backend tests can continue to read `material` and `optimization` sections from Williams/CJP envelopes.
 - Generic method-contract verifier update: backend/frontend contract tests can use `crackpy.methods.contract.verify_method_module_contract()` with a method-local fixture to verify that Williams-fit and CJP-fit method modules expose required files, load validated specs, produce `MethodResultSource` snapshots, produce schema-indexable `ResultEnvelope` records, and write standard envelope, KG bundle, graph JSON, and graph HTML artifacts.
   The verifier writes through `crackpy.results.envelope_artifacts.write_result_envelope_artifacts()` and does not change the frontend payload shape.
+- C-001 explicit analysis-result update: backend/frontend integration can use `crackpy.results.analysis_result.AnalysisResult` when one workflow needs to publish multiple method envelopes through one explicit result Interface.
+  Each `MethodEnvelopeArtifactPlan` keeps the method key, `ResultEnvelope`, artifact stem, and graph title explicit.
+  `write_analysis_result_artifacts()` returns `AnalysisResultArtifactPaths`, whose `as_dict()` method is a nested map from method key to the existing artifact keys: `envelope`, `kg_statement_bundle`, `visualization_graph`, and `visualization_graph_html`.
+  This adds a workflow-level handoff for Williams/CJP-style method envelopes without changing graph JSON node or edge shape.
 - C-010 fixture update: backend/frontend contract tests can build a Williams-fit envelope from a direct `MethodResultSource` fixture when they need stable graph/schema payloads without a fake `FractureAnalysis` object.
 - C-010 input-anchor update: frontend graph or table tests can assume input nodes have non-empty `input_id` and `data_ref` values because `SourceInput` rejects empty primary input anchors before envelope construction.
 - C-002 update: frontend integration should use `InputRecord.input_id` as the stable input key. `InputRecord.sequence_index` is available only for ordering input series, and source-specific labels such as `stage` belong in `InputRecord.source_metadata`.

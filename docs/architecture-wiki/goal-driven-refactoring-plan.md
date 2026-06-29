@@ -73,6 +73,9 @@ The current Interface after `FractureAnalysis.run()` is nearly as complex as the
 
 Deletion test: deleting `FractureAnalysis` result attributes today would push the same complexity into writers, plots, tests, and scripts. That means a deeper explicit result Module can earn its Interface.
 
+Current implementation note: the first `crackpy.results.analysis_result` slice can collect named method envelopes and write their standard frontend/backend artifacts without constructing `FractureAnalysis`.
+It is an additive artifact handoff, not a replacement for the broad post-run analysis attribute Interface.
+
 ### Target Shape
 
 - A structured analysis result record or envelope collects method results, integral summaries, path metadata, artifact references, and compatibility aliases.
@@ -84,7 +87,8 @@ Deletion test: deleting `FractureAnalysis` result attributes today would push th
 
 - `FractureAnalysis` has a documented lifecycle contract: required inputs, required pre-run state, what `run()` populates, and which attributes are compatibility-only.
 - A minimal test fixture can construct an analysis result without loading a full nodemap or running plotting code.
-- Output writer and plotter tests can exercise at least one result family from a result fixture rather than a full `FractureAnalysis` instance.
+- Output artifact tests can exercise method-envelope artifact writing from an explicit analysis result fixture rather than a full `FractureAnalysis` instance.
+- Output writer and plotter migration remain broader C-001 work because legacy text/current JSON and plots still inspect `FractureAnalysis` directly.
 - Missing or skipped method families produce explicit absence or explicit errors, not accidental `AttributeError` behavior.
 - Current text, current JSON, CSV, and plot behavior remain covered by compatibility tests.
 - Existing Williams-fit provenance records still serialize the same semantic fields after the result Interface is introduced.
