@@ -200,6 +200,12 @@ Bundled test data is operationally important:
 
 Historical fixture naming includes `Dummy2`, MT specimens, GOM/Aramis-style nodemap headers, and stages such as 52-55.
 
+Fixture outputs produced before the last release are compatibility contracts for result and provenance work.
+New method slices should compare against those fixtures where possible and must fail loudly on numerical drift.
+Old fixture tests and baseline files should not be edited except for minor import-path adjustments.
+If a legacy test structure becomes obsolete, compatibility shims or additive tests are preferred.
+Human-in-the-loop approval is required before changing old fixture expectations, old numerical baselines, or legacy test behavior.
+
 ## Citation Metadata
 
 `CITATION.cff` lists package version `1.3.0`, release date `2024-08-20`, and DOI `10.1038/s41598-024-63915-x`.

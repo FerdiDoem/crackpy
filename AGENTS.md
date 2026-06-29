@@ -115,3 +115,11 @@ Subagents should not spawn further subagents by default. Allow nested subagents 
 - Keep edits scoped to the requested files and the relevant architecture notes.
 - Prefer structured parsers and repo-local helpers over ad hoc text manipulation when changing code.
 - Verify changes with the narrowest useful command before reporting completion.
+
+## Fixture And Legacy Test Policy
+
+- Release-era fixtures and legacy regression tests are compatibility contracts.
+- Numerical drift against those fixtures must fail loudly and be treated as an immediate warning, not as expected churn.
+- Do not edit old fixture tests except for minor import-path adjustments.
+- If an old test structure becomes obsolete, preserve it through shims or additive tests before changing the legacy test itself.
+- Human-in-the-loop approval is required before changing old fixture expectations, old numerical baselines, or legacy test behavior.

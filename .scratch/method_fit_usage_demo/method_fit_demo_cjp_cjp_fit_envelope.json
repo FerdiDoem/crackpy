@@ -1,0 +1,553 @@
+{
+    "analysis_runs": [
+        {
+            "completed_at": null,
+            "configuration_id": "configuration:cjp_fit:14d030a1d2dd",
+            "crackpy_version": "demo",
+            "dependencies": [
+                {
+                    "role": "used_input",
+                    "source_id": "run:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "target_id": "input:method_fit_demo:cjp",
+                    "target_type": "InputRecord"
+                },
+                {
+                    "role": "used_configuration",
+                    "source_id": "run:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "target_id": "configuration:cjp_fit:14d030a1d2dd",
+                    "target_type": "NormalizedConfiguration"
+                },
+                {
+                    "role": "used_crack_tip_frame",
+                    "source_id": "run:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "target_id": "crack_tip_frame:method_fit_demo:right",
+                    "target_type": "CrackTipFrame"
+                },
+                {
+                    "role": "used_crack_tip_estimate",
+                    "source_id": "run:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "target_id": "crack_tip_estimate:method_fit_demo_cjp:right",
+                    "target_type": "CrackTipEstimateResult"
+                }
+            ],
+            "input_ids": [
+                "input:method_fit_demo:cjp"
+            ],
+            "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+            "method_revision": "1",
+            "parameter_hash": "sha256:14d030a1d2dd506e54b0f5d03513567f316a46ee51c801265189f64a8b14c313",
+            "run_id": "run:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+            "started_at": null
+        },
+        {
+            "completed_at": null,
+            "configuration_id": "configuration:cjp_fit:14d030a1d2dd",
+            "crackpy_version": "demo",
+            "dependencies": [
+                {
+                    "role": "used_input",
+                    "source_id": "run:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "target_id": "input:method_fit_demo:cjp",
+                    "target_type": "InputRecord"
+                },
+                {
+                    "role": "used_configuration",
+                    "source_id": "run:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "target_id": "configuration:cjp_fit:14d030a1d2dd",
+                    "target_type": "NormalizedConfiguration"
+                },
+                {
+                    "role": "used_crack_tip_frame",
+                    "source_id": "run:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "target_id": "crack_tip_frame:method_fit_demo:right",
+                    "target_type": "CrackTipFrame"
+                },
+                {
+                    "role": "used_crack_tip_estimate",
+                    "source_id": "run:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "target_id": "crack_tip_estimate:method_fit_demo_cjp:right",
+                    "target_type": "CrackTipEstimateResult"
+                }
+            ],
+            "input_ids": [
+                "input:method_fit_demo:cjp"
+            ],
+            "method_id": "crackpy.fracture.cjp_mode_i_fit",
+            "method_revision": "1",
+            "parameter_hash": "sha256:14d030a1d2dd506e54b0f5d03513567f316a46ee51c801265189f64a8b14c313",
+            "run_id": "run:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+            "started_at": null
+        }
+    ],
+    "configurations": [
+        {
+            "adapter_policy": {
+                "legacy_alias_scope": "CJP_results+CJP_modeI_results"
+            },
+            "configuration_hash": "sha256:3e3ffef198f4c6e7b72244ccbf711a491c7a0e334d7a4b7f503a8affd8cd8366",
+            "configuration_id": "configuration:cjp_fit:14d030a1d2dd",
+            "parameter_hash": "sha256:14d030a1d2dd506e54b0f5d03513567f316a46ee51c801265189f64a8b14c313",
+            "parameter_origins": {
+                "angle_gap_deg": "resolved optimization property",
+                "material": "analysis object",
+                "max_radius_mm": "resolved optimization property",
+                "min_radius_mm": "resolved optimization property",
+                "tick_size_mm": "resolved optimization property"
+            },
+            "result_parameters": {
+                "material": {
+                    "E_MPa": 72000.0,
+                    "G_MPa": 27067.66917293233,
+                    "kappa": 2.007518796992481,
+                    "name": "Synthetic AA2024-T3",
+                    "nu_xy": 0.33,
+                    "plane_strain": false,
+                    "sig_yield_MPa": 350.0
+                },
+                "optimization": {
+                    "angle_gap_deg": 10.0,
+                    "max_radius_mm": 2.0,
+                    "min_radius_mm": 1.0,
+                    "tick_size_mm": 0.25
+                }
+            },
+            "schema_version": "crackpy.configuration.cjp_fit.v1"
+        }
+    ],
+    "crack_tip_estimates": [
+        {
+            "configuration_id": "configuration:cjp_fit:14d030a1d2dd",
+            "corrected_mm": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "correction_delta_mm": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "estimate_id": "crack_tip_estimate:method_fit_demo_cjp:right",
+            "frame_id": "crack_tip_frame:method_fit_demo:right",
+            "input_id": "input:method_fit_demo:cjp",
+            "method_id": "crackpy.crack_tip.manual_import",
+            "observed_mm": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "source": "manual import",
+            "source_estimate_id": null
+        }
+    ],
+    "crack_tip_frames": [
+        {
+            "angle_deg": 0.0,
+            "compatibility_side": "right",
+            "frame_id": "crack_tip_frame:method_fit_demo:right",
+            "geometry_profile": "surface_planar",
+            "origin_mm": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "tip_id": "crack_tip:method_fit_demo:right"
+        }
+    ],
+    "envelope_schema_version": "crackpy.result_envelope.cjp_fit.v1",
+    "input_records": [
+        {
+            "data_ref": "synthetic://method_fit_demo/cjp",
+            "input_id": "input:method_fit_demo:cjp",
+            "sequence_index": null,
+            "source_hash": null,
+            "source_label": "method_fit_demo_cjp",
+            "source_metadata": {}
+        }
+    ],
+    "methods": [
+        {
+            "aliases": [
+                "CJP_results"
+            ],
+            "display_name": "CJP Mixed-Mode Fit",
+            "implementation_ref": "crackpy.fracture_analysis.methods.cjp_fit.runner.run_cjp_fit",
+            "kind": "analysis",
+            "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+            "method_revision": "1",
+            "references": [
+                "Christopher James Patterson mixed-mode CJP extension"
+            ]
+        },
+        {
+            "aliases": [
+                "CJP_modeI_results"
+            ],
+            "display_name": "CJP Mode-I Fit",
+            "implementation_ref": "crackpy.fracture_analysis.methods.cjp_fit.runner.run_cjp_fit",
+            "kind": "analysis",
+            "method_id": "crackpy.fracture.cjp_mode_i_fit",
+            "method_revision": "1",
+            "references": [
+                "Christopher James Patterson Mode-I CJP model"
+            ]
+        },
+        {
+            "aliases": [
+                "crack_info_by_nodemap.txt"
+            ],
+            "display_name": "Manual Crack-Tip Import",
+            "implementation_ref": "crackpy.input.crack_tip_info.CrackTipInfo",
+            "kind": "crack_tip_estimate",
+            "method_id": "crackpy.crack_tip.manual_import",
+            "method_revision": "1",
+            "references": []
+        }
+    ],
+    "results": [
+        {
+            "artifacts": [],
+            "quantities": [
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP optimizer residual cost.",
+                    "legacy_aliases": [
+                        "CJP_results.error",
+                        "CJP_results.Error"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:error",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "error",
+                    "unit": "1",
+                    "value": 0.0
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP fitted A_r coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.",
+                    "legacy_aliases": [
+                        "CJP_results.A_r"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:A_r",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "A_r",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.06324555320336758
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP fitted B_r coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.",
+                    "legacy_aliases": [
+                        "CJP_results.B_r"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:B_r",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "B_r",
+                    "unit": "MPa*m^{1/2}",
+                    "value": -0.015811388300841896
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP fitted B_i coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.",
+                    "legacy_aliases": [
+                        "CJP_results.B_i"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:B_i",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "B_i",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.007905694150420948
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP fitted non-singular C stress coefficient.",
+                    "legacy_aliases": [
+                        "CJP_results.C"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:C",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "C",
+                    "unit": "MPa",
+                    "value": 30.0
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP fitted E coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.",
+                    "legacy_aliases": [
+                        "CJP_results.E"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:E",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "E",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.023717082451262847
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP K_F derived from A_r, B_r, and E.",
+                    "legacy_aliases": [
+                        "CJP_results.K_F"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:K_F",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "K_F",
+                    "unit": "MPa*m^{1/2}",
+                    "value": -0.09908318244015027
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP K_R derived from B_i and E.",
+                    "legacy_aliases": [
+                        "CJP_results.K_R"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:K_R",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "K_R",
+                    "unit": "MPa*m^{1/2}",
+                    "value": -0.45280134361004815
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP K_S derived from A_r and B_r.",
+                    "legacy_aliases": [
+                        "CJP_results.K_S"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:K_S",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "K_S",
+                    "unit": "MPa*m^{1/2}",
+                    "value": -0.059449909464090164
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP K_II derived from B_i.",
+                    "legacy_aliases": [
+                        "CJP_results.K_II"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:K_II",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "K_II",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.039633272976060105
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mixed-mode CJP T-stress derived from C.",
+                    "legacy_aliases": [
+                        "CJP_results.T"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mixed_mode_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd:T",
+                    "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "T",
+                    "unit": "MPa",
+                    "value": -30.0
+                }
+            ],
+            "result_id": "result:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd",
+            "result_schema_version": "crackpy.result_record.cjp_fit.v1",
+            "run_id": "run:cjp_fit:mixed_mode:method_fit_demo_cjp:right:14d030a1d2dd"
+        },
+        {
+            "artifacts": [],
+            "quantities": [
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP optimizer residual cost.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.error",
+                        "CJP_modeI_results.Error"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:error",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "error",
+                    "unit": "1",
+                    "value": 0.0
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP fitted A coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.A"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:A",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "A",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.09486832980505139
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP fitted B coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.B"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:B",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "B",
+                    "unit": "MPa*m^{1/2}",
+                    "value": -0.03162277660168379
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP fitted non-singular C stress coefficient.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.C"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:C",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "C",
+                    "unit": "MPa",
+                    "value": 25.0
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP fitted E coefficient, converted from native MPa*mm^{1/2} to MPa*m^{1/2}.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.E"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:E",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "E",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.015811388300841896
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP fitted non-singular F stress coefficient.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.F"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:F",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "F",
+                    "unit": "MPa",
+                    "value": 12.0
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP K_F derived from A, B, and E.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.K_F"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:K_F",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "K_F",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.07926654595212021
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP K_R derived from E.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.K_R"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:K_R",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "K_R",
+                    "unit": "MPa*m^{1/2}",
+                    "value": -0.24902319843861864
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP K_S derived from A and B.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.K_S"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:K_S",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "K_S",
+                    "unit": "MPa*m^{1/2}",
+                    "value": 0.07926654595212021
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP x-direction T-stress derived from C.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.T_x"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:T_x",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "T_x",
+                    "unit": "MPa",
+                    "value": -25.0
+                },
+                {
+                    "derived_from_quantity_ids": [],
+                    "description": "Mode-I CJP y-direction T-stress derived from F.",
+                    "legacy_aliases": [
+                        "CJP_modeI_results.T_y"
+                    ],
+                    "method_id": "crackpy.fracture.cjp_mode_i_fit",
+                    "path_index": null,
+                    "quantity_id": "quantity:result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd:T_y",
+                    "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+                    "statistic": null,
+                    "symbol": "T_y",
+                    "unit": "MPa",
+                    "value": -12.0
+                }
+            ],
+            "result_id": "result:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd",
+            "result_schema_version": "crackpy.result_record.cjp_fit.v1",
+            "run_id": "run:cjp_fit:mode_i:method_fit_demo_cjp:right:14d030a1d2dd"
+        }
+    ]
+}
