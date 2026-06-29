@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from crackpy.methods.definition import MethodArtifactDefinition, MethodDefinition
 from crackpy.provenance.spec import MethodSpec
 
 DetectionTask = Literal[
@@ -144,6 +145,30 @@ def known_crack_detection_methods() -> tuple[CrackDetectionMethodMetadata, ...]:
     return KNOWN_CRACK_DETECTION_METHODS
 
 
+def known_crack_detection_method_definitions() -> tuple[MethodDefinition, ...]:
+    """Return detection methods in the generic importable method-definition shape."""
+    definitions: list[MethodDefinition] = []
+    for metadata in KNOWN_CRACK_DETECTION_METHODS:
+        artifacts: tuple[MethodArtifactDefinition, ...] = ()
+        if metadata.weights_artifact_id is not None:
+            artifacts = (
+                MethodArtifactDefinition(
+                    artifact_id=metadata.weights_artifact_id,
+                    role="pretrained_weights",
+                    required=True,
+                ),
+            )
+        definitions.append(
+            MethodDefinition(
+                method_spec=metadata.method_spec,
+                domain="crack_detection",
+                tasks=(metadata.detection_task,),
+                artifacts=artifacts,
+            )
+        )
+    return tuple(definitions)
+
+
 def method_metadata_for_id(method_id: str) -> CrackDetectionMethodMetadata:
     """Return metadata for a stable crack-detection `method_id`.
 
@@ -184,6 +209,7 @@ __all__ = [
     "DetectionTask",
     "ImplementationFamily",
     "KNOWN_CRACK_DETECTION_METHODS",
+    "known_crack_detection_method_definitions",
     "known_crack_detection_methods",
     "method_metadata_for_compatibility_selector",
     "method_metadata_for_id",

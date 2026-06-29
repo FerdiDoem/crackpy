@@ -2,6 +2,7 @@ import pytest
 
 from crackpy.crack_detection.method_metadata import (
     CrackDetectionMethodMetadata,
+    known_crack_detection_method_definitions,
     known_crack_detection_methods,
     method_metadata_for_compatibility_selector,
     method_metadata_for_id,
@@ -88,3 +89,17 @@ def test_detection_metadata_uses_generic_method_spec_shape():
     assert isinstance(metadata.method_spec, MethodSpec)
     assert metadata.method_spec.aliases == metadata.compatibility_selectors
     assert metadata.method_spec.implementation_ref == metadata.implementation_ref
+
+
+def test_detection_metadata_exports_generic_method_definitions():
+    definitions = known_crack_detection_method_definitions()
+
+    by_id = {definition.method_id: definition for definition in definitions}
+    parallel_nets = by_id["crackpy.detection.parallel_nets_crack_tip_localization"]
+    line_intercept = by_id["crackpy.detection.line_intercept_crack_tip_localization"]
+
+    assert parallel_nets.domain == "crack_detection"
+    assert parallel_nets.tasks == ("crack_tip_localization",)
+    assert parallel_nets.artifacts[0].artifact_id == "ParallelNets.pth"
+    assert parallel_nets.artifacts[0].role == "pretrained_weights"
+    assert line_intercept.artifacts == ()
