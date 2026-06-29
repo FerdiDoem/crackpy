@@ -397,6 +397,14 @@ It exists to let methods such as crack-tip localization, Williams fit, and CJP f
 Current importable record for a method artifact dependency or output.
 It records an artifact ID, artifact role, and requiredness without loading files or owning provider/cache/device policy.
 
+#### MethodRunIdentityPolicy
+Current importable helper that derives deterministic configuration, run, and result IDs from a compact method key, source stem, compatibility side label, parameter hash, and optional method variant.
+It exists to share Williams/CJP-style provenance ID policy without moving numerical method code into a generic runner.
+
+#### Manual crack-tip estimate projection
+Current helper in `crackpy.methods.runtime` that turns a `CrackTipFrame` plus input, method, and configuration IDs into a `CrackTipEstimateResult` for imported crack-tip data.
+It records zero correction delta because no correction method has changed the imported frame.
+
 #### Implementation family
 Algorithm family used to implement a crack-detection or crack-tip-estimation method. Examples include neural network, line intercept, image edge detection, Williams-series fit, symbolic regression, grid search, differential evolution, manual import, or external provider.
 

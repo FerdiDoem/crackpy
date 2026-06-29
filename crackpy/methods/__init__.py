@@ -6,5 +6,11 @@ logic stay in their method-local modules.
 """
 
 from crackpy.methods.definition import MethodArtifactDefinition, MethodDefinition
+from crackpy.methods.runtime import MethodRunIdentityPolicy, build_manual_crack_tip_estimate
 
-__all__ = ["MethodArtifactDefinition", "MethodDefinition"]
+__all__ = [
+    "MethodArtifactDefinition",
+    "MethodDefinition",
+    "MethodRunIdentityPolicy",
+    "build_manual_crack_tip_estimate",
+]
