@@ -103,6 +103,7 @@ Contains the scientific numerical core:
 - analytical crack-tip fields;
 - displacement fitting for Williams and CJP models;
 - J-integral, interaction integral, T-stress, Bueckner-Chen integral, and J-mode decomposition;
+- a first side-effect-light single-nodemap workflow runner at `crackpy.fracture_analysis.workflow`;
 - a first method module at `crackpy.fracture_analysis.methods.williams_fit` with a typed Williams runner, typed parameter/result models, source adapter, YAML-backed slice spec loader, and envelope builder wrapper;
 - single-nodemap and batch-pipeline orchestration.
 
