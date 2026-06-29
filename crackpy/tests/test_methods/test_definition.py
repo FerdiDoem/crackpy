@@ -4,7 +4,9 @@ from crackpy.crack_detection.method_metadata import known_crack_detection_method
 from crackpy.fracture_analysis.methods.cjp_fit.spec_loader import load_cjp_fit_spec
 from crackpy.fracture_analysis.methods.williams_fit.spec_loader import load_williams_fit_spec
 from crackpy.methods.definition import MethodArtifactDefinition, MethodDefinition
+from crackpy.methods.runtime import MethodRunIdentityPolicy, build_manual_crack_tip_estimate
 from crackpy.provenance.spec import MethodSpec
+from crackpy.results.result_data import CrackTipFrame
 
 
 def _current_method_specs() -> list[MethodSpec]:
@@ -73,3 +75,61 @@ def test_method_definition_rejects_empty_tasks():
 def test_required_method_artifact_requires_artifact_id():
     with pytest.raises(ValueError, match="artifact_id"):
         MethodArtifactDefinition(artifact_id=None, role="pretrained_weights", required=True)
+
+
+def test_method_run_identity_policy_derives_ids_from_parameter_hash():
+    policy = MethodRunIdentityPolicy(method_key="williams_fit")
+
+    assert policy.short_hash("sha256:abcdef1234567890") == "abcdef123456"
+    assert policy.configuration_id("sha256:abcdef1234567890") == "configuration:williams_fit:abcdef123456"
+    assert policy.run_id(stem="Dummy2", side="right", short_hash="abcdef123456") == (
+        "run:williams_fit:Dummy2:right:abcdef123456"
+    )
+    assert policy.result_id(stem="Dummy2", side="right", short_hash="abcdef123456") == (
+        "result:williams_fit:Dummy2:right:abcdef123456"
+    )
+
+
+def test_method_run_identity_policy_supports_variant_ids():
+    policy = MethodRunIdentityPolicy(method_key="cjp_fit")
+
+    assert policy.run_id(stem="Dummy2", side="right", short_hash="abcdef123456", variant="mode_i") == (
+        "run:cjp_fit:mode_i:Dummy2:right:abcdef123456"
+    )
+    assert policy.result_id(stem="Dummy2", side="right", short_hash="abcdef123456", variant="mode_i") == (
+        "result:cjp_fit:mode_i:Dummy2:right:abcdef123456"
+    )
+
+
+def test_method_run_identity_policy_rejects_empty_parts():
+    policy = MethodRunIdentityPolicy(method_key="williams_fit")
+
+    with pytest.raises(ValueError, match="stem"):
+        policy.run_id(stem="", side="right", short_hash="abcdef123456")
+    with pytest.raises(ValueError, match="method_key"):
+        MethodRunIdentityPolicy(method_key="")
+
+
+def test_manual_crack_tip_estimate_projection_is_shared():
+    frame = CrackTipFrame.from_legacy_side(
+        stem="Dummy2",
+        side="right",
+        origin_mm={"x": 1.0, "y": 2.0},
+        angle_deg=0.0,
+    )
+
+    estimate = build_manual_crack_tip_estimate(
+        stem="Dummy2",
+        side="right",
+        input_id="input:Dummy2",
+        method_id="crackpy.crack_tip.manual_import",
+        configuration_id="configuration:williams_fit:abcdef123456",
+        frame=frame,
+    )
+
+    assert estimate.estimate_id == "crack_tip_estimate:Dummy2:right"
+    assert estimate.input_id == "input:Dummy2"
+    assert estimate.frame_id == frame.frame_id
+    assert estimate.observed_mm == {"x": 1.0, "y": 2.0}
+    assert estimate.corrected_mm == {"x": 1.0, "y": 2.0}
+    assert estimate.correction_delta_mm == {"x": 0.0, "y": 0.0}

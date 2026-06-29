@@ -19,6 +19,7 @@
 - `ResultEnvelope`, `AnalysisRun`, `MethodMetadata`, `NormalizedConfiguration`, `ResultRecord`, and `ResultQuantity` already model the "what ran, with which method, on which inputs, with which configuration, producing which result" structure.
 - `ResultSchemaIndex` now proves why reusable method metadata must carry context instead of relying on display labels: CJP has repeated `error` symbols across mixed-mode and Mode-I result records, while Williams currently has unique coefficient and SIF labels.
 - The first generic method-definition slice now exists: `crackpy.methods.definition` defines `MethodDefinition` and `MethodArtifactDefinition`, and detection metadata can export generic definitions through `known_crack_detection_method_definitions()`.
+- The first generic method-runtime slice now exists: `crackpy.methods.runtime` defines `MethodRunIdentityPolicy` and `build_manual_crack_tip_estimate()` for shared Williams/CJP-style provenance ID and imported-crack-tip estimate policy.
 - Williams-fit and CJP-fit currently duplicate configuration ID generation from parameter hash, run/result ID construction, dependency-edge assembly, and manual/imported crack-tip estimate projection.
 - Williams-fit and CJP-fit also duplicate material and optimization parameter snapshot patterns, but method-specific parameters such as Williams terms or CJP variants should remain method-local until more methods prove the shared shape.
 - Artifact writing is still duplicated by method-family wrappers: Williams and CJP have separate entry points that produce envelope, KG statement bundle, graph JSON, and graph HTML artifacts.
@@ -336,6 +337,11 @@ git commit -m "feat: expose detection method definitions"
 ```
 
 ### Task 4: Introduce Generic Method Runtime Identity Helpers
+
+Status: completed by `codex/method-runtime-identity`.
+
+Implementation note: this slice adds the helper Module and tests only.
+Williams-fit and CJP-fit builders still mint the same IDs locally until a later delegation slice can prove output equivalence.
 
 **Files:**
 - Create: `crackpy/methods/runtime.py`
