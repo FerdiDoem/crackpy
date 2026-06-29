@@ -228,7 +228,11 @@ Shallow file and file-structure base descriptors in `crackpy.structure_elements.
 Observed call-order pattern around `InputData`: read nodemap data, compute equivalent strain, compute stresses when needed, run crack detection or transform into crack-tip-centered coordinates, then pass the mutated object into fracture analysis. This is not an explicit package abstraction; it is an implicit workflow enforced by caller convention.
 
 #### CrackTipInfo
-Implementation container for `crack_tip_x`, `crack_tip_y`, `crack_tip_angle`, and `left_or_right`. Used as the current handoff from crack detection to fracture analysis. This is not the physical crack tip itself; future provenance planning should treat it as source material for a [[glossary#CrackTipEstimateResult]].
+Implementation container for `crack_tip_x`, `crack_tip_y`, `crack_tip_angle`, optional `crack_tip_id`, and `left_or_right`.
+Used as the current handoff from crack detection to fracture analysis.
+`crack_tip_id` is the durable crack-tip identity when available.
+`left_or_right` remains compatibility vocabulary for current files, plots, and result names.
+This is not the physical crack tip itself; future provenance planning should treat it as source material for a [[glossary#CrackTipEstimateResult]].
 
 #### left_or_right
 Current `CrackTipInfo` attribute name for the analyzed `side`. It carries the same conceptual value as `side`, but the naming should be treated as implementation-specific.

@@ -165,6 +165,8 @@ The file contains direct methodological references to Kuna formulas, Christopher
 `FractureWorkflowInput.from_legacy_pipeline_row()` adapts the current crack-info CSV columns into that explicit input shape.
 If a row contains `Crack Tip ID`, the adapter keeps it.
 If it does not, the adapter derives `crack_tip:<filename-stem>:<side>` as a deterministic compatibility ID so new callers do not have to use `Side` as durable identity.
+The workflow-created `CrackTipInfo` now carries the same `crack_tip_id` in addition to current `left_or_right` compatibility data.
+Williams-fit and CJP-fit source adapters preserve that ID as `CrackTipFrame.tip_id` when they build provenance envelopes from a `FractureAnalysis` object.
 `run_fracture_analysis_workflow()` owns the scientific single-nodemap order: create the `Nodemap`, load `InputData`, calculate stresses, transform to crack-tip-centered coordinates, construct `FractureAnalysis`, and call `run()`.
 The runner deliberately does not write text or JSON files, create plots, create output folders, select multiprocessing policy, or own progress UI.
 `single_run()` in the pipeline is now a compatibility facade that delegates to this runner and then applies legacy writer and plotter adapter policy.

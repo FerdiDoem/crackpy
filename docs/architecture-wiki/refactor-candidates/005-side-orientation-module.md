@@ -49,3 +49,9 @@ The first C-004 workflow-runner slice adds the same direction at the runner seam
 `FractureWorkflowInput` requires `crack_tip_id` and keeps `compatibility_side` separate.
 Current legacy crack-info rows can still provide only `Side`; the adapter then derives a temporary deterministic crack-tip ID.
 This is a compatibility step toward crack-tip identity rather than a full replacement of current left/right detector, plot, and result naming behavior.
+
+The next narrow implementation slice carries that identity through the legacy handoff container.
+`CrackTipInfo` now accepts optional `crack_tip_id` while keeping `left_or_right` for compatibility.
+`CrackTipFrame.from_legacy_side()` accepts an optional `tip_id`, so Williams-fit and CJP-fit source adapters can preserve explicit crack-tip IDs in provenance envelopes instead of deriving the tip identity from side.
+The frame ID still includes the compatibility side for current artifact stability.
+This does not migrate detection, correction, plotting, training, or result filenames away from current side-labelled behavior.

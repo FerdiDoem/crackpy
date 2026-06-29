@@ -105,6 +105,7 @@ class FractureWorkflowInput:
             crack_tip_y=self.crack_tip_y,
             crack_tip_angle=self.crack_tip_angle,
             left_or_right=self.compatibility_side,
+            crack_tip_id=self.crack_tip_id,
         )
 
 

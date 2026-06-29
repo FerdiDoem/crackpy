@@ -190,20 +190,25 @@ class CrackTipFrame:
             origin_mm: Mapping[str, float | None],
             angle_deg: float | None,
             geometry_profile: str = "surface_planar",
+            tip_id: str | None = None,
     ) -> "CrackTipFrame":
         """Create a frame from the current left/right compatibility label.
 
         This adapter is the first C-005 seam: legacy `side` remains a file and
         output label, while the returned frame carries explicit provenance
-        identity and geometry-profile metadata for downstream records.
+        identity and geometry-profile metadata for downstream records. `tip_id`
+        lets newer workflow callers carry a stable crack-tip identity through
+        this compatibility adapter without making `side` the tip identity.
         """
         if not stem:
             raise ValueError("CrackTipFrame.from_legacy_side() requires a non-empty stem.")
         if side not in {"left", "right", "l", "r"}:
             raise ValueError("Legacy crack-tip side must be one of 'left', 'right', 'l', or 'r'.")
+        if tip_id is not None and not tip_id:
+            raise ValueError("CrackTipFrame.from_legacy_side() tip_id must be non-empty when provided.")
         return cls(
             frame_id=f"crack_tip_frame:{stem}:{side}",
-            tip_id=f"crack_tip:{stem}:{side}",
+            tip_id=tip_id or f"crack_tip:{stem}:{side}",
             origin_mm=origin_mm,
             angle_deg=angle_deg,
             compatibility_side=side,

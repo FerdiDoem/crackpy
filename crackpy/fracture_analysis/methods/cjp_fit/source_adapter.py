@@ -39,6 +39,7 @@ def source_from_analysis(analysis: Any) -> MethodResultSource:
             "y": analysis.crack_tip.crack_tip_y,
         },
         angle_deg=analysis.crack_tip.crack_tip_angle,
+        tip_id=getattr(analysis.crack_tip, "crack_tip_id", None),
     )
     material = analysis.material
     options = analysis.optimization_properties

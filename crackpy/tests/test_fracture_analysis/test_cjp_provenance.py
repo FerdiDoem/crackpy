@@ -289,6 +289,7 @@ def _fake_cjp_analysis():
         crack_tip_y=2.5,
         crack_tip_angle=12.0,
         left_or_right="right",
+        crack_tip_id="crack_tip:specimen-a:notch-2",
     )
     material = SimpleNamespace(
         name="AA2024-T3",
@@ -330,3 +331,18 @@ def test_output_writer_writes_cjp_provenance_artifacts_from_current_analysis_sha
     assert written["visualization_graph"].name.endswith("_cjp_fit_graph.json")
     assert written["visualization_graph_html"].name.endswith("_cjp_fit_graph.html")
     assert written["envelope"].exists()
+
+
+def test_cjp_source_adapter_uses_explicit_crack_tip_id_from_analysis():
+    from crackpy.fracture_analysis.methods.cjp_fit import source_from_analysis
+
+    source = source_from_analysis(_fake_cjp_analysis())
+    frame_dependencies = [
+        dependency
+        for dependency in source.dependencies
+        if dependency.dependency_name == "crack_tip_frame"
+    ]
+
+    assert len(frame_dependencies) == 1
+    assert frame_dependencies[0].record.tip_id == "crack_tip:specimen-a:notch-2"
+    assert frame_dependencies[0].record.compatibility_side == "right"

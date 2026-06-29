@@ -237,6 +237,11 @@ Replace repeated `left`/`right` orientation logic with a `CrackTipFrame` Module 
 
 Orientation is encoded through strings, sign flips, mirrored arrays, signed windows, output naming, and plot conventions. `side` bundles specimen geometry, crack-tip identity, crack-growth direction, detector training convention, mirroring policy, pipeline grouping, and result naming.
 
+Current implementation note: `CrackTipInfo` now carries optional `crack_tip_id` beside the legacy `left_or_right` label.
+Workflow-created crack-tip info passes `FractureWorkflowInput.crack_tip_id` into the current `FractureAnalysis` facade.
+Williams-fit and CJP-fit source adapters preserve explicit crack-tip IDs as `CrackTipFrame.tip_id` when building provenance envelopes.
+Frame IDs and output labels still keep side-labelled compatibility behavior.
+
 ### Target Shape
 
 - `CrackTipFrame` is the internal crack-tip orientation Interface.

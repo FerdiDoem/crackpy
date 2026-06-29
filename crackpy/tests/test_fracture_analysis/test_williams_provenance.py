@@ -376,6 +376,7 @@ def _fake_analysis():
         crack_tip_y=2.5,
         crack_tip_angle=12.0,
         left_or_right="right",
+        crack_tip_id="crack_tip:specimen-a:notch-2",
     )
     material = SimpleNamespace(
         name="AA2024-T3",
@@ -419,6 +420,7 @@ def test_build_williams_fit_envelope_maps_current_result_section():
 
     assert payload["envelope_schema_version"] == "crackpy.result_envelope.williams_fit.v1"
     assert payload["input_records"][0]["input_id"] == "input:DemoNodemap"
+    assert payload["crack_tip_frames"][0]["tip_id"] == "crack_tip:specimen-a:notch-2"
     assert payload["crack_tip_frames"][0]["angle_deg"] == 12.0
     assert payload["crack_tip_frames"][0]["compatibility_side"] == "right"
     assert payload["crack_tip_frames"][0]["geometry_profile"] == "surface_planar"
@@ -445,6 +447,20 @@ def test_crack_tip_frame_legacy_side_adapter_preserves_compatibility_label():
     assert frame.tip_id == "crack_tip:DemoNodemap:left"
     assert frame.compatibility_side == "left"
     assert frame.geometry_profile == "surface_planar"
+
+
+def test_crack_tip_frame_legacy_side_adapter_accepts_explicit_tip_id():
+    frame = CrackTipFrame.from_legacy_side(
+        stem="DemoNodemap",
+        side="left",
+        origin_mm={"x": 1.0, "y": 2.0},
+        angle_deg=45.0,
+        tip_id="crack_tip:specimen-a:notch-2",
+    )
+
+    assert frame.frame_id == "crack_tip_frame:DemoNodemap:left"
+    assert frame.tip_id == "crack_tip:specimen-a:notch-2"
+    assert frame.compatibility_side == "left"
 
 
 def test_crack_tip_frame_legacy_side_adapter_rejects_unknown_side():
@@ -515,9 +531,14 @@ def test_williams_fit_source_snapshot_uses_dependencies_parameters_and_quantitie
     assert "crack_tip_frame" not in source.parameters.result_parameters
     assert source.parameters.result_parameters["optimization"]["terms"] == [-1, 1, 2]
 
-    frame_dependencies = [dependency for dependency in source.dependencies if dependency.dependency_name == "crack_tip_frame"]
+    frame_dependencies = [
+        dependency
+        for dependency in source.dependencies
+        if dependency.dependency_name == "crack_tip_frame"
+    ]
     assert len(frame_dependencies) == 1
     assert isinstance(frame_dependencies[0].record, CrackTipFrame)
+    assert frame_dependencies[0].record.tip_id == "crack_tip:specimen-a:notch-2"
     assert frame_dependencies[0].target_id is None
 
     coefficient_quantities = [
