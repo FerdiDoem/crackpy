@@ -22,7 +22,8 @@
 - The first generic method-runtime slice now exists: `crackpy.methods.runtime` defines `MethodRunIdentityPolicy` and `build_manual_crack_tip_estimate()` for shared Williams/CJP-style provenance ID and imported-crack-tip estimate policy.
 - Williams-fit and CJP-fit currently duplicate configuration ID generation from parameter hash, run/result ID construction, dependency-edge assembly, and manual/imported crack-tip estimate projection.
 - Williams-fit and CJP-fit also duplicate material and optimization parameter snapshot patterns, but method-specific parameters such as Williams terms or CJP variants should remain method-local until more methods prove the shared shape.
-- Artifact writing is still duplicated by method-family wrappers: Williams and CJP have separate entry points that produce envelope, KG statement bundle, graph JSON, and graph HTML artifacts.
+- Artifact writing is now shared through `crackpy.results.envelope_artifacts.write_result_envelope_artifacts()`.
+  Williams and CJP keep separate public entry points only as method-specific Adapters for filename stems and graph titles.
 
 ## Postpone Until More Methods Exist
 
@@ -44,12 +45,11 @@ Postpone these until more method slices exist:
 - Create `crackpy/methods/__init__.py`: lightweight package entry point for generic method metadata helpers.
 - Create `crackpy/methods/definition.py`: generic `MethodDefinition`, `MethodArtifactDefinition`, and conversion helpers around `MethodSpec`.
 - Create `crackpy/methods/runtime.py`: generic helpers for method-run identity policy, normalized configuration IDs, run/result IDs, dependency edges, and manual crack-tip estimate projection.
-- Create `crackpy/results/method_artifacts.py`: generic artifact writer for `ResultEnvelope` projections that can be reused by Williams and CJP wrappers.
-- Modify `crackpy/fracture_analysis/methods/williams_fit/builder.py`: keep the public Williams entry point, delegate common artifact writing to `results.method_artifacts`.
-- Modify `crackpy/fracture_analysis/methods/cjp_fit/builder.py`: keep the public CJP entry point, delegate common artifact writing to `results.method_artifacts`.
+- Use `crackpy/results/envelope_artifacts.py`: generic artifact writer for `ResultEnvelope` projections that can be reused by Williams and CJP wrappers.
+- Keep `crackpy/results/write.py`: public Williams and CJP wrapper functions delegate common artifact writing to `results.envelope_artifacts` while preserving historical filename policy.
 - Modify `crackpy/crack_detection/method_metadata.py`: optionally expose detection records as generic `MethodDefinition` after the helper exists.
 - Test `crackpy/tests/test_methods/test_definition.py`: validate generic method definition behavior across Williams, CJP, and detection.
-- Test `crackpy/tests/test_fracture_analysis/test_method_artifacts.py`: validate generic envelope/KG/graph artifact writing through existing Williams and CJP envelopes.
+- Test `crackpy/tests/test_fracture_analysis/test_result_envelope_artifacts.py`: validate generic envelope/KG/graph artifact writing from an explicit `ResultEnvelope`.
 - Modify `docs/architecture-wiki/refactor-candidates/006-model-provider-seam.md`: link detection metadata to the shared method definition seam.
 - Modify `docs/architecture-wiki/results-io-workflows.md`: document the generic artifact writer frontend handoff.
 - Modify `docs/architecture-wiki/glossary.md`: add or refine "MethodDefinition" and "Method artifact writer" terms if implementation lands.
@@ -511,176 +511,54 @@ git commit -m "feat: add generic method run identity helpers"
 
 ### Task 5: Introduce A Generic ResultEnvelope Artifact Writer
 
+Status: completed by `codex/c001-result-envelope-artifact-writer`, with compatibility assertions tightened by `codex/method-artifact-writer-alignment`.
+
+Implementation note: do not create `crackpy/results/method_artifacts.py`.
+The live generic writer Module is `crackpy.results.envelope_artifacts`.
+Its public Interface is `write_result_envelope_artifacts(envelope=..., path=..., stem=..., graph_title=...) -> ResultEnvelopeArtifactPaths`.
+`ResultEnvelopeArtifactPaths.as_dict()` is the compatibility Adapter for legacy dictionary-returning writer code.
+
 **Files:**
-- Create: `crackpy/results/method_artifacts.py`
-- Create: `crackpy/tests/test_fracture_analysis/test_method_artifacts.py`
+- Existing: `crackpy/results/envelope_artifacts.py`
+- Existing: `crackpy/tests/test_fracture_analysis/test_result_envelope_artifacts.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Confirm the generic writer Interface exists**
 
-```python
-from pathlib import Path
+`crackpy.results.envelope_artifacts.write_result_envelope_artifacts()` writes envelope JSON, KG statement-bundle JSON, frontend graph JSON, and standalone graph HTML from an explicit `ResultEnvelope`.
 
-from crackpy.fracture_analysis.methods.williams_fit.builder import build_williams_fit_envelope_from_result
-from crackpy.results.method_artifacts import write_result_envelope_artifacts
+- [x] **Step 2: Confirm the typed return shape**
 
+`ResultEnvelopeArtifactPaths` exposes typed path fields and `as_dict()` for current dictionary-returning wrapper callers.
 
-def test_generic_writer_emits_envelope_kg_and_graph(tmp_path, williams_fit_result):
-    envelope = build_williams_fit_envelope_from_result(williams_fit_result)
+- [x] **Step 3: Confirm focused coverage**
 
-    written = write_result_envelope_artifacts(envelope=envelope, output_dir=tmp_path, stem="result")
-
-    assert written.envelope_path == tmp_path / "result_envelope.json"
-    assert written.kg_statement_bundle_path == tmp_path / "result_kg_statement_bundle.json"
-    assert written.graph_path == tmp_path / "result_graph.json"
-    assert written.html_graph_path == tmp_path / "result_graph.html"
-    assert written.envelope_path.exists()
-    assert written.kg_statement_bundle_path.exists()
-    assert written.graph_path.exists()
-    assert written.html_graph_path.exists()
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `& 'C:\Users\Admin\Documents\Coding-Projekte\crackpy\.venv\Scripts\python.exe' -m pytest crackpy\tests\test_fracture_analysis\test_method_artifacts.py -q`
-
-Expected: FAIL with `ModuleNotFoundError: No module named 'crackpy.results.method_artifacts'`.
-
-- [ ] **Step 3: Implement `crackpy/results/method_artifacts.py`**
-
-```python
-"""Generic artifact writing for result/provenance envelopes."""
-from __future__ import annotations
-
-from dataclasses import dataclass
-from pathlib import Path
-
-from crackpy.results.graph_visualization import (
-    envelope_to_visualization_graph,
-    write_visualization_graph_html,
-)
-from crackpy.results.kg_statement_bundle import envelope_to_kg_statement_bundle
-from crackpy.results.result_data import ResultEnvelope, write_json_file
-
-
-@dataclass(frozen=True)
-class WrittenEnvelopeArtifacts:
-    """Paths written for one result/provenance envelope projection."""
-
-    envelope_path: Path
-    kg_statement_bundle_path: Path
-    graph_path: Path
-    html_graph_path: Path
-
-
-def write_result_envelope_artifacts(
-    *,
-    envelope: ResultEnvelope,
-    output_dir: str | Path,
-    stem: str,
-) -> WrittenEnvelopeArtifacts:
-    """Write standard JSON, KG, graph JSON, and graph HTML artifacts for an envelope."""
-    output_dir = Path(output_dir)
-    envelope_path = write_json_file(envelope.to_dict(), output_dir / f"{stem}_envelope.json")
-
-    kg_statement_bundle = envelope_to_kg_statement_bundle(envelope)
-    kg_statement_bundle_path = write_json_file(
-        kg_statement_bundle.to_dict(),
-        output_dir / f"{stem}_kg_statement_bundle.json",
-    )
-
-    graph = envelope_to_visualization_graph(envelope)
-    graph_path = write_json_file(graph.to_dict(), output_dir / f"{stem}_graph.json")
-    html_graph_path = write_visualization_graph_html(graph, output_dir / f"{stem}_graph.html")
-
-    return WrittenEnvelopeArtifacts(
-        envelope_path=envelope_path,
-        kg_statement_bundle_path=kg_statement_bundle_path,
-        graph_path=graph_path,
-        html_graph_path=html_graph_path,
-    )
-```
-
-- [ ] **Step 4: Run the focused test**
-
-Run: `& 'C:\Users\Admin\Documents\Coding-Projekte\crackpy\.venv\Scripts\python.exe' -m pytest crackpy\tests\test_fracture_analysis\test_method_artifacts.py -q`
-
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add crackpy/results/method_artifacts.py crackpy/tests/test_fracture_analysis/test_method_artifacts.py
-git commit -m "feat: write generic envelope artifacts"
-```
+`crackpy/tests/test_fracture_analysis/test_result_envelope_artifacts.py` proves the writer emits all four projections and preserves the legacy dictionary keys.
 
 ### Task 6: Delegate Williams And CJP Artifact Wrappers To The Generic Writer
 
+Status: completed by `codex/c001-result-envelope-artifact-writer`, with public filename compatibility assertions tightened by `codex/method-artifact-writer-alignment`.
+
+Implementation note: the method-specific public Adapters live in `crackpy.results.write`.
+`write_williams_fit_provenance_artifacts()` and `write_cjp_fit_provenance_artifacts()` delegate to `crackpy.results.envelope_artifacts.write_result_envelope_artifacts()` and preserve historical filename stems.
+They also pass method-specific graph titles.
+
 **Files:**
-- Modify: `crackpy/fracture_analysis/methods/williams_fit/builder.py`
-- Modify: `crackpy/fracture_analysis/methods/cjp_fit/builder.py`
-- Modify: existing Williams/CJP provenance tests if path-return types need adjustment.
+- Existing: `crackpy/results/write.py`
+- Modified: existing Williams/CJP provenance tests to assert all explicit wrapper filenames.
 
-- [ ] **Step 1: Write compatibility tests**
+- [x] **Step 1: Confirm public wrapper delegation**
 
-Add assertions to existing artifact-writer tests that the public Williams and CJP wrapper functions still write the historical filenames:
+`write_williams_fit_provenance_artifacts(envelope, path, stem)` passes `stem=f"{stem}_williams_fit"` and the Williams graph title to the generic writer.
+`write_cjp_fit_provenance_artifacts(envelope, path, stem)` passes `stem=f"{stem}_cjp_fit"` and the CJP graph title to the generic writer.
 
-```python
-def test_williams_wrapper_keeps_historical_artifact_names(tmp_path, williams_fit_result):
-    envelope = build_williams_fit_envelope_from_result(williams_fit_result)
+- [x] **Step 2: Tighten compatibility tests**
 
-    written = write_williams_fit_provenance_artifacts(envelope, tmp_path, "sample")
+Williams and CJP explicit-envelope tests assert the exact historical names for envelope JSON, KG statement bundle, graph JSON, and graph HTML outputs.
 
-    assert (tmp_path / "sample_williams_fit_envelope.json").exists()
-    assert (tmp_path / "sample_williams_fit_kg_statement_bundle.json").exists()
-    assert (tmp_path / "sample_williams_fit_graph.json").exists()
-    assert (tmp_path / "sample_williams_fit_graph.html").exists()
-```
+- [x] **Step 3: Verify the writer seam**
 
-- [ ] **Step 2: Run tests to verify current behavior before refactor**
-
-Run: `& 'C:\Users\Admin\Documents\Coding-Projekte\crackpy\.venv\Scripts\python.exe' -m pytest crackpy\tests\test_fracture_analysis\test_williams_provenance.py crackpy\tests\test_fracture_analysis\test_cjp_provenance.py -q`
-
-Expected: PASS before refactor.
-
-- [ ] **Step 3: Replace duplicated artifact-writing code with the generic writer**
-
-In each method builder, keep the method-specific public entry point and stem policy:
-
-```python
-from crackpy.results.method_artifacts import write_result_envelope_artifacts
-
-
-def write_williams_fit_provenance_artifacts(envelope: ResultEnvelope, output_dir: str | Path, stem: str):
-    return write_result_envelope_artifacts(
-        envelope=envelope,
-        output_dir=output_dir,
-        stem=f"{stem}_williams_fit",
-    )
-```
-
-Use the same pattern for CJP:
-
-```python
-def write_cjp_fit_provenance_artifacts(envelope: ResultEnvelope, output_dir: str | Path, stem: str):
-    return write_result_envelope_artifacts(
-        envelope=envelope,
-        output_dir=output_dir,
-        stem=f"{stem}_cjp_fit",
-    )
-```
-
-- [ ] **Step 4: Run compatibility and generic writer tests**
-
-Run: `& 'C:\Users\Admin\Documents\Coding-Projekte\crackpy\.venv\Scripts\python.exe' -m pytest crackpy\tests\test_fracture_analysis\test_method_artifacts.py crackpy\tests\test_fracture_analysis\test_williams_provenance.py crackpy\tests\test_fracture_analysis\test_cjp_provenance.py -q`
-
+Run the generic writer test plus Williams and CJP explicit-envelope wrapper tests.
 Expected: PASS with unchanged public artifact filenames.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add crackpy/results/method_artifacts.py crackpy/fracture_analysis/methods/williams_fit/builder.py crackpy/fracture_analysis/methods/cjp_fit/builder.py crackpy/tests/test_fracture_analysis
-git commit -m "refactor: share method envelope artifact writing"
-```
 
 ### Task 7: Document The Reusable Method Metadata Seam
 
@@ -694,7 +572,7 @@ git commit -m "refactor: share method envelope artifact writing"
 Add this observed note after the provenance artifact writer bullets:
 
 ```markdown
-- `crackpy/results/method_artifacts.py`: generic artifact writer for `ResultEnvelope` projections. Method-local wrappers keep public filename policy, while the generic writer owns envelope JSON, compact KG bundle, graph JSON, and graph HTML projection.
+- `crackpy/results/envelope_artifacts.py`: generic artifact writer for `ResultEnvelope` projections. Method-local wrappers keep public filename policy, while the generic writer owns envelope JSON, compact KG bundle, graph JSON, and graph HTML projection.
 ```
 
 - [ ] **Step 2: Update C-006**
@@ -736,7 +614,7 @@ git commit -m "docs: describe reusable method metadata seam"
 - A generic `MethodDefinition` helper exists and is imported by detection metadata without moving numerical method code.
 - A generic method-runtime helper owns deterministic configuration/run/result ID construction and manual crack-tip estimate projection for Williams/CJP-style envelopes.
 - Result and quantity metadata lookup treats `symbol` as a readable method/result label and uses `quantity_id`, `result_id`, or `method_id` for stable identity and disambiguation.
-- Generic envelope artifact writing exists in one Module and Williams/CJP public wrappers delegate to it without changing public artifact filenames.
+- Generic envelope artifact writing exists in `crackpy.results.envelope_artifacts` and Williams/CJP public wrappers delegate to it without changing public artifact filenames.
 - Tests prove the generic method metadata shape across detection, Williams, and CJP.
 - Tests prove method-run identity and manual crack-tip estimate projection without constructing a full `FractureAnalysis` object.
 - Tests prove the generic artifact writer emits envelope, KG bundle, graph JSON, and graph HTML from a `ResultEnvelope`.
