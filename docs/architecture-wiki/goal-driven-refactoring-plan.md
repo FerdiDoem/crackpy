@@ -457,6 +457,9 @@ Williams-fit and CJP-fit now share method-module shape, but the commonality is i
 Future integral methods could copy the shape inconsistently, especially around metadata, schema versions, aliases, source adapters, and envelope builders.
 CJP shows that a method family may need variants and contextual result-symbol lookup, so a simple base class would be too rigid.
 
+Current implementation note: the first `crackpy.methods.contract` verifier slice exists and is exercised by Williams-fit and CJP-fit fixtures.
+It is a test-time helper, not a package-wide registry or release gate.
+
 ### Target Shape
 
 - A protocol-like method-module Interface describes required files, public seams, spec loading, typed parameters, typed results, source adapters, runners, and envelope builders.
@@ -467,7 +470,8 @@ CJP shows that a method family may need variants and contextual result-symbol lo
 ### Definition Of Done
 
 - The method-module contract is documented with Williams-fit and CJP-fit as examples.
-- Contract tests verify spec loading, unique method IDs, alias uniqueness, quantity metadata, repeated-symbol disambiguation, parameter snapshots, source snapshots, and envelope construction.
+- Contract tests verify spec loading, unique method IDs, alias uniqueness, quantity metadata, source snapshots, schema-indexable envelopes, and standard artifact construction.
+- Repeated-symbol disambiguation and parameter snapshot expectations remain covered by the surrounding CJP/Williams provenance tests until the verifier owns those checks directly.
 - CJP passes the contract while still producing separate mixed-mode and Mode-I runs/results.
 - Williams passes the contract while still producing one analysis run/result.
 - Shared runtime helpers remove repeated ID/configuration/imported-crack-tip-estimate plumbing without changing public artifact filenames or envelope semantics.

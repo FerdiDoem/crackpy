@@ -1,6 +1,6 @@
 # Candidate 011: Method Module Contract
 
-Status: proposed
+Status: proposed, first test-time verifier slice implemented
 Role: Architecture candidate for defining a standard method-module Interface, its required seams, and build-time verification.
 
 Related: [[refactor-candidates/003-self-contained-williams-fit-interface]], [[refactor-candidates/008-result-tag-schema]], [[refactor-candidates/010-provenance-metadata-architecture]], [[refactor-roadmap]]
@@ -123,6 +123,24 @@ The verifier should not require a common base class.
 
 It should treat the method module's public seam as the Interface and the numerical details as method-local implementation.
 
+## First Verifier Slice
+
+`crackpy.methods.contract.verify_method_module_contract()` is the first implemented verifier slice.
+
+It is intentionally a test-time helper rather than a package-wide registry or release gate.
+
+The verifier receives an importable method module name, a `MethodContractFixture`, and an artifact directory.
+
+`MethodContractFixture.source_factory` builds a method-local `MethodResultSource` so the verifier can check source snapshot construction without knowing method-specific numerical inputs.
+
+`MethodContractFixture.envelope_factory` builds a method-local `ResultEnvelope` so the verifier can check schema indexing and artifact writing without importing `FractureAnalysis`.
+
+`MethodContractFixture.artifact_stem` and `MethodContractFixture.graph_title` are explicit because filename policy and graph labels are adapter concerns, not verifier guesses.
+
+The first tests run this verifier against Williams-fit and CJP-fit fixtures.
+
+This proves the one-result Williams case and the two-result CJP variant case, but it does not yet approve integral method migration or a build/release gate.
+
 ## Seams / Interfaces / Adapters
 
 - Interface: method-module contract covering files, exported functions, specs, parameters, typed results, source snapshots, and envelope builders.
@@ -153,7 +171,8 @@ It should treat the method module's public seam as the Interface and the numeric
 
 - A documented method-module contract exists and is linked from the refactor roadmap.
 - Williams-fit and CJP-fit are used as the first contract examples.
-- Contract tests verify method metadata, quantity metadata, alias uniqueness, contextual symbol lookup, parameter snapshots, source snapshots, and envelope construction.
+- Contract tests verify method metadata, quantity metadata, alias uniqueness, source snapshots, schema-indexable envelopes, and standard artifact construction.
+- Contextual repeated-symbol lookup and parameter snapshot coverage remain part of the broader C-011 DoD and are still covered through the existing provenance and parameter-snapshot tests.
 - Shared runtime helpers remove repeated configuration/run/result ID and imported crack-tip estimate code from Williams/CJP builders without changing output shape.
 - CJP still emits one mixed-mode run/result and one Mode-I run/result.
 - Williams still emits one analysis run/result.
@@ -163,6 +182,6 @@ It should treat the method module's public seam as the Interface and the numeric
 
 ## Decision State
 
-Draft planning accepted for documentation only.
+Draft planning accepted, with a focused first verifier implementation in tests.
 
-No package-wide method-module contract, build-time verifier, or generic method runtime helper is approved for implementation until a focused goal is explicitly started.
+No package-wide method-module registry, build/release gate, integral method migration, or generic method runtime helper is approved until a focused goal is explicitly started.
