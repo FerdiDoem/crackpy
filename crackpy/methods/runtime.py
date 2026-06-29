@@ -1,14 +1,29 @@
-"""Reusable method-run identity helpers.
+"""Reusable method-run metadata helpers.
 
-These helpers own generic ID and imported-crack-tip projection policy. They do
-not call numerical methods and do not expand method-specific quantities.
+These helpers own generic ID, dependency-edge, and imported-crack-tip
+projection policy. They do not call numerical methods and do not expand
+method-specific quantities.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol
 
-from crackpy.results.result_data import CrackTipEstimateResult, CrackTipFrame
+from crackpy.results.result_data import CrackTipEstimateResult, CrackTipFrame, DependencyEdge
+
+
+class MethodDependencyEdgeBuilder(Protocol):
+    """Builder Interface for standard method-run dependency edges.
+
+    Implementations must return the dependencies implied by inputs,
+    configurations, and source dependencies for one run. Callers can then add
+    method-specific runtime dependencies without knowing the builder internals.
+    """
+
+    def dependency_edges(self, run_id: str, configuration_id: str) -> list[DependencyEdge]:
+        """Return standard dependency edges for a method run."""
+        ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +75,55 @@ class MethodRunIdentityPolicy:
     def _require_non_empty(name: str, value: str) -> None:
         if not value:
             raise ValueError(f"MethodRunIdentityPolicy requires a non-empty {name}.")
+
+
+@dataclass(frozen=True, slots=True)
+class MethodRunDependency:
+    """Additional dependency appended to one method run.
+
+    `target_id` is the provenance identity of the depended-on record, such as a
+    crack-tip estimate. `role` names why the run uses the target. `target_type`
+    records the target record shape for graph, KG, and frontend projections.
+    """
+
+    target_id: str
+    role: str
+    target_type: str
+
+    def __post_init__(self) -> None:
+        for name, value in {
+            "target_id": self.target_id,
+            "role": self.role,
+            "target_type": self.target_type,
+        }.items():
+            if not value:
+                raise ValueError(f"MethodRunDependency requires a non-empty {name}.")
+
+
+def build_method_run_dependencies(
+        builder: MethodDependencyEdgeBuilder,
+        *,
+        run_id: str,
+        configuration_id: str,
+        dependencies: tuple[MethodRunDependency, ...] = (),
+) -> list[DependencyEdge]:
+    """Return standard and method-specific dependency edges for one run."""
+    if not run_id:
+        raise ValueError("build_method_run_dependencies() requires a non-empty run_id.")
+    if not configuration_id:
+        raise ValueError("build_method_run_dependencies() requires a non-empty configuration_id.")
+
+    edges = builder.dependency_edges(run_id, configuration_id)
+    edges.extend(
+        DependencyEdge(
+            source_id=run_id,
+            target_id=dependency.target_id,
+            role=dependency.role,
+            target_type=dependency.target_type,
+        )
+        for dependency in dependencies
+    )
+    return edges
 
 
 def build_manual_crack_tip_estimate(

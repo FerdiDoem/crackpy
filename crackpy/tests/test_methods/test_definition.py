@@ -4,9 +4,14 @@ from crackpy.crack_detection.method_metadata import known_crack_detection_method
 from crackpy.fracture_analysis.methods.cjp_fit.spec_loader import load_cjp_fit_spec
 from crackpy.fracture_analysis.methods.williams_fit.spec_loader import load_williams_fit_spec
 from crackpy.methods.definition import MethodArtifactDefinition, MethodDefinition
-from crackpy.methods.runtime import MethodRunIdentityPolicy, build_manual_crack_tip_estimate
+from crackpy.methods.runtime import (
+    MethodRunDependency,
+    MethodRunIdentityPolicy,
+    build_manual_crack_tip_estimate,
+    build_method_run_dependencies,
+)
 from crackpy.provenance.spec import MethodSpec
-from crackpy.results.result_data import CrackTipFrame
+from crackpy.results.result_data import CrackTipFrame, DependencyEdge
 
 
 def _current_method_specs() -> list[MethodSpec]:
@@ -133,3 +138,62 @@ def test_manual_crack_tip_estimate_projection_is_shared():
     assert estimate.observed_mm == {"x": 1.0, "y": 2.0}
     assert estimate.corrected_mm == {"x": 1.0, "y": 2.0}
     assert estimate.correction_delta_mm == {"x": 0.0, "y": 0.0}
+
+
+class _FakeDependencyBuilder:
+    def dependency_edges(self, run_id: str, configuration_id: str) -> list[DependencyEdge]:
+        return [
+            DependencyEdge(
+                source_id=run_id,
+                target_id="input:demo",
+                role="used_input",
+                target_type="InputRecord",
+            ),
+            DependencyEdge(
+                source_id=run_id,
+                target_id=configuration_id,
+                role="used_configuration",
+                target_type="NormalizedConfiguration",
+            ),
+        ]
+
+
+def test_method_run_dependencies_append_method_specific_dependencies():
+    dependencies = build_method_run_dependencies(
+        _FakeDependencyBuilder(),
+        run_id="run:demo",
+        configuration_id="configuration:demo",
+        dependencies=(
+            MethodRunDependency(
+                target_id="crack_tip_estimate:demo:right",
+                role="used_crack_tip_estimate",
+                target_type="CrackTipEstimateResult",
+            ),
+        ),
+    )
+
+    assert dependencies == [
+        DependencyEdge(
+            source_id="run:demo",
+            target_id="input:demo",
+            role="used_input",
+            target_type="InputRecord",
+        ),
+        DependencyEdge(
+            source_id="run:demo",
+            target_id="configuration:demo",
+            role="used_configuration",
+            target_type="NormalizedConfiguration",
+        ),
+        DependencyEdge(
+            source_id="run:demo",
+            target_id="crack_tip_estimate:demo:right",
+            role="used_crack_tip_estimate",
+            target_type="CrackTipEstimateResult",
+        ),
+    ]
+
+
+def test_method_run_dependency_rejects_empty_parts():
+    with pytest.raises(ValueError, match="target_id"):
+        MethodRunDependency(target_id="", role="used_crack_tip_estimate", target_type="CrackTipEstimateResult")

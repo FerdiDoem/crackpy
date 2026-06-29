@@ -19,9 +19,9 @@
 - `ResultEnvelope`, `AnalysisRun`, `MethodMetadata`, `NormalizedConfiguration`, `ResultRecord`, and `ResultQuantity` already model the "what ran, with which method, on which inputs, with which configuration, producing which result" structure.
 - `ResultSchemaIndex` now proves why reusable method metadata must carry context instead of relying on display labels: CJP has repeated `error` symbols across mixed-mode and Mode-I result records, while Williams currently has unique coefficient and SIF labels.
 - The first generic method-definition slice now exists: `crackpy.methods.definition` defines `MethodDefinition` and `MethodArtifactDefinition`, and detection metadata can export generic definitions through `known_crack_detection_method_definitions()`.
-- The first generic method-runtime slice now exists: `crackpy.methods.runtime` defines `MethodRunIdentityPolicy` and `build_manual_crack_tip_estimate()` for shared Williams/CJP-style provenance ID and imported-crack-tip estimate policy.
-- Williams-fit and CJP-fit builders now delegate configuration ID generation, run/result ID construction, and manual/imported crack-tip estimate projection to `crackpy.methods.runtime`.
-- Williams-fit and CJP-fit still build dependency edges locally because the dependencies are owned by method-specific provenance slice specs.
+- The generic method-runtime slice now exists: `crackpy.methods.runtime` defines `MethodRunIdentityPolicy`, `build_manual_crack_tip_estimate()`, `MethodRunDependency`, and `build_method_run_dependencies()` for shared Williams/CJP-style provenance ID, imported-crack-tip estimate, and run-dependency edge policy.
+- Williams-fit and CJP-fit builders now delegate configuration ID generation, run/result ID construction, manual/imported crack-tip estimate projection, and common dependency-edge assembly to `crackpy.methods.runtime`.
+- Williams-fit and CJP-fit still source dependency roles and target types from their method-specific provenance slice specs.
 - Williams-fit and CJP-fit also duplicate material and optimization parameter snapshot patterns, but method-specific parameters such as Williams terms or CJP variants should remain method-local until more methods prove the shared shape.
 - Artifact writing is now shared through `crackpy.results.envelope_artifacts.write_result_envelope_artifacts()`.
   Williams and CJP keep separate public entry points only as method-specific Adapters for filename stems and graph titles.
@@ -341,10 +341,11 @@ git commit -m "feat: expose detection method definitions"
 
 Status: completed by `codex/method-runtime-identity`.
 Williams/CJP builder delegation completed by `codex/method-runtime-delegation`.
+Williams/CJP dependency-edge delegation completed by `codex/method-run-dependencies`.
 
-Implementation note: the helper Module owns deterministic ID and imported-crack-tip estimate policy.
-Williams-fit and CJP-fit builders now call the helper while preserving the same envelope IDs, payloads, and filenames.
-Dependency-edge assembly remains method-local because each method slice owns its dependency spec.
+Implementation note: the helper Module owns deterministic ID, imported-crack-tip estimate, and common dependency-edge assembly policy.
+Williams-fit and CJP-fit builders now call the helper while preserving the same envelope IDs, dependency roles, payloads, and filenames.
+Dependency role and target-type declarations remain method-local because each method slice owns its dependency spec.
 
 **Files:**
 - Create: `crackpy/methods/runtime.py`
@@ -615,11 +616,11 @@ git commit -m "docs: describe reusable method metadata seam"
 
 - Detection, Williams-fit, and CJP-fit method metadata all expose the same `MethodSpec` core.
 - A generic `MethodDefinition` helper exists and is imported by detection metadata without moving numerical method code.
-- A generic method-runtime helper owns deterministic configuration/run/result ID construction and manual crack-tip estimate projection for Williams/CJP-style envelopes.
+- A generic method-runtime helper owns deterministic configuration/run/result ID construction, manual crack-tip estimate projection, and common dependency-edge assembly for Williams/CJP-style envelopes.
 - Result and quantity metadata lookup treats `symbol` as a readable method/result label and uses `quantity_id`, `result_id`, or `method_id` for stable identity and disambiguation.
 - Generic envelope artifact writing exists in `crackpy.results.envelope_artifacts` and Williams/CJP public wrappers delegate to it without changing public artifact filenames.
 - Tests prove the generic method metadata shape across detection, Williams, and CJP.
-- Tests prove method-run identity and manual crack-tip estimate projection without constructing a full `FractureAnalysis` object.
+- Tests prove method-run identity, manual crack-tip estimate projection, and common dependency-edge assembly without constructing a full `FractureAnalysis` object.
 - Tests prove the generic artifact writer emits envelope, KG bundle, graph JSON, and graph HTML from a `ResultEnvelope`.
 - Existing Williams/CJP provenance tests still pass.
 - Architecture wiki distinguishes observed implementation from deferred registry/provider/runtime-orchestrator work.

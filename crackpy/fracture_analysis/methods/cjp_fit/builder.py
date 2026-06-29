@@ -10,12 +10,16 @@ from crackpy.fracture_analysis.methods.cjp_fit.parameters import CjpFitResultPar
 from crackpy.fracture_analysis.methods.cjp_fit.result import CjpFitResult
 from crackpy.fracture_analysis.methods.cjp_fit.source_adapter import source_from_analysis, source_from_result
 from crackpy.fracture_analysis.methods.cjp_fit.spec_loader import CjpFitSliceSpec, load_cjp_fit_spec
-from crackpy.methods.runtime import MethodRunIdentityPolicy, build_manual_crack_tip_estimate
+from crackpy.methods.runtime import (
+    MethodRunDependency,
+    MethodRunIdentityPolicy,
+    build_manual_crack_tip_estimate,
+    build_method_run_dependencies,
+)
 from crackpy.provenance import MethodResultEnvelopeBuilder, MethodResultSource
 from crackpy.results.result_data import (
     AnalysisRun,
     CrackTipFrame,
-    DependencyEdge,
     ResultEnvelope,
     ResultRecord,
 )
@@ -90,14 +94,17 @@ def build_cjp_fit_envelope_from_source(
             short_hash=short_hash,
             variant=variant,
         )
-        dependencies = builder.dependency_edges(run_id, configuration.configuration_id)
-        dependencies.append(
-            DependencyEdge(
-                run_id,
-                estimate.estimate_id,
-                crack_tip_estimate_dependency.role,
-                crack_tip_estimate_dependency.target_type,
-            )
+        dependencies = build_method_run_dependencies(
+            builder,
+            run_id=run_id,
+            configuration_id=configuration.configuration_id,
+            dependencies=(
+                MethodRunDependency(
+                    target_id=estimate.estimate_id,
+                    role=crack_tip_estimate_dependency.role,
+                    target_type=crack_tip_estimate_dependency.target_type,
+                ),
+            ),
         )
         runs.append(
             AnalysisRun(

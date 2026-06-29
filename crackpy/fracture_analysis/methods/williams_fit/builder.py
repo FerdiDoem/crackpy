@@ -11,12 +11,16 @@ from crackpy.fracture_analysis.methods.williams_fit.parameters import WilliamsFi
 from crackpy.fracture_analysis.methods.williams_fit.result import WilliamsFitResult
 from crackpy.fracture_analysis.methods.williams_fit.source_adapter import source_from_analysis, source_from_result
 from crackpy.fracture_analysis.methods.williams_fit.spec_loader import WilliamsFitSliceSpec, load_williams_fit_spec
-from crackpy.methods.runtime import MethodRunIdentityPolicy, build_manual_crack_tip_estimate
+from crackpy.methods.runtime import (
+    MethodRunDependency,
+    MethodRunIdentityPolicy,
+    build_manual_crack_tip_estimate,
+    build_method_run_dependencies,
+)
 from crackpy.provenance import MethodResultEnvelopeBuilder, MethodResultSource
 from crackpy.results.result_data import (
     AnalysisRun,
     CrackTipFrame,
-    DependencyEdge,
     ResultEnvelope,
     ResultRecord,
 )
@@ -64,14 +68,17 @@ def build_williams_fit_envelope_from_source(
     )
 
     crack_tip_estimate_dependency = spec.dependencies["crack_tip_estimate"]
-    dependencies = builder.dependency_edges(run_id, configuration.configuration_id)
-    dependencies.append(
-        DependencyEdge(
-            run_id,
-            estimate.estimate_id,
-            crack_tip_estimate_dependency.role,
-            crack_tip_estimate_dependency.target_type,
-        )
+    dependencies = build_method_run_dependencies(
+        builder,
+        run_id=run_id,
+        configuration_id=configuration.configuration_id,
+        dependencies=(
+            MethodRunDependency(
+                target_id=estimate.estimate_id,
+                role=crack_tip_estimate_dependency.role,
+                target_type=crack_tip_estimate_dependency.target_type,
+            ),
+        ),
     )
 
     analysis_method = spec.methods["analysis"]
