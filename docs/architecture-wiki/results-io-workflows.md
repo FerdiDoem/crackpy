@@ -127,6 +127,11 @@ Frontend integration handoff:
   Current crack-info CSV rows can be adapted with `FractureWorkflowInput.from_legacy_pipeline_row()`.
   If a row provides `Crack Tip ID`, the adapter preserves it; otherwise it derives `crack_tip:<filename-stem>:<side>` as a temporary compatibility ID.
   Frontend state should key crack-tip selections by `crack_tip_id` and display `compatibility_side` only as a legacy label.
+- C-005 crack-tip ID handoff update: `CrackTipInfo` now carries optional `crack_tip_id` beside current `left_or_right`.
+  Workflow-created `CrackTipInfo` objects pass the `FractureWorkflowInput.crack_tip_id` through to Williams-fit and CJP-fit source adapters.
+  When those adapters build `CrackTipFrame` records from a `FractureAnalysis` object, `CrackTipFrame.tip_id` preserves the explicit crack-tip ID when one exists.
+  `CrackTipFrame.frame_id` and `data.compatibility_side` still preserve current side-labelled frame and output compatibility.
+  Frontend graph consumers should treat `tip_id` as the stable crack-tip node identity and `compatibility_side` as a display/filter label only.
 - C-007 update: result/provenance payload shape is unchanged. Backend/frontend fixture code may omit `FractureAnalysis` option arguments without sharing mutated default `IntegralProperties` or `OptimizationProperties` across fixture runs; pass `None` explicitly when a fixture should disable line integrals or optimization.
 - C-003 update: result/provenance payload shape is unchanged. Backend/frontend contract tests can now build a `WilliamsFitResult` either from explicit coefficient arrays with `run_williams_fit_from_coefficients()` or from crack-tip-centered displacement grids with `WilliamsFitDisplacementField` and `fit_williams_displacement_field()`, without constructing `FractureAnalysis` or relying on `Optimization` constructor side effects.
 - C-003 correction update: frontend or backend integration that consumes crack-tip correction output should prefer `CrackTipCorrectionResult.corrected_mm` for the absolute corrected crack-tip estimate and `CrackTipCorrectionResult.correction_delta_mm` for audit display. Existing list-shaped correction returns remain relative deltas and should not be displayed as absolute crack-tip coordinates.

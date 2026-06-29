@@ -133,6 +133,7 @@ def test_workflow_runner_prepares_analysis_without_writer_or_plotter_policy():
     assert result.data.stress_material is material
     assert result.data.transform_args == (1.0, 2.0, 3.0)
     assert analysis.crack_tip_info.left_or_right == "right"
+    assert analysis.crack_tip_info.crack_tip_id == "crack_tip:specimen-a:notch-2"
     assert analysis.integral_properties is integral_properties
     assert analysis.optimization_properties is optimization_properties
     assert analysis.run_args == (progress, "task-1")
