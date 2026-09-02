@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+from importlib.metadata import PackageNotFoundError, version as package_version
 import math
 from pathlib import Path
 import platform
@@ -54,7 +55,8 @@ class RuntimeBenchmark:
     phases: dict[str, PhaseStatistics]
     total_measured_ms: float
     throughput_per_second: float
-    process_rss_bytes: int | None
+    process_rss_after_bytes: int | None
+    process_peak_rss_bytes: int | None
     gpu_peak_memory_bytes: int | None
 
     def to_dict(self) -> dict[str, object]:
@@ -66,7 +68,8 @@ class RuntimeBenchmark:
             "phases": {name: summary.to_dict() for name, summary in self.phases.items()},
             "total_measured_ms": self.total_measured_ms,
             "throughput_per_second": self.throughput_per_second,
-            "process_rss_bytes": self.process_rss_bytes,
+            "process_rss_after_bytes": self.process_rss_after_bytes,
+            "process_peak_rss_bytes": self.process_peak_rss_bytes,
             "gpu_peak_memory_bytes": self.gpu_peak_memory_bytes,
         }
 
@@ -98,6 +101,7 @@ class RunMetadata:
     cuda_version: str | None
     python_version: str
     platform: str
+    crackpy_version: str | None
     numpy_version: str
     torch_version: str | None
     artifact_sha256: dict[str, str]
@@ -112,9 +116,8 @@ def configure_deterministic_execution(seed: int, *, torch_module: Any | None = N
     """Seed Python, NumPy, and Torch while preferring deterministic kernels.
 
     Torch is injected for lightweight tests and imported only when the caller
-    does not supply it.  ``warn_only`` preserves benchmark execution on an
-    operation without a deterministic implementation while making the choice
-    visible in the returned metadata.
+    does not supply it. Unsupported nondeterministic operations fail loudly so
+    a reference run cannot silently weaken its reproducibility contract.
     """
 
     if not isinstance(seed, int) or isinstance(seed, bool) or seed < 0:
@@ -130,7 +133,7 @@ def configure_deterministic_execution(seed: int, *, torch_module: Any | None = N
     cuda_available = _cuda_available(torch_module)
     if cuda_available:
         torch_module.cuda.manual_seed_all(seed)
-    torch_module.use_deterministic_algorithms(True, warn_only=True)
+    torch_module.use_deterministic_algorithms(True, warn_only=False)
 
     cudnn = getattr(getattr(torch_module, "backends", None), "cudnn", None)
     if cudnn is None:
@@ -181,6 +184,7 @@ def collect_run_metadata(
         cuda_version=cuda_version,
         python_version=platform.python_version(),
         platform=platform.platform(),
+        crackpy_version=_installed_version("crackpy"),
         numpy_version=np.__version__,
         torch_version=torch_version,
         artifact_sha256={name: sha256_file(path) for name, path in artifact_paths.items()},
@@ -230,9 +234,11 @@ def benchmark_phases(
 
     if _is_cuda_device(device) and _cuda_available(torch_module):
         gpu_peak_memory_bytes = int(torch_module.cuda.max_memory_allocated(device))
-    process_rss_bytes = _process_rss_bytes(process)
+    process_rss_after_bytes, process_peak_rss_bytes = _process_memory_bytes(process)
     phase_statistics = {name: _phase_statistics(samples) for name, samples in samples_by_phase.items()}
     total_measured_ms = float(sum(sum(samples) for samples in samples_by_phase.values()))
+    if total_measured_ms <= 0:
+        raise RuntimeError("total measured duration must be greater than zero")
     throughput_per_second = measured_iterations / (total_measured_ms / 1000.0)
 
     return RuntimeBenchmark(
@@ -241,7 +247,8 @@ def benchmark_phases(
         phases=phase_statistics,
         total_measured_ms=total_measured_ms,
         throughput_per_second=float(throughput_per_second),
-        process_rss_bytes=process_rss_bytes,
+        process_rss_after_bytes=process_rss_after_bytes,
+        process_peak_rss_bytes=process_peak_rss_bytes,
         gpu_peak_memory_bytes=gpu_peak_memory_bytes,
     )
 
@@ -303,17 +310,31 @@ def _reset_gpu_peak_memory(device: str, torch_module: Any | None) -> int | None:
     return 0
 
 
-def _process_rss_bytes(process: Any | None) -> int | None:
-    """Read process resident memory, accepting a lightweight test double."""
+def _process_memory_bytes(process: Any | None) -> tuple[int | None, int | None]:
+    """Read current and peak resident memory when the platform exposes them."""
 
     if process is None:
         try:
             import psutil
         except ImportError:
-            return None
+            return None, _resource_peak_rss_bytes()
         process = psutil.Process()
-    rss = int(process.memory_info().rss)
-    return rss if rss >= 0 else None
+    memory_info = process.memory_info()
+    rss = int(memory_info.rss)
+    peak = getattr(memory_info, "peak_wset", None)
+    peak_bytes = int(peak) if peak is not None else _resource_peak_rss_bytes()
+    return rss if rss >= 0 else None, peak_bytes if peak_bytes is None or peak_bytes >= 0 else None
+
+
+def _resource_peak_rss_bytes() -> int | None:
+    """Return the Unix process peak RSS with its platform-specific unit."""
+
+    try:
+        import resource
+    except ImportError:
+        return None
+    peak = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    return peak if sys.platform == "darwin" else peak * 1024
 
 
 def _git_commit(git_root: str | Path | None) -> str | None:
@@ -341,6 +362,15 @@ def _optional_text(value: object) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _installed_version(distribution: str) -> str | None:
+    """Return an installed distribution version without requiring packaging."""
+
+    try:
+        return package_version(distribution)
+    except PackageNotFoundError:
+        return None
 
 
 def _validate_phases(phases: Mapping[str, Callable[[], T]]) -> None:

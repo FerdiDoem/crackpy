@@ -69,6 +69,7 @@ class _FakeTorch:
 class _FakeProcess:
     class _MemoryInfo:
         rss = 8192
+        peak_wset = 16384
 
     def memory_info(self):
         return self._MemoryInfo()
@@ -113,7 +114,8 @@ def test_benchmark_phases_excludes_warmups_and_retains_separate_phase_statistics
     assert result.phases["prepare"].samples_ms == (1.0, 2.0)
     assert result.phases["inference"].samples_ms == (3.0, 4.0)
     assert result.phases["inference"].p95_ms == pytest.approx(3.95)
-    assert result.process_rss_bytes == 8192
+    assert result.process_rss_after_bytes == 8192
+    assert result.process_peak_rss_bytes == 16384
 
 
 def test_benchmark_phases_reports_throughput_and_mockable_cuda_synchronization():
@@ -149,7 +151,7 @@ def test_deterministic_execution_controls_all_random_sources_and_cuda_settings()
     assert float(np.random.random()) == first_numpy
     assert torch_module.manual_seeds == [1234, 1234]
     assert torch_module.cuda.manual_seeds == [1234, 1234]
-    assert torch_module.deterministic_calls == [(True, True), (True, True)]
+    assert torch_module.deterministic_calls == [(True, False), (True, False)]
     assert torch_module.backends.cudnn.benchmark is False
     assert torch_module.backends.cudnn.deterministic is True
 
@@ -171,6 +173,7 @@ def test_hash_and_metadata_are_strict_json_compatible_and_capture_device(tmp_pat
     assert metadata.device == "cuda:0"
     assert metadata.device_name == "mock-gpu"
     assert metadata.git_commit is None
+    assert metadata.crackpy_version == "1.3.0"
     encoded = json.dumps(metadata.to_dict(), allow_nan=False)
     assert json.loads(encoded)["seed"] == 17
 
@@ -184,3 +187,13 @@ def test_benchmark_result_is_strict_json_compatible():
     )
 
     assert json.loads(json.dumps(result.to_dict(), allow_nan=False))["phases"]["inference"]["mean_ms"] == 1.0
+
+
+def test_benchmark_rejects_a_zero_total_duration():
+    with pytest.raises(RuntimeError, match="greater than zero"):
+        benchmark_phases(
+            {"inference": lambda: None},
+            measured_iterations=1,
+            clock_ns=_clock_from_nanoseconds([0, 0]),
+            process=_FakeProcess(),
+        )
