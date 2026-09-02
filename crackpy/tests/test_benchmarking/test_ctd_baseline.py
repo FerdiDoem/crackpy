@@ -98,6 +98,22 @@ def test_native_resolution_is_explicitly_marked_as_sensitivity() -> None:
     torch.testing.assert_close(actual, normalize(raw).to(dtype=torch.float32))
 
 
+def test_low_64_resolution_resizes_raw_fields_before_normalization() -> None:
+    raw = torch.arange(2 * 128 * 128, dtype=torch.float32).reshape(1, 2, 128, 128)
+    expected_resized = torch_functional.interpolate(
+        raw,
+        size=(64, 64),
+        mode="bilinear",
+        align_corners=True,
+    )
+
+    actual, model_pixels = prepare_crackmnist_inputs(raw, ResolutionMode.LOW_64)
+
+    assert model_pixels == 64
+    assert tuple(actual.shape) == (1, 2, 64, 64)
+    torch.testing.assert_close(actual, normalize(expected_resized).to(dtype=torch.float32))
+
+
 class _FakeCrackMNIST:
     split = "test"
     size = "S"

@@ -58,6 +58,7 @@ class ResolutionMode(str, Enum):
 
     TRAINED_256 = "trained-256"
     NATIVE_128 = "native-128"
+    LOW_64 = "low-64"
 
 
 def decode_historical_tip(probability_mask: Tensor) -> Point | None:
@@ -130,7 +131,11 @@ def prepare_crackmnist_inputs(
     fields = torch.as_tensor(raw_fields, dtype=torch.float32, device="cpu")
     if fields.ndim != 4 or fields.shape[1:] != (2, 128, 128):
         raise ValueError("raw CrackMNIST fields must have shape (n, 2, 128, 128)")
-    model_pixels = 256 if mode is ResolutionMode.TRAINED_256 else 128
+    model_pixels = {
+        ResolutionMode.TRAINED_256: 256,
+        ResolutionMode.NATIVE_128: 128,
+        ResolutionMode.LOW_64: 64,
+    }[mode]
     if model_pixels != 128:
         fields = torch_functional.interpolate(
             fields,
@@ -232,13 +237,13 @@ def evaluate_crackmnist(
         "dataset": _crackmnist_summary(dataset, sample_count),
         "resolution": {
             "mode": mode.value,
-            "model_pixels": 256 if mode is ResolutionMode.TRAINED_256 else 128,
+            "model_pixels": model_pixels,
             "original_pixels": 128,
-            "resize_before_normalization": mode is ResolutionMode.TRAINED_256,
-            "align_corners": True if mode is ResolutionMode.TRAINED_256 else None,
+            "resize_before_normalization": model_pixels != 128,
+            "align_corners": True if model_pixels != 128 else None,
             "mask_decoder_mapping": "legacy_endpoint_to_index",
             "coordinate_head_mapping": "model_index_to_original_index",
-            "sensitivity_analysis": mode is ResolutionMode.NATIVE_128,
+            "sensitivity_analysis": mode is not ResolutionMode.TRAINED_256,
             "millimetre_conversion": None,
         },
         "b0": {
