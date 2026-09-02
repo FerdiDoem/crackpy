@@ -34,10 +34,13 @@ P1 gibt kein Retraining frei und verändert keine Modellarchitektur.
 
 P2 erweitert die vorhandene sequenzielle Offset-Nachführung und ersetzt sie nicht durch ein neues Modell.
 Die erste Ausbaustufe hält die physische Fenstergröße konstant und führt nur dessen Position nach.
-Der erste Frame und jeder unsichere Zustand verwenden das große Ausgangsfenster.
+Der erste Frame verwendet das Start-ROI.
+Ein unsicherer lokaler Versuch darf in P2.1 nur auf dieses gleich große Start-ROI zurückgesetzt werden.
+Ein Start-Reset ist ausdrücklich kein globaler Fallback, wenn das Start-ROI nicht das gesamte zulässige Suchfeld abdeckt.
 
 Ein lokaler Vorschlag wird nur akzeptiert, wenn Maskensicherheit, Masken-Koordinaten-Konsistenz, maximaler Bewegungssprung, Tip-Randabstand und DIC-Feldqualität die festgelegten Grenzen erfüllen.
-Bei einem verletzten Kriterium wird das Fenster vergrößert oder auf das Ausgangsfeld zurückgesetzt.
+Bei einem verletzten Kriterium wird P2.1 auf das Start-ROI zurückgesetzt.
+Erst P2.2 darf ein größeres Expanded-ROI oder ein das gesamte Suchfeld abdeckendes Full-search-ROI verwenden.
 Eine Williams-Korrektur darf als selektive Option für unsichere Fälle getestet werden, muss aber getrennt in Qualität und Laufzeit erscheinen.
 
 Variable physische Fenstergrößen werden erst nach der konstanten Nachführung untersucht.
