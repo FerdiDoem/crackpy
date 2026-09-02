@@ -19,7 +19,9 @@ from crackpy.benchmarking.ctd_baseline import ResolutionMode
 from crackpy.benchmarking.ctd_calibration import (
     apply_frozen_decoder,
     calibrate_decoder,
+    evaluate_decoder_config,
 )
+from crackpy.benchmarking.ctd_decoders import DecoderConfig
 from crackpy.benchmarking.ctd_p1_evaluation import (
     CrackMnistTipOutputs,
     collect_crackmnist_tip_outputs,
@@ -407,6 +409,21 @@ def _evaluate_resolution(
     )
     test_outputs: CrackMnistTipOutputs | None = None
     try:
+        validation_reference = evaluate_decoder_config(
+            validation_outputs.probability_masks,
+            validation_outputs.coordinate_heads,
+            validation_outputs.references,
+            split=validation_outputs.split,
+            config=DecoderConfig.historical(),
+            model_pixels=validation_outputs.model_pixels,
+            original_pixels=validation_outputs.original_pixels,
+        )
+        if validation_reference.detection_rate is None:
+            raise RuntimeError("validation reference contains no evaluable tip labels")
+        validation_minimum_detection_rate = max(
+            0.0,
+            validation_reference.detection_rate - DETECTION_RATE_DEGRADATION_LIMIT,
+        )
         calibration = calibrate_decoder(
             validation_outputs.probability_masks,
             validation_outputs.coordinate_heads,
@@ -414,7 +431,7 @@ def _evaluate_resolution(
             split=validation_outputs.split,
             model_pixels=validation_outputs.model_pixels,
             original_pixels=validation_outputs.original_pixels,
-            minimum_detection_rate=reference.minimum_detection_rate,
+            minimum_detection_rate=validation_minimum_detection_rate,
         )
         test_outputs = services.collect_outputs(
             inference,
@@ -442,6 +459,15 @@ def _evaluate_resolution(
             "resolution_mode": resolution.value,
             "validation_outputs": validation_outputs.to_summary(),
             "calibration": calibration.to_dict(),
+            "validation_selection_policy": {
+                "reference_decoder": "historical_mask_decoder_on_validation",
+                "reference_detection_rate": validation_reference.detection_rate,
+                "allowed_absolute_detection_rate_degradation": (
+                    DETECTION_RATE_DEGRADATION_LIMIT
+                ),
+                "minimum_detection_rate": validation_minimum_detection_rate,
+                "p0_test_metrics_used_for_selection": False,
+            },
             "test_outputs": test_outputs.to_summary(),
             "frozen_test_metrics": frozen_test.to_dict(),
             "resolution_gate": gate,

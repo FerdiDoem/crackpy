@@ -292,7 +292,14 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
     for resolution in result["resolutions"].values():
         assert resolution["calibration"]["source_split"] == "validation"
         assert resolution["calibration"]["test_split_used_for_selection"] is False
-        assert resolution["calibration"]["minimum_detection_rate"] == pytest.approx(0.993)
+        assert resolution["calibration"]["minimum_detection_rate"] == pytest.approx(0.995)
+        assert resolution["validation_selection_policy"] == {
+            "reference_decoder": "historical_mask_decoder_on_validation",
+            "reference_detection_rate": 1.0,
+            "allowed_absolute_detection_rate_degradation": 0.005,
+            "minimum_detection_rate": 0.995,
+            "p0_test_metrics_used_for_selection": False,
+        }
         assert resolution["frozen_test_metrics"]["split"] == "test"
         assert (
             resolution["frozen_test_metrics"]["config"]
