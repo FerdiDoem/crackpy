@@ -11,6 +11,7 @@ from typing import Iterable, Sequence
 
 import numpy as np
 from numpy.typing import ArrayLike
+from scipy.spatial import cKDTree
 
 Point = tuple[float, float]
 
@@ -231,13 +232,27 @@ def _finite_point(value: Point | ArrayLike | None) -> Point | None:
 
 
 def _binary_masks(prediction: ArrayLike, reference: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
-    """Validate equal mask shapes and convert them to boolean masks."""
+    """Validate equal, already-binarized masks and convert them to booleans."""
 
-    predicted_mask = np.asarray(prediction, dtype=bool)
-    reference_mask = np.asarray(reference, dtype=bool)
+    predicted_values = np.asarray(prediction)
+    reference_values = np.asarray(reference)
+    predicted_mask = _binary_mask(predicted_values, "prediction")
+    reference_mask = _binary_mask(reference_values, "reference")
     if predicted_mask.shape != reference_mask.shape:
         raise ValueError("prediction and reference masks must have the same shape")
     return predicted_mask, reference_mask
+
+
+def _binary_mask(values: np.ndarray, name: str) -> np.ndarray:
+    """Reject probabilities, labels, and non-finite values before scoring."""
+
+    try:
+        is_binary = np.logical_or(values == 0, values == 1)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} mask must be binary") from exc
+    if not np.all(is_binary):
+        raise ValueError(f"{name} mask must be binary")
+    return values.astype(bool, copy=False)
 
 
 def _paths(prediction: ArrayLike, reference: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
@@ -257,12 +272,9 @@ def _path_array(path: ArrayLike, name: str) -> np.ndarray:
     return array
 
 
-def _nearest_distances(source: np.ndarray, target: np.ndarray, *, chunk_size: int = 4096) -> np.ndarray:
-    """Compute nearest distances without allocating a full pairwise matrix."""
+def _nearest_distances(source: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """Compute nearest distances with bounded-memory spatial indexing."""
 
-    distances: list[np.ndarray] = []
-    for start in range(0, len(source), chunk_size):
-        chunk = source[start:start + chunk_size]
-        squared = np.sum((chunk[:, np.newaxis, :] - target[np.newaxis, :, :]) ** 2, axis=2)
-        distances.append(np.sqrt(np.min(squared, axis=1)))
-    return np.concatenate(distances)
+    tree = cKDTree(target)
+    distances, _ = tree.query(source, k=1, workers=1)
+    return np.asarray(distances, dtype=float)

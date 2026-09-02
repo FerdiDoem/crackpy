@@ -4,12 +4,14 @@ These tests deliberately keep the benchmark contract independent of CrackPy's
 legacy training evaluation helpers, which skip unsuccessful detections.
 """
 
+import json
 import math
 
 import numpy as np
 import pytest
 
 from crackpy.benchmarking.ctd_metrics import (
+    _nearest_distances,
     angle_error_degrees,
     dice_score,
     hausdorff95_distance,
@@ -53,6 +55,14 @@ def test_tip_metrics_reports_empty_conditional_distribution_when_every_detection
     assert metrics.error_mm is None
 
 
+def test_tip_metrics_result_is_strict_json_serializable():
+    metrics = tip_metrics(predictions=[None], references=[(2.0, 3.0)])
+
+    encoded = json.dumps(metrics.to_dict(), allow_nan=False)
+
+    assert json.loads(encoded)["error_mm"] is None
+
+
 @pytest.mark.parametrize(
     ("prediction", "reference", "expected"),
     [
@@ -79,6 +89,19 @@ def test_intersection_over_union_handles_overlap_and_explicit_empty_cases(predic
     assert intersection_over_union(prediction, reference) == expected
 
 
+@pytest.mark.parametrize(
+    "invalid_mask",
+    [np.array([[0.0, np.nan]]), np.array([[0.0, 0.25]]), np.array([[0, 2]])],
+)
+def test_overlap_metrics_reject_nonbinary_or_nonfinite_masks(invalid_mask):
+    reference = np.zeros_like(invalid_mask)
+
+    with pytest.raises(ValueError, match="binary"):
+        dice_score(invalid_mask, reference)
+    with pytest.raises(ValueError, match="binary"):
+        intersection_over_union(invalid_mask, reference)
+
+
 def test_path_distance_is_symmetric_mean_nearest_neighbour_distance():
     prediction = np.array([[0.0, 0.0], [2.0, 0.0]])
     reference = np.array([[0.0, 0.0], [1.0, 0.0]])
@@ -102,6 +125,21 @@ def test_hausdorff95_uses_both_directed_nearest_neighbour_sets():
     reference = np.array([[0.0, 0.0], [1.0, 0.0]])
 
     assert hausdorff95_distance(prediction, reference) == pytest.approx(7.2)
+
+
+def test_nearest_distance_avoids_dense_pairwise_tensor(monkeypatch):
+    source = np.column_stack((np.arange(100.0), np.zeros(100)))
+    target = np.column_stack((np.arange(100.0), np.ones(100)))
+    original_sum = np.sum
+
+    def reject_dense_pairwise_sum(values, *args, **kwargs):
+        if np.asarray(values).ndim == 3:
+            raise AssertionError("dense pairwise allocation")
+        return original_sum(values, *args, **kwargs)
+
+    monkeypatch.setattr(np, "sum", reject_dense_pairwise_sum)
+
+    assert np.allclose(_nearest_distances(source, target), 1.0)
 
 
 @pytest.mark.parametrize(
