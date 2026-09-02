@@ -18,6 +18,7 @@ from crackpy.benchmarking.ctd_p1 import (
     assess_resolution_gate,
     load_p0_reference,
     run_p1_benchmark,
+    verify_p1_provenance,
 )
 from crackpy.benchmarking.ctd_p1_evaluation import CrackMnistTipOutputs
 from scripts.crack_detection import benchmark_ctd_p1
@@ -60,7 +61,21 @@ def _write_p0(path: Path) -> None:
         json.dumps(
             {
                 "schema_version": "ctd-p0-v1",
+                "metadata": {
+                    "artifact_sha256": {
+                        "ParallelNets": "tip",
+                        "UNetPath": "path",
+                    }
+                },
                 "crackmnist": {
+                    "dataset": {
+                        "h5_md5": "fixture-h5",
+                        "metadata_sha256": "fixture-metadata",
+                        "crackmnist_version": "2.0.1",
+                        "size": "S",
+                        "pixels": 128,
+                        "task": "crack_tip_segmentation",
+                    },
                     "variants": {
                         "trained_256": {
                             "b0": {
@@ -128,6 +143,21 @@ def test_p0_reference_defines_absolute_detection_and_p95_gates(tmp_path: Path) -
     }
 
 
+def test_provenance_mismatch_fails_before_results_can_be_compared(tmp_path: Path) -> None:
+    p0_path = tmp_path / "p0.json"
+    _write_p0(p0_path)
+    reference = load_p0_reference(p0_path)
+    common = dict(reference.dataset_identity)
+
+    with pytest.raises(RuntimeError, match="artifact_sha256:UNetPath"):
+        verify_p1_provenance(
+            reference,
+            current_artifact_sha256={"ParallelNets": "tip", "UNetPath": "changed"},
+            validation_dataset={**common, "split": "validation"},
+            test_dataset={**common, "split": "test"},
+        )
+
+
 def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
     tmp_path: Path,
 ) -> None:
@@ -136,6 +166,7 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
     model_loads: list[str] = []
     collection_calls: list[tuple[str, str, str]] = []
     runtime_calls: list[tuple[str, str, int]] = []
+    runtime_decoder_configs: list[dict[str, Any]] = []
     lifecycle_events: list[str] = []
 
     def load_model(name: str, *, map_location: torch.device) -> nn.Module:
@@ -144,17 +175,21 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
         lifecycle_events.append(f"load:{name}")
         return _TipModel() if name == "ParallelNets" else _PathModel()
 
-    def measure_model_loading(loader: Any) -> tuple[dict[str, Any], nn.Module, nn.Module]:
-        tip_model, path_model = loader()
+    def measure_model_loading(
+        loader: Any,
+        *,
+        phase_name: str,
+        first_in_process: bool,
+    ) -> tuple[dict[str, Any], nn.Module]:
+        model = loader()
         return (
             {
-                "phase_name": "first_in_process_model_loading_cpu",
-                "first_in_process": True,
+                "phase_name": phase_name,
+                "first_in_process": first_in_process,
                 "models_prepared_for_device": False,
                 "runtime": {"total_measured_ms": 1.0},
             },
-            tip_model,
-            path_model,
+            model,
         )
 
     class _Inference:
@@ -191,6 +226,8 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
         raw_inputs: torch.Tensor,
         mode: Any,
         resolution_mode: Any,
+        tip_decoder_config: Any,
+        sample_sides: Any,
         warmup_iterations: int,
         measured_iterations: int,
     ) -> dict[str, Any]:
@@ -198,6 +235,8 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
         mode_value = str(getattr(mode, "value", mode))
         resolution_value = str(getattr(resolution_mode, "value", resolution_mode))
         runtime_calls.append((mode_value, resolution_value, len(raw_inputs)))
+        runtime_decoder_configs.append(tip_decoder_config.to_dict())
+        assert sample_sides == ("right",) * len(raw_inputs)
         lifecycle_events.append(f"runtime:{mode_value}:{resolution_value}:{len(raw_inputs)}")
         return {
             "status": "completed",
@@ -208,6 +247,7 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
 
     def benchmark_interpolation(frames: Any, **kwargs: Any) -> dict[str, Any]:
         assert kwargs["tip_inference"].path_model is None
+        assert kwargs["tip_decoder_config"].uncertainty_threshold is None
         lifecycle_events.append("interpolation:tip_only")
         return {
             "frames": sorted(frames),
@@ -234,6 +274,18 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
             stage: object() for stage in ("52", "53", "54", "55")
         },
         benchmark_interpolation=benchmark_interpolation,
+        dataset_summary=lambda dataset, sample_count: {
+            "name": "CrackMNIST",
+            "crackmnist_version": "2.0.1",
+            "split": "validation" if dataset.split == "val" else "test",
+            "size": "S",
+            "pixels": 128,
+            "task": "crack_tip_segmentation",
+            "sample_count": sample_count,
+            "total_split_sample_count": len(dataset),
+            "h5_md5": "fixture-h5",
+            "metadata_sha256": "fixture-metadata",
+        },
         collect_metadata=lambda **kwargs: SimpleNamespace(
             to_dict=lambda: {
                 "seed": kwargs["seed"],
@@ -260,7 +312,7 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
 
     assert model_loads == ["ParallelNets", "UNetPath"]
     path_load_index = lifecycle_events.index("load:UNetPath")
-    assert path_load_index < lifecycle_events.index("attach:tip_only")
+    assert path_load_index > lifecycle_events.index("interpolation:tip_only")
     assert all(
         lifecycle_events.index(f"collect:{split}:{resolution}")
         > lifecycle_events.index("attach:tip_only")
@@ -305,6 +357,16 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
             resolution["frozen_test_metrics"]["config"]
             == resolution["calibration"]["selected_config"]
         )
+        assert resolution["confidence_gated_test_metrics"]["split"] == "test"
+        assert (
+            resolution["confidence_gated_test_metrics"]["config"]
+            == resolution["calibration"]["confidence_gated_config"]
+        )
+        assert (
+            resolution["resolution_gate"]["observed"]["detection_rate"]
+            == resolution["frozen_test_metrics"]["detection_rate"]
+        )
+        assert resolution["confidence_policy"]["default_action"] == "trigger_p2_fallback"
     expected_runtime_calls = {
         ("tip_only", resolution, batch)
         for resolution in ("trained-256", "native-128", "low-64")
@@ -314,21 +376,28 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
         for batch in (1, 8, 16, 32)
     }
     assert set(runtime_calls) == expected_runtime_calls
+    assert len(runtime_decoder_configs) == len(expected_runtime_calls)
+    assert all(config["uncertainty_threshold"] is None for config in runtime_decoder_configs)
     assert result["runtime"]["interpolation"]["frames"] == ["52", "53", "54", "55"]
     assert result["runtime"]["interpolation"]["signed_sizes"] == [70.0, -70.0]
     assert result["scope"]["training_performed"] is False
     assert result["scope"]["model_architecture_changed"] is False
+    assert result["scope"]["test_used_for_decoder_or_threshold_selection"] is False
+    assert result["scope"]["test_used_for_final_default_admission"] is True
+    assert result["provenance_verification"]["all_checks_passed"] is True
     assert result["model_lifecycle"]["path_model_absent_during_tip_only"] is True
     assert result["model_lifecycle"]["execution_order"] == [
-        "first_in_process_cpu_model_loading",
+        "first_in_process_tip_model_loading_cpu",
         "attach_tip_model_only",
         "validation_calibration_and_frozen_test",
         "tip_only_runtime_sweeps",
         "dummy2_interpolation_and_tip_parity",
+        "deferred_path_model_loading_cpu",
         "attach_preloaded_cpu_path_model",
         "trained_256_path_angle_runtime_sweep",
     ]
-    assert result["model_lifecycle"]["cpu_loading"]["models_prepared_for_device"] is False
+    assert result["model_lifecycle"]["tip_cpu_loading"]["models_prepared_for_device"] is False
+    assert result["model_lifecycle"]["path_cpu_loading"]["first_in_process"] is False
     payload = json.dumps(result, allow_nan=False)
     assert "validation-trained-256.npy" not in payload
     assert "test-trained-256.npy" not in payload

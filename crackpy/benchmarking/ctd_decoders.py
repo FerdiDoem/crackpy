@@ -441,12 +441,25 @@ def _single_probability_mask(value: Any) -> np.ndarray | None:
 
 
 def _coordinate_model_point(value: Any, *, model_pixels: int) -> Point | None:
-    """Decode one coordinate head while treating malformed output as unavailable."""
+    """Decode one coordinate head and reject points outside the model grid."""
 
     try:
-        return denormalize_coordinate_head(value, model_pixels=model_pixels)
+        point = denormalize_coordinate_head(value, model_pixels=model_pixels)
     except (TypeError, ValueError, RuntimeError):
         return None
+    if point is None:
+        return None
+    boundary_tolerance = 1e-6
+    if any(
+        coordinate < -boundary_tolerance
+        or coordinate > model_pixels - 1 + boundary_tolerance
+        for coordinate in point
+    ):
+        return None
+    return tuple(
+        float(np.clip(coordinate, 0.0, model_pixels - 1))
+        for coordinate in point
+    )
 
 
 def _invalid_probability_output(

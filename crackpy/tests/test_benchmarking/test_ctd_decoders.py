@@ -193,6 +193,32 @@ def test_missing_or_malformed_coordinate_is_an_explicit_failed_head() -> None:
     assert fused.invalid_reason == "coordinate_head_required"
 
 
+@pytest.mark.parametrize("coordinate", [[1.0, 0.0], [-1.1, 0.0], [0.0, 1.2]])
+def test_coordinate_head_outside_model_grid_is_unavailable(
+    coordinate: list[float],
+) -> None:
+    probabilities = np.zeros((3, 3), dtype=float)
+    probabilities[1, 1] = 0.8
+
+    coordinate_only = decode_tip(
+        probabilities,
+        coordinate,
+        config=_config(fusion_weight=1.0),
+        model_pixels=3,
+    )
+    mask_only = decode_tip(
+        probabilities,
+        coordinate,
+        config=_config(fusion_weight=0.0),
+        model_pixels=3,
+    )
+
+    assert coordinate_only.point_rc is None
+    assert coordinate_only.invalid_reason == "coordinate_head_required"
+    assert mask_only.point_rc == pytest.approx((1.0, 1.0))
+    assert mask_only.coordinate_point_rc is None
+
+
 def test_disagreement_contributes_to_uncertainty_and_the_frozen_gate_rejects_it() -> None:
     probabilities = np.zeros((5, 5), dtype=float)
     probabilities[0, 0] = 0.99

@@ -119,11 +119,15 @@ class RiskCoverageAnalysis:
 class CalibrationResult:
     """Frozen validation result ready for unchanged application to test data.
 
-    ``selected_config`` contains the decoder and uncertainty gate frozen on
-    validation.
+    ``selected_config`` contains the decoder frozen on validation for the P1
+    default operating point without rejecting otherwise valid detections.
+    ``confidence_gated_config`` adds the validation-only confidence cutoff for
+    diagnostic selective-risk evidence and as a prospective P2 fallback
+    trigger.
     ``selection_metrics`` records its ungated metrics because configuration
     selection precedes confidence rejection.
-    ``frozen_validation_metrics`` records the final gated operating point.
+    ``confidence_gated_validation_metrics`` records what would happen if low
+    confidence were treated as a hard rejection rather than a fallback signal.
     ``candidate_summaries`` keeps every predeclared comparison auditable.
     ``risk_coverage`` explains the confidence cutoff and its usefulness.
     ``source_split`` is fixed to validation as a technical leakage barrier.
@@ -134,8 +138,9 @@ class CalibrationResult:
     """
 
     selected_config: DecoderConfig
+    confidence_gated_config: DecoderConfig
     selection_metrics: DecoderEvaluation
-    frozen_validation_metrics: DecoderEvaluation
+    confidence_gated_validation_metrics: DecoderEvaluation
     candidate_summaries: tuple[DecoderEvaluation, ...]
     risk_coverage: RiskCoverageAnalysis
     source_split: str
@@ -148,6 +153,7 @@ class CalibrationResult:
         return {
             "source_split": self.source_split,
             "selected_config": self.selected_config.to_dict(),
+            "confidence_gated_config": self.confidence_gated_config.to_dict(),
             "selection_objective": {
                 "admissibility_gate": "minimum_detection_rate",
                 "without_gate": ["detection_rate_desc", "p95_asc", "median_asc"],
@@ -156,7 +162,9 @@ class CalibrationResult:
             },
             "minimum_detection_rate": self.minimum_detection_rate,
             "selection_metrics": self.selection_metrics.to_dict(),
-            "frozen_validation_metrics": self.frozen_validation_metrics.to_dict(),
+            "confidence_gated_validation_metrics": (
+                self.confidence_gated_validation_metrics.to_dict()
+            ),
             "risk_coverage": self.risk_coverage.to_dict(),
             "candidate_summaries": [
                 evaluation.to_dict(include_samples=False)
@@ -278,15 +286,15 @@ def calibrate_decoder(
         selected_uncertainties,
         minimum_coverage=min(effective_uncertainty_coverage, 1.0),
     )
-    frozen_config = selected_summary.config.with_uncertainty_threshold(
+    confidence_gated_config = selected_summary.config.with_uncertainty_threshold(
         risk_coverage.selected_uncertainty_threshold
     )
-    frozen_evaluation = evaluate_decoder_config(
+    confidence_gated_evaluation = evaluate_decoder_config(
         masks,
         coordinates,
         reference_values,
         split=source_split,
-        config=frozen_config,
+        config=confidence_gated_config,
         model_pixels=model_pixels,
         original_pixels=original_pixels,
     )
@@ -294,9 +302,10 @@ def calibrate_decoder(
     unique_thresholds = len({config.threshold for config in configs})
     naive_calls = sample_count * len(configs)
     return CalibrationResult(
-        selected_config=frozen_config,
+        selected_config=selected_summary.config,
+        confidence_gated_config=confidence_gated_config,
         selection_metrics=selected_evaluation,
-        frozen_validation_metrics=frozen_evaluation,
+        confidence_gated_validation_metrics=confidence_gated_evaluation,
         candidate_summaries=summaries,
         risk_coverage=risk_coverage,
         source_split=source_split,

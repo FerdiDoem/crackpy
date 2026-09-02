@@ -192,11 +192,12 @@ def test_calibration_freezes_validation_choice_and_test_application_cannot_chang
 
     assert calibration.source_split == "validation"
     assert calibration.selected_config.fusion_weight == 0.0
-    assert calibration.selected_config.uncertainty_threshold is not None
+    assert calibration.selected_config.uncertainty_threshold is None
+    assert calibration.confidence_gated_config.uncertainty_threshold is not None
     assert calibration.selection_metrics.successful_detections == 3
     assert calibration.risk_coverage.minimum_coverage == 1.0
-    assert calibration.frozen_validation_metrics.successful_detections == 3
-    assert calibration.frozen_validation_metrics.detection_rate >= 1.0
+    assert calibration.confidence_gated_validation_metrics.successful_detections == 3
+    assert calibration.confidence_gated_validation_metrics.detection_rate >= 1.0
     assert evaluation.config.to_dict() == frozen_payload
     assert calibration.efficiency["connected_component_labelings_per_sample"] == 1
     json.dumps(calibration.to_dict(), allow_nan=False)

@@ -234,7 +234,7 @@ def evaluate_crackmnist(
 
     return {
         "evaluation_contract": _evaluation_contract(),
-        "dataset": _crackmnist_summary(dataset, sample_count),
+        "dataset": crackmnist_dataset_summary(dataset, sample_count),
         "resolution": {
             "mode": mode.value,
             "model_pixels": model_pixels,
@@ -882,8 +882,8 @@ def _experiment(dataset: Any, index: int) -> tuple[int, str]:
     return experiment_id, str(name)
 
 
-def _crackmnist_summary(dataset: Any, sample_count: int) -> dict[str, Any]:
-    """Capture dataset identity without claiming augmented-sample independence."""
+def crackmnist_dataset_summary(dataset: Any, sample_count: int) -> dict[str, Any]:
+    """Capture split and artifact identity without claiming sample independence."""
 
     experiment_ids = sorted({int(value) for value in np.asarray(dataset.exp_ids[:])})
     experiment_names = sorted({_experiment(dataset, index)[1] for index in range(len(dataset))})
@@ -892,10 +892,15 @@ def _crackmnist_summary(dataset: Any, sample_count: int) -> dict[str, Any]:
     )
     artifact = Path(str(dataset.download_path)) / "crackmnist_128_S.h5"
     metadata_artifact = Path(str(dataset.download_path)) / "experiments_metadata.json"
+    split = getattr(dataset, "split", None)
+    if split == "val":
+        split = "validation"
+    if split not in {"validation", "test", "train"}:
+        raise ValueError("CrackMNIST dataset summary requires a named official split")
     return {
         "name": "CrackMNIST",
         "crackmnist_version": _installed_distribution_version("crackmnist"),
-        "split": "test",
+        "split": split,
         "size": "S",
         "pixels": 128,
         "task": "crack_tip_segmentation",

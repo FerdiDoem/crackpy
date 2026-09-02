@@ -16,9 +16,9 @@ from torch import nn
 from crackpy.benchmarking.ctd_baseline import (
     FIXTURE_WINDOW_MM,
     ResolutionMode,
-    decode_historical_tip,
     prepare_crackmnist_inputs,
 )
+from crackpy.benchmarking.ctd_decoders import DecoderConfig, decode_tip
 from crackpy.benchmarking.ctd_runtime import benchmark_phases
 from crackpy.crack_detection.detection import CrackAngleEstimation, CrackDetection
 from crackpy.crack_detection.data.interpolation import interpolate as legacy_interpolate
@@ -34,31 +34,33 @@ class P1InferenceMode(str, Enum):
 
 
 def measure_p1_model_loading(
-    model_loader: Callable[[], tuple[nn.Module, nn.Module]],
+    model_loader: Callable[[], nn.Module],
     *,
+    phase_name: str,
+    first_in_process: bool,
     clock_ns: Callable[[], int] = time.perf_counter_ns,
-) -> tuple[dict[str, Any], nn.Module, nn.Module]:
-    """Measure one first-in-process CPU load before either model is prepared.
+) -> tuple[dict[str, Any], nn.Module]:
+    """Measure one CPU model load before that model is prepared for a device.
 
-    Keeping loading on the host lets the caller measure a genuine path-free
-    tip-only state and attach UNetPath to the accelerator only afterwards.
+    Separate calls let the orchestrator defer both loading and device residency
+    of UNetPath until the path-and-angle benchmark actually begins.
     """
 
-    loaded: tuple[nn.Module, nn.Module] | None = None
+    if not isinstance(phase_name, str) or not phase_name.strip():
+        raise ValueError("phase_name must be non-empty")
+    loaded: nn.Module | None = None
 
     def load_once() -> None:
         nonlocal loaded
         if loaded is not None:
             raise RuntimeError("P1 model loader was invoked more than once")
         candidate = model_loader()
-        if not isinstance(candidate, tuple) or len(candidate) != 2:
-            raise TypeError("model_loader must return a (tip_model, path_model) tuple")
-        if not all(isinstance(model, nn.Module) for model in candidate):
-            raise TypeError("model_loader must return torch.nn.Module instances")
+        if not isinstance(candidate, nn.Module):
+            raise TypeError("model_loader must return one torch.nn.Module")
         loaded = candidate
 
     runtime = benchmark_phases(
-        {"first_in_process_model_loading_cpu": load_once},
+        {phase_name: load_once},
         warmup_iterations=0,
         measured_iterations=1,
         device="cpu",
@@ -66,16 +68,12 @@ def measure_p1_model_loading(
     )
     if loaded is None:
         raise RuntimeError("model loader completed without returning models")
-    return (
-        {
-            "phase_name": "first_in_process_model_loading_cpu",
-            "first_in_process": True,
-            "models_prepared_for_device": False,
-            "runtime": runtime.to_dict(),
-        },
-        loaded[0],
-        loaded[1],
-    )
+    return {
+        "phase_name": phase_name,
+        "first_in_process": bool(first_in_process),
+        "models_prepared_for_device": False,
+        "runtime": runtime.to_dict(),
+    }, loaded
 
 
 def measure_p1_model_phases(
@@ -84,6 +82,8 @@ def measure_p1_model_phases(
     raw_inputs: torch.Tensor | np.ndarray,
     mode: P1InferenceMode | str,
     resolution_mode: ResolutionMode | str,
+    tip_decoder_config: DecoderConfig | None = None,
+    sample_sides: Sequence[str] | None = None,
     warmup_iterations: int = 1,
     measured_iterations: int = 3,
     clock_ns: Callable[[], int] = time.perf_counter_ns,
@@ -97,11 +97,19 @@ def measure_p1_model_phases(
 
     selected_mode = P1InferenceMode(mode)
     selected_resolution = ResolutionMode(resolution_mode)
+    selected_decoder = (
+        DecoderConfig.historical()
+        if tip_decoder_config is None
+        else tip_decoder_config
+    )
+    if not isinstance(selected_decoder, DecoderConfig):
+        raise TypeError("tip_decoder_config must be a DecoderConfig or None")
     fields = torch.as_tensor(raw_inputs, dtype=torch.float32, device="cpu")
     if fields.ndim != 4 or tuple(fields.shape[1:]) != (2, 128, 128):
         raise ValueError("raw_inputs must have shape (n, 2, 128, 128)")
     if len(fields) == 0:
         raise ValueError("raw_inputs must contain at least one image")
+    sides = _validated_sample_sides(sample_sides, len(fields))
     if selected_mode is P1InferenceMode.TIP_ONLY and inference.path_model is not None:
         raise ValueError("tip_only timing requires a path-free inference instance")
     if selected_mode is P1InferenceMode.TIP_PATH_ANGLE:
@@ -128,10 +136,22 @@ def measure_p1_model_phases(
         state["tip_probabilities"] = probabilities.detach().to("cpu")
         state["tip_coordinates"] = coordinates.detach().to("cpu")
 
-    def historical_tip_decoder() -> None:
+    def selected_tip_decoder() -> None:
         probabilities = state["tip_probabilities"]
+        coordinates = state["tip_coordinates"]
+        output_pixels = (
+            state["model_pixels"]
+            if selected_mode is P1InferenceMode.TIP_PATH_ANGLE
+            else 128
+        )
         state["tip_points"] = [
-            decode_historical_tip(probabilities[index:index + 1])
+            decode_tip(
+                probabilities[index],
+                coordinates[index],
+                config=selected_decoder,
+                model_pixels=state["model_pixels"],
+                original_pixels=output_pixels,
+            ).point_rc
             for index in range(len(probabilities))
         ]
 
@@ -140,7 +160,7 @@ def measure_p1_model_phases(
         "host_to_device": host_to_device,
         "tip_forward": tip_forward,
         "tip_device_to_host": tip_device_to_host,
-        "historical_tip_decoder": historical_tip_decoder,
+        "selected_tip_decoder": selected_tip_decoder,
     }
 
     if selected_mode is P1InferenceMode.TIP_PATH_ANGLE:
@@ -166,15 +186,23 @@ def measure_p1_model_phases(
             ]
 
         def angle_postprocessing() -> None:
-            detection = CrackDetection(
-                side="right",
-                detection_window_size=FIXTURE_WINDOW_MM,
-                angle_det_radius=10.0,
-                device=inference.device,
-            )
+            detections = {
+                side: CrackDetection(
+                    side=side,
+                    detection_window_size=FIXTURE_WINDOW_MM,
+                    angle_det_radius=10.0,
+                    device=inference.device,
+                )
+                for side in set(sides)
+            }
             state["angles"] = [
-                _angle_from_path_mask(detection, mask, tip)
-                for mask, tip in zip(state["path_masks"], state["tip_points"], strict=True)
+                _angle_from_path_mask(detections[side], mask, tip)
+                for side, mask, tip in zip(
+                    sides,
+                    state["path_masks"],
+                    state["tip_points"],
+                    strict=True,
+                )
             ]
 
         phases.update(
@@ -204,6 +232,8 @@ def measure_p1_model_phases(
         "mode": selected_mode.value,
         "resolution_mode": selected_resolution.value,
         "batch_size": int(len(fields)),
+        "tip_decoder_config": selected_decoder.to_dict(),
+        "sample_sides": sorted(set(sides)),
         "runtime": runtime.to_dict(),
         "throughput": {
             "batch_iterations_per_second": batches_per_second,
@@ -265,6 +295,7 @@ def benchmark_interpolation_frames(
     measured_iterations: int = 3,
     clock_ns: Callable[[], int] = time.perf_counter_ns,
     tip_inference: FrozenCtdInference | None = None,
+    tip_decoder_config: DecoderConfig | None = None,
 ) -> dict[str, Any]:
     """Compare three legacy ``griddata`` calls with one frame-local triangulation."""
 
@@ -309,8 +340,25 @@ def benchmark_interpolation_frames(
                 coordinate_head_parity = bool(
                     torch.equal(legacy_coordinates, optimized_coordinates)
                 )
-                legacy_tip = decode_historical_tip(legacy_probabilities)
-                optimized_tip = decode_historical_tip(optimized_probabilities)
+                selected_decoder = (
+                    DecoderConfig.historical()
+                    if tip_decoder_config is None
+                    else tip_decoder_config
+                )
+                legacy_tip = decode_tip(
+                    legacy_probabilities,
+                    legacy_coordinates[0],
+                    config=selected_decoder,
+                    model_pixels=pixels,
+                    original_pixels=pixels,
+                ).point_rc
+                optimized_tip = decode_tip(
+                    optimized_probabilities,
+                    optimized_coordinates[0],
+                    config=selected_decoder,
+                    model_pixels=pixels,
+                    original_pixels=pixels,
+                ).point_rc
                 tip_decision_parity = bool(
                     tip_probability_parity
                     and coordinate_head_parity
@@ -346,6 +394,11 @@ def benchmark_interpolation_frames(
                     "float64_parity": float64_parity,
                     "normalized_float32_parity": normalized_parity,
                     "tip_model_checked": tip_inference is not None,
+                    "tip_decoder_config": (
+                        None
+                        if tip_inference is None
+                        else selected_decoder.to_dict()
+                    ),
                     "tip_probability_parity": tip_probability_parity,
                     "coordinate_head_parity": coordinate_head_parity,
                     "tip_decision_parity": tip_decision_parity,
@@ -358,6 +411,22 @@ def benchmark_interpolation_frames(
         "cross_frame_cache": False,
         "variants": variants,
     }
+
+
+def _validated_sample_sides(
+    values: Sequence[str] | None,
+    sample_count: int,
+) -> tuple[str, ...]:
+    """Return one explicit physical side per batch sample."""
+
+    if values is None:
+        return ("right",) * sample_count
+    sides = tuple(str(value).strip().lower() for value in values)
+    if len(sides) != sample_count:
+        raise ValueError("sample_sides must contain one side per input")
+    if any(side not in {"left", "right"} for side in sides):
+        raise ValueError("sample_sides values must be 'left' or 'right'")
+    return sides
 
 
 def _interpolation_results_equal(

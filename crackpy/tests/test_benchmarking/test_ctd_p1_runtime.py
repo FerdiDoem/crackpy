@@ -10,6 +10,11 @@ import torch
 from torch import nn
 
 from crackpy.benchmarking.ctd_baseline import ResolutionMode
+from crackpy.benchmarking.ctd_decoders import (
+    CoordinateConvention,
+    DecoderConfig,
+    RegionRule,
+)
 from crackpy.benchmarking.ctd_p1_runtime import (
     P1InferenceMode,
     benchmark_interpolation_frames,
@@ -61,22 +66,50 @@ def _increasing_clock() -> Callable[[], int]:
 def test_p1_model_loading_is_a_separate_first_in_process_phase() -> None:
     calls = 0
 
-    def loader() -> tuple[nn.Module, nn.Module]:
+    def loader() -> nn.Module:
         nonlocal calls
         calls += 1
-        return _TipModel(), _PathModel()
+        return _TipModel()
 
-    result, tip_model, path_model = measure_p1_model_loading(
+    result, tip_model = measure_p1_model_loading(
         loader,
+        phase_name="first_in_process_tip_model_loading_cpu",
+        first_in_process=True,
         clock_ns=_increasing_clock(),
     )
 
     assert calls == 1
-    assert result["phase_name"] == "first_in_process_model_loading_cpu"
-    assert result["runtime"]["phases"]["first_in_process_model_loading_cpu"]["median_ms"] == 1.0
+    assert result["phase_name"] == "first_in_process_tip_model_loading_cpu"
+    assert result["runtime"]["phases"]["first_in_process_tip_model_loading_cpu"]["median_ms"] == 1.0
+    assert result["first_in_process"] is True
     assert result["models_prepared_for_device"] is False
     assert isinstance(tip_model, _TipModel)
-    assert isinstance(path_model, _PathModel)
+
+
+def test_selected_decoder_is_part_of_the_measured_runtime_contract() -> None:
+    inference = FrozenCtdInference(_TipModel(), device="cpu")
+    inputs = torch.arange(2 * 128 * 128, dtype=torch.float32).reshape(1, 2, 128, 128)
+    selected = DecoderConfig(
+        threshold=0.3,
+        region_rule=RegionRule.MEAN_PROBABILITY,
+        fusion_weight=0.25,
+        coordinate_convention=CoordinateConvention.MODEL_INDEX,
+    )
+
+    result = measure_p1_model_phases(
+        inference,
+        raw_inputs=inputs,
+        mode=P1InferenceMode.TIP_ONLY,
+        resolution_mode=ResolutionMode.TRAINED_256,
+        tip_decoder_config=selected,
+        warmup_iterations=0,
+        measured_iterations=1,
+        clock_ns=_increasing_clock(),
+    )
+
+    assert result["tip_decoder_config"] == selected.to_dict()
+    assert "selected_tip_decoder" in result["runtime"]["phases"]
+    assert "historical_tip_decoder" not in result["runtime"]["phases"]
 
 
 def test_tip_only_skips_path_and_reports_both_throughput_units() -> None:
@@ -100,7 +133,7 @@ def test_tip_only_skips_path_and_reports_both_throughput_units() -> None:
         "host_to_device",
         "tip_forward",
         "tip_device_to_host",
-        "historical_tip_decoder",
+        "selected_tip_decoder",
     ]
     assert path.calls == 0
     assert result["mode"] == "tip_only"

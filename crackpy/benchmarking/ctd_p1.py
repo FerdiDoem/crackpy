@@ -16,6 +16,7 @@ import numpy as np
 import torch
 
 from crackpy.benchmarking.ctd_baseline import ResolutionMode
+from crackpy.benchmarking.ctd_baseline import crackmnist_dataset_summary
 from crackpy.benchmarking.ctd_calibration import (
     apply_frozen_decoder,
     calibrate_decoder,
@@ -73,6 +74,8 @@ class P0Reference:
     maximum_p95_error_px: float
     source_sha256: str
     source_schema_version: str | None
+    artifact_sha256: Mapping[str, str]
+    dataset_identity: Mapping[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
         """Return the frozen comparison point and its explicit tolerances."""
@@ -90,6 +93,8 @@ class P0Reference:
             "maximum_p95_error_px": self.maximum_p95_error_px,
             "source_sha256": self.source_sha256,
             "source_schema_version": self.source_schema_version,
+            "expected_artifact_sha256": dict(self.artifact_sha256),
+            "expected_dataset_identity": dict(self.dataset_identity),
         }
 
 
@@ -159,6 +164,7 @@ class P1Services:
     runtime_sweep: Callable[..., list[dict[str, Any]]]
     load_dummy2_frames: Callable[[Path], Mapping[str, InputData]]
     benchmark_interpolation: Callable[..., dict[str, Any]]
+    dataset_summary: Callable[[Any, int], dict[str, Any]]
     collect_metadata: Callable[..., Any]
 
     @classmethod
@@ -175,6 +181,7 @@ class P1Services:
             runtime_sweep=run_p1_runtime_sweep,
             load_dummy2_frames=_load_dummy2_frames,
             benchmark_interpolation=benchmark_interpolation_frames,
+            dataset_summary=crackmnist_dataset_summary,
             collect_metadata=collect_run_metadata,
         )
 
@@ -195,6 +202,22 @@ def load_p0_reference(path: str | Path) -> P0Reference:
         ]
         detection_rate = float(primary["detection_rate"])
         p95_error_px = float(primary["error_px"]["p95"])
+        artifact_sha256 = {
+            name: str(payload["metadata"]["artifact_sha256"][name])
+            for name in ("ParallelNets", "UNetPath")
+        }
+        p0_dataset = payload["crackmnist"]["dataset"]
+        dataset_identity = {
+            key: p0_dataset[key]
+            for key in (
+                "h5_md5",
+                "metadata_sha256",
+                "crackmnist_version",
+                "size",
+                "pixels",
+                "task",
+            )
+        }
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
         raise ValueError("P0 result does not contain the trained_256 primary metrics") from error
     if not math.isfinite(detection_rate) or not 0.0 <= detection_rate <= 1.0:
@@ -211,7 +234,42 @@ def load_p0_reference(path: str | Path) -> P0Reference:
         maximum_p95_error_px=p95_error_px + P95_ERROR_INCREASE_LIMIT_PX,
         source_sha256=sha256_file(source),
         source_schema_version=_optional_text(payload.get("schema_version")),
+        artifact_sha256=artifact_sha256,
+        dataset_identity=dataset_identity,
     )
+
+
+def verify_p1_provenance(
+    reference: P0Reference,
+    *,
+    current_artifact_sha256: Mapping[str, Any],
+    validation_dataset: Mapping[str, Any],
+    test_dataset: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Fail before evaluation if live weights or CrackMNIST differ from P0."""
+
+    checks: dict[str, bool] = {}
+    for name, expected in reference.artifact_sha256.items():
+        checks[f"artifact_sha256:{name}"] = (
+            str(current_artifact_sha256.get(name, "")) == expected
+        )
+    for key, expected in reference.dataset_identity.items():
+        checks[f"validation_dataset:{key}"] = validation_dataset.get(key) == expected
+        checks[f"test_dataset:{key}"] = test_dataset.get(key) == expected
+    checks["validation_split"] = validation_dataset.get("split") == "validation"
+    checks["test_split"] = test_dataset.get("split") == "test"
+    failures = sorted(name for name, passed in checks.items() if not passed)
+    if failures:
+        raise RuntimeError(
+            "P1 provenance differs from the P0 baseline: " + ", ".join(failures)
+        )
+    return {
+        "all_checks_passed": True,
+        "checks": checks,
+        "p0_result_sha256": reference.source_sha256,
+        "validation_dataset": dict(validation_dataset),
+        "test_dataset": dict(test_dataset),
+    }
 
 
 def assess_resolution_gate(
@@ -257,18 +315,25 @@ def run_p1_benchmark(
     deterministic = configure_deterministic_execution(0)
     reference = load_p0_reference(config.p0_results_path)
     artifact_paths = _model_artifact_paths()
+    metadata_value = services.collect_metadata(
+        seed=0,
+        device=config.device,
+        artifact_paths=artifact_paths,
+        git_root=config.repository_root,
+    )
+    metadata = (
+        metadata_value.to_dict()
+        if hasattr(metadata_value, "to_dict")
+        else dict(metadata_value)
+    )
 
-    cpu_loading, tip_model, path_model = services.measure_model_loading(
-        lambda: (
-            services.load_model(
-                "ParallelNets",
-                map_location=torch.device("cpu"),
-            ),
-            services.load_model(
-                "UNetPath",
-                map_location=torch.device("cpu"),
-            ),
-        )
+    tip_cpu_loading, tip_model = services.measure_model_loading(
+        lambda: services.load_model(
+            "ParallelNets",
+            map_location=torch.device("cpu"),
+        ),
+        phase_name="first_in_process_tip_model_loading_cpu",
+        first_in_process=True,
     )
     inference = services.inference_factory(
         tip_model,
@@ -278,6 +343,23 @@ def run_p1_benchmark(
 
     validation_dataset = services.load_dataset("val", config.dataset_root)
     test_dataset = services.load_dataset("test", config.dataset_root)
+    evaluated_count = lambda dataset: (
+        len(dataset) if config.limit is None else min(config.limit, len(dataset))
+    )
+    validation_dataset_summary = services.dataset_summary(
+        validation_dataset,
+        evaluated_count(validation_dataset),
+    )
+    test_dataset_summary = services.dataset_summary(
+        test_dataset,
+        evaluated_count(test_dataset),
+    )
+    provenance_verification = verify_p1_provenance(
+        reference,
+        current_artifact_sha256=metadata.get("artifact_sha256", {}),
+        validation_dataset=validation_dataset_summary,
+        test_dataset=test_dataset_summary,
+    )
     resolution_results: dict[str, Any] = {}
     with tempfile.TemporaryDirectory(prefix="crackpy-p1-") as cache_directory:
         cache_root = Path(cache_directory)
@@ -294,10 +376,22 @@ def run_p1_benchmark(
             )
             resolution_results[_resolution_key(resolution)] = result
 
+    selected_configs = {
+        resolution: DecoderConfig.from_dict(
+            resolution_results[_resolution_key(resolution)]["calibration"][
+                "selected_config"
+            ]
+        )
+        for resolution in P1_RESOLUTIONS
+    }
+
     runtime_inputs = _runtime_inputs(test_dataset, max(P1_BATCH_SIZES))
+    runtime_sides = _runtime_sample_sides(test_dataset, max(P1_BATCH_SIZES))
     runtime_sweeps = _tip_runtime_sweeps(
         inference,
         runtime_inputs=runtime_inputs,
+        sample_sides=runtime_sides,
+        selected_configs=selected_configs,
         config=config,
         services=services,
     )
@@ -309,8 +403,17 @@ def run_p1_benchmark(
         warmup_iterations=config.interpolation_warmup_iterations,
         measured_iterations=config.interpolation_measured_iterations,
         tip_inference=inference,
+        tip_decoder_config=selected_configs[ResolutionMode.TRAINED_256],
     )
 
+    path_cpu_loading, path_model = services.measure_model_loading(
+        lambda: services.load_model(
+            "UNetPath",
+            map_location=torch.device("cpu"),
+        ),
+        phase_name="deferred_path_model_loading_cpu",
+        first_in_process=False,
+    )
     path_model_attach_started = time.perf_counter()
     inference.attach_path_model(path_model)
     path_model_attach_seconds = float(time.perf_counter() - path_model_attach_started)
@@ -318,20 +421,11 @@ def run_p1_benchmark(
         _path_runtime_sweep(
             inference,
             runtime_inputs=runtime_inputs,
+            sample_sides=runtime_sides,
+            tip_decoder_config=selected_configs[ResolutionMode.TRAINED_256],
             config=config,
             services=services,
         )
-    )
-    metadata_value = services.collect_metadata(
-        seed=0,
-        device=config.device,
-        artifact_paths=artifact_paths,
-        git_root=config.repository_root,
-    )
-    metadata = (
-        metadata_value.to_dict()
-        if hasattr(metadata_value, "to_dict")
-        else dict(metadata_value)
     )
     return {
         "schema_version": "ctd-p1-v1",
@@ -343,12 +437,14 @@ def run_p1_benchmark(
             "model_architecture_changed": False,
             "original_weights_frozen": True,
             "validation_only_calibration": True,
-            "test_used_for_selection": False,
+            "test_used_for_decoder_or_threshold_selection": False,
+            "test_used_for_final_default_admission": True,
             "resolutions": [resolution.value for resolution in P1_RESOLUTIONS],
             "runtime_batch_sizes": list(P1_BATCH_SIZES),
             "path_angle_resolution": ResolutionMode.TRAINED_256.value,
         },
         "metadata": metadata,
+        "provenance_verification": provenance_verification,
         "deterministic_execution": deterministic.to_dict(),
         "p0_reference_and_policy": reference.to_dict(),
         "model_lifecycle": {
@@ -356,15 +452,17 @@ def run_p1_benchmark(
             "path_model_loads": 1,
             "persistent_device_residency": True,
             "torch_inference_mode": True,
-            "cpu_loading": cpu_loading,
+            "tip_cpu_loading": tip_cpu_loading,
+            "path_cpu_loading": path_cpu_loading,
             "path_model_attach_seconds": path_model_attach_seconds,
             "path_model_absent_during_tip_only": True,
             "execution_order": [
-                "first_in_process_cpu_model_loading",
+                "first_in_process_tip_model_loading_cpu",
                 "attach_tip_model_only",
                 "validation_calibration_and_frozen_test",
                 "tip_only_runtime_sweeps",
                 "dummy2_interpolation_and_tip_parity",
+                "deferred_path_model_loading_cpu",
                 "attach_preloaded_cpu_path_model",
                 "trained_256_path_angle_runtime_sweep",
             ],
@@ -450,6 +548,15 @@ def _evaluate_resolution(
             model_pixels=test_outputs.model_pixels,
             original_pixels=test_outputs.original_pixels,
         )
+        confidence_gated_test = apply_frozen_decoder(
+            test_outputs.probability_masks,
+            test_outputs.coordinate_heads,
+            test_outputs.references,
+            split=test_outputs.split,
+            config=calibration.confidence_gated_config,
+            model_pixels=test_outputs.model_pixels,
+            original_pixels=test_outputs.original_pixels,
+        )
         gate = assess_resolution_gate(
             detection_rate=frozen_test.detection_rate,
             p95_error_px=frozen_test.p95_error_px,
@@ -470,6 +577,17 @@ def _evaluate_resolution(
             },
             "test_outputs": test_outputs.to_summary(),
             "frozen_test_metrics": frozen_test.to_dict(),
+            "confidence_gated_test_metrics": confidence_gated_test.to_dict(),
+            "confidence_policy": {
+                "threshold_source": "validation_only",
+                "test_recalibration_performed": False,
+                "default_action": "trigger_p2_fallback",
+                "hard_rejection_is_default": False,
+                "reason": (
+                    "A confidence warning must not convert a finite P1 tip into a "
+                    "detection failure before P2 can attempt recovery."
+                ),
+            },
             "resolution_gate": gate,
             "decoder_frozen_before_test": True,
             "test_recalibration_performed": False,
@@ -484,6 +602,8 @@ def _tip_runtime_sweeps(
     inference: FrozenCtdInference,
     *,
     runtime_inputs: torch.Tensor,
+    sample_sides: tuple[str, ...],
+    selected_configs: Mapping[ResolutionMode, DecoderConfig],
     config: P1RunConfig,
     services: P1Services,
 ) -> list[dict[str, Any]]:
@@ -497,6 +617,8 @@ def _tip_runtime_sweeps(
                 raw_inputs=runtime_inputs[:batch_size],
                 mode=mode,
                 resolution_mode=resolution,
+                tip_decoder_config=selected_configs[resolution],
+                sample_sides=sample_sides[:batch_size],
                 warmup_iterations=config.runtime_warmup_iterations,
                 measured_iterations=config.runtime_measured_iterations,
             ),
@@ -513,6 +635,8 @@ def _path_runtime_sweep(
     inference: FrozenCtdInference,
     *,
     runtime_inputs: torch.Tensor,
+    sample_sides: tuple[str, ...],
+    tip_decoder_config: DecoderConfig,
     config: P1RunConfig,
     services: P1Services,
 ) -> list[dict[str, Any]]:
@@ -524,6 +648,8 @@ def _path_runtime_sweep(
             raw_inputs=runtime_inputs[:batch_size],
             mode=mode,
             resolution_mode=ResolutionMode.TRAINED_256,
+            tip_decoder_config=tip_decoder_config,
+            sample_sides=sample_sides[:batch_size],
             warmup_iterations=config.runtime_warmup_iterations,
             measured_iterations=config.runtime_measured_iterations,
         ),
@@ -544,6 +670,30 @@ def _runtime_inputs(dataset: Any, count: int) -> torch.Tensor:
     if fields.shape != (count, 2, 128, 128):
         raise ValueError("CrackMNIST runtime inputs must have shape (n, 2, 128, 128)")
     return torch.as_tensor(fields, dtype=torch.float32, device="cpu")
+
+
+def _runtime_sample_sides(dataset: Any, count: int) -> tuple[str, ...]:
+    """Resolve one physical side per runtime sample from dataset metadata."""
+
+    if len(dataset) < count:
+        raise ValueError(f"runtime sweep requires at least {count} test samples")
+    sides: list[str] = []
+    for index in range(count):
+        try:
+            experiment_id = int(dataset.exp_ids[index])
+            name = dataset.exp_names[experiment_id]
+            if isinstance(name, bytes):
+                name = name.decode("utf-8")
+            normalized = str(name).strip().lower()
+        except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+            normalized = "right"
+        if normalized.endswith("_left"):
+            sides.append("left")
+        elif normalized.endswith("_right") or normalized == "right":
+            sides.append("right")
+        else:
+            raise ValueError("runtime sample experiment name does not identify left or right")
+    return tuple(sides)
 
 
 def _load_crackmnist_split(split: str, dataset_root: Path) -> Any:
