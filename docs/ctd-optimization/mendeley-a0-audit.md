@@ -15,13 +15,13 @@ Er kann deshalb parallel annotiert werden, darf in P0 jedoch nicht als quantitat
 
 ## Veröffentlichte Dateien
 
-| Datei | Größe | Dokumentierter Inhalt |
-|---|---:|---|
-| `1. DataFromDIC_CSV.rar` | 5.814.691.113 Byte | Roh-DIC-Verschiebungsfelder als CSV |
-| `2. DataAfterInterpolation_PT.rar` | 1.484.643.198 Byte | Interpolierte Verschiebungsfelder als PyTorch-Tensoren |
-| `3. TrainedModel_PT.zip` | 1.303.694.078 Byte | Vortrainierte Modelle der Veröffentlichung |
-| `4. Cycles vs Crack Length.xlsx` | 43.064 Byte | Zyklen-Risslängen-Werte für vier Proben |
-| `5. Readme.txt` | 633 Byte | Namenskonvention und Frame-Zyklus-Bezug |
+| Datei | Größe | SHA-256 | Dokumentierter Inhalt |
+|---|---:|---|---|
+| `1. DataFromDIC_CSV.rar` | 5.814.691.113 Byte | `4840d888ae4e5e640d693fab1392804b60baaac5232a7bbaff6bfe63f65ade59` | Roh-DIC-Verschiebungsfelder als CSV |
+| `2. DataAfterInterpolation_PT.rar` | 1.484.643.198 Byte | `726f81fdc474688c7a454ed72f07acc6490c7f79c149829dde33c2ecd6aa9244` | Interpolierte Verschiebungsfelder als PyTorch-Tensoren |
+| `3. TrainedModel_PT.zip` | 1.303.694.078 Byte | `1a5333cb01733a0bd477a5a4e7cc0ebecccf1afc8edc5d6e1660b086e2ba06e1` | Vortrainierte Modelle der Veröffentlichung |
+| `4. Cycles vs Crack Length.xlsx` | 43.064 Byte | `366be8711993ec0100c1830ca5f57d70ded3855bd12ced818ceec7f0f1c9b053` | Zyklen-Risslängen-Werte für vier Proben |
+| `5. Readme.txt` | 633 Byte | `bfd2334644ac5410a60add43fc6c3232d9d46c4dcc3a75042f740353ce9c8332` | Namenskonvention und Frame-Zyklus-Bezug |
 
 Das öffentliche Dateiinventar ist über die [Mendeley-API](https://data.mendeley.com/public-api/datasets/dywwnjv22h/files?folder_id=root&version=1) prüfbar.
 Die veröffentlichte Namenskonvention ist direkt im [Readme](https://data.mendeley.com/public-files/datasets/dywwnjv22h/files/2c1c5dc2-dfc3-49a8-8e40-19a220f01bff/file_downloaded) beschrieben.
