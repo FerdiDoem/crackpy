@@ -29,6 +29,7 @@ from crackpy.benchmarking.ctd_metrics import (
     tip_metrics,
 )
 from crackpy.benchmarking.ctd_runtime import benchmark_phases
+from crackpy.crack_detection.correction import CrackTipCorrection
 from crackpy.crack_detection.data.preprocess import normalize
 from crackpy.crack_detection.detection import (
     CrackAngleEstimation,
@@ -37,11 +38,16 @@ from crackpy.crack_detection.detection import (
     CrackTipDetection,
 )
 from crackpy.crack_detection.utils.utilityfunctions import find_most_likely_tip_pos
+from crackpy.fracture_analysis.optimization import OptimizationProperties
+from crackpy.input.input_data import InputData
+from crackpy.structure_elements.data_files import Nodemap
+from crackpy.structure_elements.material import Material
 
 Point = tuple[float, float]
 FIXTURE_PIXELS = 256
 FIXTURE_WINDOW_MM = 70.0
 FIXTURE_PIXEL_SIZE_MM = FIXTURE_WINDOW_MM / (FIXTURE_PIXELS - 1)
+B2_NODEMAP_NAME = "Dummy2_WPXXX_DummyVersuch_2_dic_results_1_52.txt"
 
 
 class ResolutionMode(str, Enum):
@@ -448,6 +454,195 @@ def measure_inference_contracts(
     }
 
 
+def build_b2_result(
+    *,
+    initial_tip_mm: Point | None,
+    initial_angle_degrees: float | None,
+    correction_vector_mm: Point | None,
+    iteration_count: int,
+    runtime: Any | None,
+    status_code: str,
+) -> dict[str, Any]:
+    """Represent one Williams correction without implying an accuracy result.
+
+    ``initial_tip_mm`` and ``initial_angle_degrees`` are the frozen AI outputs
+    that seed the correction.  ``correction_vector_mm`` is the displacement
+    returned by CrackPy's existing correction routine, and ``final_tip_mm`` is
+    their vector sum when both are available.  ``iteration_count`` reports the
+    actual Williams fit attempts recorded by that routine.  No independent
+    corrected tip label is supplied by the bundled DIC example, so this record
+    deliberately reports displacement and runtime only.
+    """
+
+    if not isinstance(iteration_count, int) or isinstance(iteration_count, bool) or iteration_count < 0:
+        raise ValueError("iteration_count must be a non-negative integer")
+    if not isinstance(status_code, str) or not status_code:
+        raise ValueError("status_code must be a non-empty string")
+
+    initial = _finite_b2_point(initial_tip_mm, "initial_tip_mm")
+    correction = _finite_b2_point(correction_vector_mm, "correction_vector_mm")
+    angle = _finite_b2_angle(initial_angle_degrees)
+    final = None if initial is None or correction is None else (
+        initial[0] + correction[0],
+        initial[1] + correction[1],
+    )
+    return {
+        "initial_ai_tip_mm": _point_list(initial),
+        "initial_ai_angle_degrees": angle,
+        "correction_vector_mm": _point_list(correction),
+        "final_tip_mm": _point_list(final),
+        "iterations": iteration_count,
+        "runtime": None if runtime is None else runtime.to_dict(),
+        "status": {
+            "code": status_code,
+            "independent_ground_truth_available": False,
+        },
+        "independent_ground_truth_available": False,
+        "accuracy_claim_supported": False,
+    }
+
+
+def evaluate_b2_example(
+    tip_model: nn.Module,
+    path_model: nn.Module,
+    *,
+    repository_root: str | Path,
+    device: str | torch.device,
+    warmup_iterations: int = 0,
+    measured_iterations: int = 1,
+) -> dict[str, Any]:
+    """Run the unchanged Williams correction on CrackPy's stage-52 right DIC example.
+
+    The bundled example has no independent corrected-tip annotation.  The
+    returned record consequently treats the original AI tip, its correction
+    vector, and phase runtimes as reproducibility evidence only, never as an
+    accuracy comparison.  Plot generation remains disabled for every call.
+    """
+
+    repository_path = Path(repository_root)
+    nodemap_path = repository_path / "test_data" / "crack_detection" / "Nodemaps" / B2_NODEMAP_NAME
+    if not nodemap_path.is_file():
+        return _b2_example_result(
+            build_b2_result(
+                initial_tip_mm=None,
+                initial_angle_degrees=None,
+                correction_vector_mm=None,
+                iteration_count=0,
+                runtime=None,
+                status_code="nodemap_missing",
+            )
+        )
+
+    material = Material(E=72000, nu_xy=0.33, sig_yield=350)
+    detection = CrackDetection(
+        side="right",
+        detection_window_size=40,
+        offset=(-10, 0),
+        angle_det_radius=10,
+        device=device,
+    )
+    nodemap = Nodemap(name=B2_NODEMAP_NAME, folder=str(nodemap_path.parent))
+    data = InputData(nodemap)
+    data.calc_stresses(material)
+    tip_detector = CrackTipDetection(detection, _freeze_model(tip_model, device))
+    path_detector = CrackPathDetection(detection, _freeze_model(path_model, device))
+    correction_properties = OptimizationProperties(
+        angle_gap=10,
+        min_radius=3,
+        max_radius=8,
+        tick_size=0.1,
+        terms=[-1, 0, 1, 2],
+    )
+    state: dict[str, Any] = {
+        "input": None,
+        "initial_tip_pixels": None,
+        "initial_tip_mm": None,
+        "initial_angle_degrees": None,
+        "correction_vector_mm": None,
+        "iteration_count": 0,
+        "status_code": "completed",
+    }
+
+    def preprocess_phase() -> None:
+        interpolated_displacements, _ = detection.interpolate(data)
+        state["input"] = detection.preprocess(interpolated_displacements)
+
+    def tip_phase() -> None:
+        if state["input"] is None:
+            state["status_code"] = "preprocessing_failed"
+            return
+        with torch.inference_mode():
+            prediction = tip_detector.make_prediction(state["input"])
+        tip_pixels = tip_detector.find_most_likely_tip_pos(prediction)
+        point = _finite_optional_b2_point(tip_pixels)
+        if point is None:
+            state["status_code"] = "initial_ai_tip_unavailable"
+            return
+        state["initial_tip_pixels"] = point
+        state["initial_tip_mm"] = tip_detector.calculate_position_in_mm(point)
+
+    def path_angle_phase() -> None:
+        if state["initial_tip_mm"] is None:
+            return
+        with torch.inference_mode():
+            segmentation, _ = path_detector.predict_path(state["input"])
+        estimator = CrackAngleEstimation(
+            detection=detection,
+            crack_tip_in_px=torch.tensor(state["initial_tip_pixels"]),
+        )
+        masked = estimator.apply_circular_mask(segmentation)
+        largest_region = estimator.get_largest_region(masked)
+        angle = estimator.predict_angle(largest_region)
+        state["initial_angle_degrees"] = _finite_optional_angle(angle)
+        if state["initial_angle_degrees"] is None:
+            state["status_code"] = "initial_ai_angle_unavailable"
+
+    def correction_phase() -> None:
+        if state["initial_tip_mm"] is None or state["initial_angle_degrees"] is None:
+            return
+        correction = CrackTipCorrection(
+            data,
+            state["initial_tip_mm"],
+            state["initial_angle_degrees"],
+            material,
+        )
+        vector = correction.correct_crack_tip(
+            correction_properties,
+            max_iter=100,
+            step_tol=0.005,
+            damper=1,
+            method="symbolic_regression",
+            plot_intermediate_results=False,
+        )
+        state["correction_vector_mm"] = _finite_b2_point(vector, "correction_vector_mm")
+        state["iteration_count"] = int(len(correction.iteration_log))
+        if state["iteration_count"] == 0:
+            state["status_code"] = "williams_fit_failed"
+
+    runtime = benchmark_phases(
+        {
+            "preprocessing": preprocess_phase,
+            "tip_inference": tip_phase,
+            "path_angle": path_angle_phase,
+            "williams_correction": correction_phase,
+        },
+        warmup_iterations=warmup_iterations,
+        measured_iterations=measured_iterations,
+        device=str(device),
+    )
+
+    return _b2_example_result(
+        build_b2_result(
+            initial_tip_mm=state["initial_tip_mm"],
+            initial_angle_degrees=state["initial_angle_degrees"],
+            correction_vector_mm=state["correction_vector_mm"],
+            iteration_count=state["iteration_count"],
+            runtime=runtime,
+            status_code=state["status_code"],
+        )
+    )
+
+
 def _freeze_model(model: nn.Module, device: str | torch.device) -> nn.Module:
     """Place an original artifact in evaluation-only state without training logic."""
 
@@ -512,6 +707,63 @@ def _point_list(point: Point | None) -> list[float] | None:
     """Convert a point to a strict-JSON-native representation."""
 
     return None if point is None else [float(point[0]), float(point[1])]
+
+
+def _finite_b2_point(point: Point | None, name: str) -> Point | None:
+    """Validate optional B2 coordinates before they enter a JSON artifact."""
+
+    if point is None:
+        return None
+    values = np.asarray(point, dtype=float)
+    if values.shape != (2,) or not np.all(np.isfinite(values)):
+        raise ValueError(f"{name} must be a finite two-coordinate point or None")
+    return float(values[0]), float(values[1])
+
+
+def _finite_optional_b2_point(point: Any) -> Point | None:
+    """Convert decoder output into an optional B2 point without raising on a miss."""
+
+    if point is None:
+        return None
+    try:
+        return _finite_b2_point(point, "point")
+    except (TypeError, ValueError):
+        return None
+
+
+def _finite_b2_angle(angle: float | None) -> float | None:
+    """Normalize an optional AI angle without fabricating an unavailable value."""
+
+    if angle is None:
+        return None
+    value = float(angle)
+    if not np.isfinite(value):
+        raise ValueError("initial_angle_degrees must be finite or None")
+    return value
+
+
+def _finite_optional_angle(angle: Any) -> float | None:
+    """Preserve an unavailable legacy angle as ``None`` in the B2 status record."""
+
+    try:
+        return _finite_b2_angle(angle)
+    except (TypeError, ValueError):
+        return None
+
+
+def _b2_example_result(result: dict[str, Any]) -> dict[str, Any]:
+    """Attach immutable example provenance to a B2 measurement record."""
+
+    result["example"] = {
+        "nodemap": B2_NODEMAP_NAME,
+        "stage": 52,
+        "side": "right",
+        "detection_window_mm": 40.0,
+        "offset_mm": [-10.0, 0.0],
+        "correction_method": "symbolic_regression",
+        "plot_generation": False,
+    }
+    return result
 
 
 def _experiment(dataset: Any, index: int) -> tuple[int, str]:

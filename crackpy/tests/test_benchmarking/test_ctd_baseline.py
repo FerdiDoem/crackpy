@@ -13,14 +13,17 @@ from torch.nn import functional as torch_functional
 
 from crackpy.benchmarking.ctd_baseline import (
     ResolutionMode,
+    build_b2_result,
     decode_historical_tip,
     denormalize_coordinate_head,
+    evaluate_b2_example,
     evaluate_crackmnist,
     evaluate_repository_fixtures,
     map_model_point_to_original,
     measure_inference_contracts,
     prepare_crackmnist_inputs,
 )
+from crackpy.benchmarking.ctd_runtime import benchmark_phases
 from crackpy.crack_detection.data.preprocess import normalize
 from crackpy.crack_detection.utils.utilityfunctions import find_most_likely_tip_pos
 
@@ -245,6 +248,7 @@ def test_cli_defaults_to_full_official_split_and_trained_resolution() -> None:
             "--resolution-mode",
             "native-128",
             "--fixture-only",
+            "--include-b2",
         ]
     )
 
@@ -258,3 +262,50 @@ def test_cli_defaults_to_full_official_split_and_trained_resolution() -> None:
     assert smoke.batch_size == 2
     assert smoke.resolution_mode == "native-128"
     assert smoke.fixture_only is True
+    assert defaults.include_b2 is False
+    assert smoke.include_b2 is True
+
+
+def test_b2_result_records_correction_runtime_and_lack_of_independent_ground_truth() -> None:
+    clock_values = iter((0, 2_000_000))
+    runtime = benchmark_phases(
+        {"williams_correction": lambda: None},
+        measured_iterations=1,
+        clock_ns=lambda: next(clock_values),
+    )
+
+    result = build_b2_result(
+        initial_tip_mm=(15.0, 0.5),
+        initial_angle_degrees=-0.5,
+        correction_vector_mm=(0.25, -0.1),
+        iteration_count=3,
+        runtime=runtime,
+        status_code="completed",
+    )
+
+    assert result["initial_ai_tip_mm"] == [15.0, 0.5]
+    assert result["initial_ai_angle_degrees"] == -0.5
+    assert result["correction_vector_mm"] == [0.25, -0.1]
+    assert result["final_tip_mm"] == [15.25, 0.4]
+    assert result["iterations"] == 3
+    assert result["runtime"]["phases"]["williams_correction"]["median_ms"] == 2.0
+    assert result["status"] == {"code": "completed", "independent_ground_truth_available": False}
+    assert result["accuracy_claim_supported"] is False
+    json.dumps(result, allow_nan=False)
+
+
+class _ExplodingB2Model(nn.Module):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        raise RuntimeError("test model inference failed")
+
+
+def test_b2_propagates_unexpected_model_errors_for_a_fail_fast_scientific_run() -> None:
+    repository_root = Path(__file__).resolve().parents[3]
+
+    with pytest.raises(RuntimeError, match="test model inference failed"):
+        evaluate_b2_example(
+            _ExplodingB2Model(),
+            _ExplodingB2Model(),
+            repository_root=repository_root,
+            device="cpu",
+        )

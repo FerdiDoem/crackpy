@@ -1,4 +1,4 @@
-"""Run the frozen P0 B0/B1 baseline on repository fixtures and CrackMNIST."""
+"""Run the frozen P0 B0/B1 baseline and optionally the B2 Williams correction."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import torch
 
 from crackpy.benchmarking.ctd_baseline import (
     ResolutionMode,
+    evaluate_b2_example,
     evaluate_crackmnist,
     evaluate_repository_fixtures,
     load_repository_fixtures,
@@ -61,6 +62,23 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run only the three repository fixtures as a small integration smoke test.",
     )
+    parser.add_argument(
+        "--include-b2",
+        action="store_true",
+        help="Also run the stage-52 right-side Williams-correction example; disabled by default.",
+    )
+    parser.add_argument(
+        "--b2-warmup-iterations",
+        type=_non_negative_integer,
+        default=0,
+        help="Warm-up iterations for the optional B2 correction timing.",
+    )
+    parser.add_argument(
+        "--b2-measured-iterations",
+        type=_positive_integer,
+        default=1,
+        help="Measured iterations for the optional B2 correction timing.",
+    )
     return parser
 
 
@@ -99,6 +117,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "crackmnist_limit": args.limit,
             "batch_size": args.batch_size,
             "resolution_mode": args.resolution_mode,
+            "include_b2": bool(args.include_b2),
         },
         "metadata": collect_run_metadata(
             seed=0,
@@ -109,6 +128,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "repository_fixtures": repository_result,
         "runtime": runtime,
         "crackmnist": None,
+        "b2": None,
     }
     if not args.fixture_only:
         from crackmnist import CrackMNIST
@@ -128,6 +148,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             resolution_mode=args.resolution_mode,
             limit=args.limit,
         )
+    if args.include_b2:
+        result["b2"] = evaluate_b2_example(
+            tip_model,
+            path_model,
+            repository_root=repository_root,
+            device=args.device,
+            warmup_iterations=args.b2_warmup_iterations,
+            measured_iterations=args.b2_measured_iterations,
+        )
     return result
 
 
@@ -141,7 +170,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
-    print(f"Wrote frozen CTD P0 B0/B1 results to {args.output}")
+    print(f"Wrote frozen CTD P0 baseline results to {args.output}")
     return 0
 
 
@@ -151,6 +180,15 @@ def _positive_integer(value: str) -> int:
     parsed = int(value)
     if parsed <= 0:
         raise argparse.ArgumentTypeError("value must be greater than zero")
+    return parsed
+
+
+def _non_negative_integer(value: str) -> int:
+    """Parse a non-negative CLI integer for an optional warm-up count."""
+
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be greater than or equal to zero")
     return parsed
 
 
