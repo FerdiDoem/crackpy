@@ -47,6 +47,18 @@ class FrozenCtdInference:
         self.tip_model = self._prepare_model(tip_model)
         self.path_model = self._prepare_model(path_model) if path_model is not None else None
 
+    def attach_path_model(self, path_model: nn.Module) -> None:
+        """Prepare and attach UNetPath exactly once after genuine tip-only work.
+
+        Delayed attachment keeps the path network off the accelerator during
+        calibration and tip-only timing while preserving one persistent owner
+        and one lifecycle transition per model.
+        """
+
+        if self.path_model is not None:
+            raise RuntimeError("a path model is already attached")
+        self.path_model = self._prepare_model(path_model)
+
     @torch.inference_mode()
     def forward_tip(self, device_batch: Tensor) -> tuple[Tensor, Tensor]:
         """Run both ParallelNets heads on an already transferred batch."""

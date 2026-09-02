@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 import torch
 from skimage.morphology import skeletonize
+from torch import nn
 
 from crackpy.benchmarking.ctd_baseline import (
     FIXTURE_WINDOW_MM,
@@ -30,6 +31,51 @@ class P1InferenceMode(str, Enum):
 
     TIP_ONLY = "tip_only"
     TIP_PATH_ANGLE = "tip_path_angle"
+
+
+def measure_p1_model_loading(
+    model_loader: Callable[[], tuple[nn.Module, nn.Module]],
+    *,
+    clock_ns: Callable[[], int] = time.perf_counter_ns,
+) -> tuple[dict[str, Any], nn.Module, nn.Module]:
+    """Measure one first-in-process CPU load before either model is prepared.
+
+    Keeping loading on the host lets the caller measure a genuine path-free
+    tip-only state and attach UNetPath to the accelerator only afterwards.
+    """
+
+    loaded: tuple[nn.Module, nn.Module] | None = None
+
+    def load_once() -> None:
+        nonlocal loaded
+        if loaded is not None:
+            raise RuntimeError("P1 model loader was invoked more than once")
+        candidate = model_loader()
+        if not isinstance(candidate, tuple) or len(candidate) != 2:
+            raise TypeError("model_loader must return a (tip_model, path_model) tuple")
+        if not all(isinstance(model, nn.Module) for model in candidate):
+            raise TypeError("model_loader must return torch.nn.Module instances")
+        loaded = candidate
+
+    runtime = benchmark_phases(
+        {"first_in_process_model_loading_cpu": load_once},
+        warmup_iterations=0,
+        measured_iterations=1,
+        device="cpu",
+        clock_ns=clock_ns,
+    )
+    if loaded is None:
+        raise RuntimeError("model loader completed without returning models")
+    return (
+        {
+            "phase_name": "first_in_process_model_loading_cpu",
+            "first_in_process": True,
+            "models_prepared_for_device": False,
+            "runtime": runtime.to_dict(),
+        },
+        loaded[0],
+        loaded[1],
+    )
 
 
 def measure_p1_model_phases(
@@ -56,6 +102,8 @@ def measure_p1_model_phases(
         raise ValueError("raw_inputs must have shape (n, 2, 128, 128)")
     if len(fields) == 0:
         raise ValueError("raw_inputs must contain at least one image")
+    if selected_mode is P1InferenceMode.TIP_ONLY and inference.path_model is not None:
+        raise ValueError("tip_only timing requires a path-free inference instance")
     if selected_mode is P1InferenceMode.TIP_PATH_ANGLE:
         if selected_resolution is not ResolutionMode.TRAINED_256:
             raise ValueError("tip_path_angle retains the historical 256-pixel geometry")
@@ -216,6 +264,7 @@ def benchmark_interpolation_frames(
     warmup_iterations: int = 1,
     measured_iterations: int = 3,
     clock_ns: Callable[[], int] = time.perf_counter_ns,
+    tip_inference: FrozenCtdInference | None = None,
 ) -> dict[str, Any]:
     """Compare three legacy ``griddata`` calls with one frame-local triangulation."""
 
@@ -244,6 +293,29 @@ def benchmark_interpolation_frames(
                     equal_nan=True,
                 )
             )
+            tip_probability_parity: bool | None = None
+            coordinate_head_parity: bool | None = None
+            tip_decision_parity: bool | None = None
+            if tip_inference is not None:
+                legacy_prediction = tip_inference.predict(legacy_input, include_path=False)
+                optimized_prediction = tip_inference.predict(optimized_input, include_path=False)
+                legacy_probabilities = legacy_prediction.tip_probabilities.detach().to("cpu")
+                optimized_probabilities = optimized_prediction.tip_probabilities.detach().to("cpu")
+                legacy_coordinates = legacy_prediction.coordinate_outputs.detach().to("cpu")
+                optimized_coordinates = optimized_prediction.coordinate_outputs.detach().to("cpu")
+                tip_probability_parity = bool(
+                    torch.equal(legacy_probabilities, optimized_probabilities)
+                )
+                coordinate_head_parity = bool(
+                    torch.equal(legacy_coordinates, optimized_coordinates)
+                )
+                legacy_tip = decode_historical_tip(legacy_probabilities)
+                optimized_tip = decode_historical_tip(optimized_probabilities)
+                tip_decision_parity = bool(
+                    tip_probability_parity
+                    and coordinate_head_parity
+                    and legacy_tip == optimized_tip
+                )
             runtime = benchmark_phases(
                 {
                     "legacy_three_griddata": lambda frame=frame, signed_size=signed_size: legacy_interpolate(
@@ -273,6 +345,10 @@ def benchmark_interpolation_frames(
                     "pixels": pixels,
                     "float64_parity": float64_parity,
                     "normalized_float32_parity": normalized_parity,
+                    "tip_model_checked": tip_inference is not None,
+                    "tip_probability_parity": tip_probability_parity,
+                    "coordinate_head_parity": coordinate_head_parity,
+                    "tip_decision_parity": tip_decision_parity,
                     "median_speedup": float(legacy_median / optimized_median),
                     "runtime": runtime_dict,
                 }

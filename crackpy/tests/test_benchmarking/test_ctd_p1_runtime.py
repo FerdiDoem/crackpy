@@ -13,6 +13,7 @@ from crackpy.benchmarking.ctd_baseline import ResolutionMode
 from crackpy.benchmarking.ctd_p1_runtime import (
     P1InferenceMode,
     benchmark_interpolation_frames,
+    measure_p1_model_loading,
     measure_p1_model_phases,
     run_p1_runtime_sweep,
 )
@@ -57,10 +58,31 @@ def _increasing_clock() -> Callable[[], int]:
     return clock
 
 
+def test_p1_model_loading_is_a_separate_first_in_process_phase() -> None:
+    calls = 0
+
+    def loader() -> tuple[nn.Module, nn.Module]:
+        nonlocal calls
+        calls += 1
+        return _TipModel(), _PathModel()
+
+    result, tip_model, path_model = measure_p1_model_loading(
+        loader,
+        clock_ns=_increasing_clock(),
+    )
+
+    assert calls == 1
+    assert result["phase_name"] == "first_in_process_model_loading_cpu"
+    assert result["runtime"]["phases"]["first_in_process_model_loading_cpu"]["median_ms"] == 1.0
+    assert result["models_prepared_for_device"] is False
+    assert isinstance(tip_model, _TipModel)
+    assert isinstance(path_model, _PathModel)
+
+
 def test_tip_only_skips_path_and_reports_both_throughput_units() -> None:
     tip = _TipModel()
     path = _PathModel()
-    inference = FrozenCtdInference(tip, path, device="cpu")
+    inference = FrozenCtdInference(tip, device="cpu")
     inputs = torch.arange(4 * 2 * 128 * 128, dtype=torch.float32).reshape(4, 2, 128, 128)
 
     result = measure_p1_model_phases(
@@ -88,6 +110,17 @@ def test_tip_only_skips_path_and_reports_both_throughput_units() -> None:
     assert result["phase_availability"]["interpolation"] == "not_applicable_pregridded_input"
     assert result["plotting"]["status"] == "disabled_not_requested"
     assert result["result_writing"]["status"] == "disabled_not_requested"
+
+    resident_path = FrozenCtdInference(_TipModel(), path, device="cpu")
+    with pytest.raises(ValueError, match="path-free"):
+        measure_p1_model_phases(
+            resident_path,
+            raw_inputs=inputs,
+            mode=P1InferenceMode.TIP_ONLY,
+            resolution_mode=ResolutionMode.TRAINED_256,
+            warmup_iterations=0,
+            measured_iterations=1,
+        )
 
 
 def test_tip_path_angle_keeps_path_phases_and_requires_256_geometry() -> None:
@@ -175,6 +208,7 @@ def test_interpolation_benchmark_reports_parity_and_per_frame_speedup() -> None:
         pixels=9,
         measured_iterations=1,
         clock_ns=_increasing_clock(),
+        tip_inference=FrozenCtdInference(_TipModel(), device="cpu"),
     )
 
     assert result["triangulation_scope"] == "one_per_frame_and_roi"
@@ -182,4 +216,5 @@ def test_interpolation_benchmark_reports_parity_and_per_frame_speedup() -> None:
     assert {entry["side"] for entry in result["variants"]} == {"right", "left"}
     assert all(entry["float64_parity"] for entry in result["variants"])
     assert all(entry["normalized_float32_parity"] for entry in result["variants"])
+    assert all(entry["tip_decision_parity"] for entry in result["variants"])
     assert all(entry["median_speedup"] == pytest.approx(1.0) for entry in result["variants"])

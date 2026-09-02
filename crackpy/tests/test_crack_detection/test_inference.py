@@ -134,6 +134,29 @@ def test_tip_only_skips_path_and_missing_optional_path_returns_none() -> None:
     assert missing_optional_path.path_probabilities is None
 
 
+def test_path_model_can_be_attached_once_after_genuine_tip_only_measurement() -> None:
+    tip_model = _CountingTipModel()
+    path_model = _CountingPathModel()
+    inference = FrozenCtdInference(tip_model, device="cpu")
+    batch = torch.ones((2, 2, 8, 8), dtype=torch.float32)
+
+    inference.predict(batch, include_path=False)
+    assert inference.path_model is None
+    assert path_model.freeze_calls == 0
+    assert path_model.to_calls == 0
+    assert path_model.eval_calls == 0
+
+    inference.attach_path_model(path_model)
+    prediction = inference.predict(batch, include_path=True)
+
+    assert prediction.path_probabilities is not None
+    assert path_model.freeze_calls == 1
+    assert path_model.to_calls == 1
+    assert path_model.eval_calls == 1
+    with pytest.raises(RuntimeError, match="already attached"):
+        inference.attach_path_model(_CountingPathModel())
+
+
 def test_tip_and_path_forwards_can_be_measured_as_separate_device_operations() -> None:
     tip_model = _CountingTipModel()
     path_model = _CountingPathModel()
