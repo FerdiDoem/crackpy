@@ -166,6 +166,7 @@ class P1Services:
     benchmark_interpolation: Callable[..., dict[str, Any]]
     dataset_summary: Callable[[Any, int], dict[str, Any]]
     collect_metadata: Callable[..., Any]
+    hash_file: Callable[[Path], str]
 
     @classmethod
     def defaults(cls) -> "P1Services":
@@ -183,6 +184,7 @@ class P1Services:
             benchmark_interpolation=benchmark_interpolation_frames,
             dataset_summary=crackmnist_dataset_summary,
             collect_metadata=collect_run_metadata,
+            hash_file=sha256_file,
         )
 
     def replace(self, **changes: Any) -> "P1Services":
@@ -246,7 +248,7 @@ def verify_p1_provenance(
     validation_dataset: Mapping[str, Any],
     test_dataset: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Fail before evaluation if live weights or CrackMNIST differ from P0."""
+    """Confirm the complete final provenance after staged fail-fast checks."""
 
     checks: dict[str, bool] = {}
     for name, expected in reference.artifact_sha256.items():
@@ -270,6 +272,43 @@ def verify_p1_provenance(
         "validation_dataset": dict(validation_dataset),
         "test_dataset": dict(test_dataset),
     }
+
+
+def _require_artifact_hash(
+    reference: P0Reference,
+    *,
+    name: str,
+    observed_sha256: str,
+) -> None:
+    """Reject one changed model immediately after its cold load is measured."""
+
+    expected = reference.artifact_sha256.get(name)
+    if expected is None or observed_sha256 != expected:
+        raise RuntimeError(f"P1 provenance differs from P0 for artifact {name}")
+
+
+def _require_dataset_identity(
+    reference: P0Reference,
+    *,
+    validation_dataset: Mapping[str, Any],
+    test_dataset: Mapping[str, Any],
+) -> None:
+    """Reject changed CrackMNIST artifacts before model evaluation begins."""
+
+    failures: list[str] = []
+    for key, expected in reference.dataset_identity.items():
+        if validation_dataset.get(key) != expected:
+            failures.append(f"validation:{key}")
+        if test_dataset.get(key) != expected:
+            failures.append(f"test:{key}")
+    if validation_dataset.get("split") != "validation":
+        failures.append("validation:split")
+    if test_dataset.get("split") != "test":
+        failures.append("test:split")
+    if failures:
+        raise RuntimeError(
+            "P1 CrackMNIST provenance differs from P0: " + ", ".join(failures)
+        )
 
 
 def assess_resolution_gate(
@@ -324,6 +363,12 @@ def run_p1_benchmark(
         phase_name="first_in_process_tip_model_loading_cpu",
         first_in_process=True,
     )
+    tip_artifact_sha256 = services.hash_file(artifact_paths["ParallelNets"])
+    _require_artifact_hash(
+        reference,
+        name="ParallelNets",
+        observed_sha256=tip_artifact_sha256,
+    )
     inference = services.inference_factory(
         tip_model,
         None,
@@ -332,6 +377,19 @@ def run_p1_benchmark(
 
     validation_dataset = services.load_dataset("val", config.dataset_root)
     test_dataset = services.load_dataset("test", config.dataset_root)
+    validation_dataset_summary = services.dataset_summary(
+        validation_dataset,
+        _evaluated_sample_count(validation_dataset, config.limit),
+    )
+    test_dataset_summary = services.dataset_summary(
+        test_dataset,
+        _evaluated_sample_count(test_dataset, config.limit),
+    )
+    _require_dataset_identity(
+        reference,
+        validation_dataset=validation_dataset_summary,
+        test_dataset=test_dataset_summary,
+    )
     resolution_results: dict[str, Any] = {}
     with tempfile.TemporaryDirectory(prefix="crackpy-p1-") as cache_directory:
         cache_root = Path(cache_directory)
@@ -386,6 +444,12 @@ def run_p1_benchmark(
         phase_name="deferred_path_model_loading_cpu",
         first_in_process=False,
     )
+    path_artifact_sha256 = services.hash_file(artifact_paths["UNetPath"])
+    _require_artifact_hash(
+        reference,
+        name="UNetPath",
+        observed_sha256=path_artifact_sha256,
+    )
     path_model_attach_started = time.perf_counter()
     inference.attach_path_model(path_model)
     path_model_attach_seconds = float(time.perf_counter() - path_model_attach_started)
@@ -410,20 +474,21 @@ def run_p1_benchmark(
         if hasattr(metadata_value, "to_dict")
         else dict(metadata_value)
     )
-    validation_dataset_summary = services.dataset_summary(
-        validation_dataset,
-        _evaluated_sample_count(validation_dataset, config.limit),
-    )
-    test_dataset_summary = services.dataset_summary(
-        test_dataset,
-        _evaluated_sample_count(test_dataset, config.limit),
-    )
     provenance_verification = verify_p1_provenance(
         reference,
         current_artifact_sha256=metadata.get("artifact_sha256", {}),
         validation_dataset=validation_dataset_summary,
         test_dataset=test_dataset_summary,
     )
+    provenance_verification["staged_fail_fast"] = {
+        "tip_artifact_checked_before_accuracy": True,
+        "datasets_checked_before_accuracy": True,
+        "path_artifact_checked_before_path_runtime": True,
+    }
+    provenance_verification["staged_artifact_sha256"] = {
+        "ParallelNets": tip_artifact_sha256,
+        "UNetPath": path_artifact_sha256,
+    }
     return {
         "schema_version": "ctd-p1-v1",
         "stage": "P1",
@@ -574,7 +639,9 @@ def _evaluate_resolution(
             },
             "test_outputs": test_outputs.to_summary(),
             "frozen_test_metrics": frozen_test.to_dict(),
-            "confidence_gated_test_metrics": confidence_gated_test.to_dict(),
+            "confidence_gated_test_metrics": confidence_gated_test.to_dict(
+                include_samples=False
+            ),
             "confidence_policy": {
                 "threshold_source": "validation_only",
                 "test_recalibration_performed": False,

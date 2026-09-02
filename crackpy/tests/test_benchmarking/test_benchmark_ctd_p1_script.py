@@ -288,6 +288,13 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
             }
         )
 
+    def hash_file(path: Path) -> str:
+        lifecycle_events.append(f"provenance:hash:{path.name}")
+        return {
+            "ParallelNets.pth": "tip",
+            "UNetPath.pth": "path",
+        }[path.name]
+
     services = P1Services.defaults().replace(
         load_model=load_model,
         measure_model_loading=measure_model_loading,
@@ -301,6 +308,7 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
         benchmark_interpolation=benchmark_interpolation,
         dataset_summary=summarize_dataset,
         collect_metadata=collect_metadata,
+        hash_file=hash_file,
     )
     result = run_p1_benchmark(
         P1RunConfig(
@@ -344,8 +352,17 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
         lifecycle_events.index(f"runtime:tip_path_angle:trained-256:{batch}")
         for batch in (1, 8, 16, 32)
     )
-    assert lifecycle_events.index("provenance:dataset:val") > path_attach_index
-    assert lifecycle_events.index("provenance:dataset:test") > path_attach_index
+    tip_hash_index = lifecycle_events.index("provenance:hash:ParallelNets.pth")
+    path_hash_index = lifecycle_events.index("provenance:hash:UNetPath.pth")
+    assert lifecycle_events.index("load:ParallelNets") < tip_hash_index
+    assert tip_hash_index < lifecycle_events.index("collect:val:trained-256")
+    assert lifecycle_events.index("provenance:dataset:val") < lifecycle_events.index(
+        "collect:val:trained-256"
+    )
+    assert lifecycle_events.index("provenance:dataset:test") < lifecycle_events.index(
+        "collect:test:trained-256"
+    )
+    assert path_load_index < path_hash_index < path_attach_index
     assert [(split, mode) for split, mode, _ in collection_calls] == [
         ("val", "trained-256"),
         ("test", "trained-256"),
@@ -372,6 +389,8 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
             == resolution["calibration"]["selected_config"]
         )
         assert resolution["confidence_gated_test_metrics"]["split"] == "test"
+        assert "samples" not in resolution["confidence_gated_test_metrics"]
+        assert "samples" in resolution["frozen_test_metrics"]
         assert (
             resolution["confidence_gated_test_metrics"]["config"]
             == resolution["calibration"]["confidence_gated_config"]

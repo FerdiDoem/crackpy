@@ -163,7 +163,9 @@ class CalibrationResult:
             "minimum_detection_rate": self.minimum_detection_rate,
             "selection_metrics": self.selection_metrics.to_dict(),
             "confidence_gated_validation_metrics": (
-                self.confidence_gated_validation_metrics.to_dict()
+                self.confidence_gated_validation_metrics.to_dict(
+                    include_samples=False
+                )
             ),
             "risk_coverage": self.risk_coverage.to_dict(),
             "candidate_summaries": [

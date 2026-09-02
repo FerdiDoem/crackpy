@@ -200,7 +200,10 @@ def test_calibration_freezes_validation_choice_and_test_application_cannot_chang
     assert calibration.confidence_gated_validation_metrics.detection_rate >= 1.0
     assert evaluation.config.to_dict() == frozen_payload
     assert calibration.efficiency["connected_component_labelings_per_sample"] == 1
-    json.dumps(calibration.to_dict(), allow_nan=False)
+    calibration_payload = calibration.to_dict()
+    assert "samples" in calibration_payload["selection_metrics"]
+    assert "samples" not in calibration_payload["confidence_gated_validation_metrics"]
+    json.dumps(calibration_payload, allow_nan=False)
     json.dumps(evaluation.to_dict(), allow_nan=False)
 
 
