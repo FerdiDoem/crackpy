@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 import math
 import time
@@ -20,6 +20,8 @@ from crackpy.benchmarking.ctd_baseline import (
 )
 from crackpy.benchmarking.ctd_runtime import benchmark_phases
 from crackpy.crack_detection.detection import CrackAngleEstimation, CrackDetection
+from crackpy.crack_detection.data.interpolation import interpolate as legacy_interpolate
+from crackpy.crack_detection.data.optimized_interpolation import interpolate_frame
 from crackpy.crack_detection.inference import FrozenCtdInference
 
 
@@ -204,6 +206,104 @@ def run_p1_runtime_sweep(
             result.setdefault("batch_size", batch_size)
             results.append(result)
     return results
+
+
+def benchmark_interpolation_frames(
+    frames: Mapping[str, Any],
+    *,
+    signed_sizes: Sequence[float] = (70.0, -70.0),
+    pixels: int = 256,
+    warmup_iterations: int = 1,
+    measured_iterations: int = 3,
+    clock_ns: Callable[[], int] = time.perf_counter_ns,
+) -> dict[str, Any]:
+    """Compare three legacy ``griddata`` calls with one frame-local triangulation."""
+
+    if not frames or not signed_sizes:
+        raise ValueError("frames and signed_sizes must be non-empty")
+    if not isinstance(pixels, int) or isinstance(pixels, bool) or pixels <= 1:
+        raise ValueError("pixels must be an integer greater than one")
+
+    variants: list[dict[str, Any]] = []
+    for frame_name, frame in frames.items():
+        for signed_size in signed_sizes:
+            if not np.isfinite(signed_size) or signed_size == 0:
+                raise ValueError("signed interpolation sizes must be finite and non-zero")
+            legacy_result = legacy_interpolate(frame, size=float(signed_size), pixels=pixels)
+            optimized_result = interpolate_frame(frame, size=float(signed_size), pixels=pixels)
+            float64_parity = _interpolation_results_equal(legacy_result, optimized_result)
+            legacy_input = CrackDetection.preprocess(legacy_result[1])
+            optimized_input = CrackDetection.preprocess(optimized_result[1])
+            normalized_parity = bool(
+                torch.equal(torch.isnan(legacy_input), torch.isnan(optimized_input))
+                and torch.allclose(
+                    legacy_input,
+                    optimized_input,
+                    atol=0.0,
+                    rtol=0.0,
+                    equal_nan=True,
+                )
+            )
+            runtime = benchmark_phases(
+                {
+                    "legacy_three_griddata": lambda frame=frame, signed_size=signed_size: legacy_interpolate(
+                        frame,
+                        size=float(signed_size),
+                        pixels=pixels,
+                    ),
+                    "shared_triangulation": lambda frame=frame, signed_size=signed_size: interpolate_frame(
+                        frame,
+                        size=float(signed_size),
+                        pixels=pixels,
+                    ),
+                },
+                warmup_iterations=warmup_iterations,
+                measured_iterations=measured_iterations,
+                device="cpu",
+                clock_ns=clock_ns,
+            )
+            runtime_dict = runtime.to_dict()
+            legacy_median = runtime_dict["phases"]["legacy_three_griddata"]["median_ms"]
+            optimized_median = runtime_dict["phases"]["shared_triangulation"]["median_ms"]
+            variants.append(
+                {
+                    "frame": str(frame_name),
+                    "side": "right" if signed_size > 0 else "left",
+                    "signed_size": float(signed_size),
+                    "pixels": pixels,
+                    "float64_parity": float64_parity,
+                    "normalized_float32_parity": normalized_parity,
+                    "median_speedup": float(legacy_median / optimized_median),
+                    "runtime": runtime_dict,
+                }
+            )
+    return {
+        "triangulation_scope": "one_per_frame_and_roi",
+        "cross_frame_cache": False,
+        "variants": variants,
+    }
+
+
+def _interpolation_results_equal(
+    legacy: tuple[np.ndarray, np.ndarray, np.ndarray | None],
+    optimized: tuple[np.ndarray, np.ndarray, np.ndarray | None],
+) -> bool:
+    """Apply the P1 Float64 parity contract to all available fields."""
+
+    for legacy_field, optimized_field in zip(legacy, optimized, strict=True):
+        if legacy_field is None or optimized_field is None:
+            if legacy_field is not optimized_field:
+                return False
+            continue
+        if not np.allclose(
+            legacy_field,
+            optimized_field,
+            atol=1e-12,
+            rtol=1e-12,
+            equal_nan=True,
+        ):
+            return False
+    return True
 
 
 def _angle_from_path_mask(

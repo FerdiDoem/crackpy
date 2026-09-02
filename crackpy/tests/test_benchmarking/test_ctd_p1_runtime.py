@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -11,6 +12,7 @@ from torch import nn
 from crackpy.benchmarking.ctd_baseline import ResolutionMode
 from crackpy.benchmarking.ctd_p1_runtime import (
     P1InferenceMode,
+    benchmark_interpolation_frames,
     measure_p1_model_phases,
     run_p1_runtime_sweep,
 )
@@ -154,3 +156,30 @@ def test_runtime_sweep_preserves_requested_order_and_structures_cuda_oom() -> No
         "cuda_out_of_memory",
     ]
     assert all(entry["status"] == "completed" for entry in results if entry["batch_size"] != 16)
+
+
+def test_interpolation_benchmark_reports_parity_and_per_frame_speedup() -> None:
+    coor_x = torch.tensor([0.0, 2.0, 0.0, 2.0, 1.0], dtype=torch.float64).numpy()
+    coor_y = torch.tensor([-1.0, -1.0, 1.0, 1.0, 0.0], dtype=torch.float64).numpy()
+    frame = SimpleNamespace(
+        coor_x=coor_x,
+        coor_y=coor_y,
+        disp_x=2.0 * coor_x + coor_y,
+        disp_y=-coor_x + 0.5 * coor_y,
+        eps_vm=0.2 * coor_x - 0.1 * coor_y,
+    )
+
+    result = benchmark_interpolation_frames(
+        {"synthetic": frame},
+        signed_sizes=(2.0, -2.0),
+        pixels=9,
+        measured_iterations=1,
+        clock_ns=_increasing_clock(),
+    )
+
+    assert result["triangulation_scope"] == "one_per_frame_and_roi"
+    assert len(result["variants"]) == 2
+    assert {entry["side"] for entry in result["variants"]} == {"right", "left"}
+    assert all(entry["float64_parity"] for entry in result["variants"])
+    assert all(entry["normalized_float32_parity"] for entry in result["variants"])
+    assert all(entry["median_speedup"] == pytest.approx(1.0) for entry in result["variants"])
