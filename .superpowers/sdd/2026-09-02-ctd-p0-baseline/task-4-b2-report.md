@@ -34,6 +34,9 @@ The resulting focused B2 baseline test run passed with twelve tests.
 - Both the top-level record and its status explicitly set `independent_ground_truth_available` to `false`.
 - `accuracy_claim_supported` is `false`, so the bundled example is not represented as evidence of an accuracy gain.
 - Missing nodemap, unavailable initial tip, unavailable initial angle, and absent Williams fit iterations remain explicit status codes.
+- The adapter now distinguishes convergence, an interrupted internal Williams fit, and exhaustion of the maximum iteration count from the legacy iteration log.
+- Warm-up and measured repetitions reset every intermediate value before preprocessing, so a measured failure cannot inherit a warm-up tip or correction.
+- The default timing uses one warm-up and three measured repetitions.
 - Unexpected execution failures propagate instead of being silently converted into a result artifact.
 
 ## Verification
@@ -69,4 +72,5 @@ The bundled Dummy2 example has no independent corrected-tip ground truth.
 
 Its correction vector and final position are therefore functional and runtime observations only, not a demonstrated accuracy improvement.
 
-The default one measured B2 iteration limits the smoke artifact to reproducibility validation rather than stable timing characterization.
+The first implementation smoke used one measured B2 iteration and remains only reproducibility validation.
+The final P0 runner uses one warm-up and three measured repetitions for median and P95 reporting.

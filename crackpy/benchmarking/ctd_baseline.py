@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from enum import Enum
 from hashlib import md5
+from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -28,7 +29,7 @@ from crackpy.benchmarking.ctd_metrics import (
     path_distance,
     tip_metrics,
 )
-from crackpy.benchmarking.ctd_runtime import benchmark_phases
+from crackpy.benchmarking.ctd_runtime import benchmark_phases, sha256_file
 from crackpy.crack_detection.correction import CrackTipCorrection
 from crackpy.crack_detection.data.preprocess import normalize
 from crackpy.crack_detection.detection import (
@@ -48,6 +49,8 @@ FIXTURE_PIXELS = 256
 FIXTURE_WINDOW_MM = 70.0
 FIXTURE_PIXEL_SIZE_MM = FIXTURE_WINDOW_MM / (FIXTURE_PIXELS - 1)
 B2_NODEMAP_NAME = "Dummy2_WPXXX_DummyVersuch_2_dic_results_1_52.txt"
+B2_MAX_ITERATIONS = 100
+B2_STEP_TOLERANCE_MM = 0.005
 
 
 class ResolutionMode(str, Enum):
@@ -79,19 +82,41 @@ def denormalize_coordinate_head(coordinate: Tensor | Sequence[float], *, model_p
     return float(decoded[0]), float(decoded[1])
 
 
-def map_model_point_to_original(
+def map_legacy_decoder_point_to_original(
     point: Point | None,
     *,
     model_pixels: int,
     original_pixels: int,
 ) -> Point | None:
-    """Map legacy coordinates between equal-FOV raster spans."""
+    """Map CrackPy's endpoint-valued decoder output to original pixel indices.
+
+    The unchanged decoder assigns model index ``i`` the coordinate
+    ``i * model_pixels / (model_pixels - 1)``.  Removing that legacy endpoint
+    convention and applying the endpoint-inclusive resize mapping collapses to
+    ``(original_pixels - 1) / model_pixels``.
+    """
 
     if model_pixels <= 0 or original_pixels <= 0:
         raise ValueError("pixel counts must be greater than zero")
     if point is None:
         return None
-    scale = original_pixels / model_pixels
+    scale = (original_pixels - 1) / model_pixels
+    return float(point[0] * scale), float(point[1] * scale)
+
+
+def map_model_index_point_to_original(
+    point: Point | None,
+    *,
+    model_pixels: int,
+    original_pixels: int,
+) -> Point | None:
+    """Map a true model-grid pixel index through an endpoint-inclusive resize."""
+
+    if model_pixels <= 1 or original_pixels <= 1:
+        raise ValueError("pixel counts must be greater than one")
+    if point is None:
+        return None
+    scale = (original_pixels - 1) / (model_pixels - 1)
     return float(point[0] * scale), float(point[1] * scale)
 
 
@@ -156,7 +181,7 @@ def evaluate_crackmnist(
             for local_index, dataset_index in enumerate(batch_indices):
                 reference = _reference_tip(target_masks[local_index])
                 model_point = decode_historical_tip(mask_probabilities[local_index:local_index + 1])
-                primary = map_model_point_to_original(
+                primary = map_legacy_decoder_point_to_original(
                     model_point,
                     model_pixels=model_pixels,
                     original_pixels=128,
@@ -165,7 +190,7 @@ def evaluate_crackmnist(
                     coordinate_outputs[local_index],
                     model_pixels=model_pixels,
                 )
-                diagnostic = map_model_point_to_original(
+                diagnostic = map_model_index_point_to_original(
                     coordinate_model_point,
                     model_pixels=model_pixels,
                     original_pixels=128,
@@ -211,6 +236,8 @@ def evaluate_crackmnist(
             "original_pixels": 128,
             "resize_before_normalization": mode is ResolutionMode.TRAINED_256,
             "align_corners": True if mode is ResolutionMode.TRAINED_256 else None,
+            "mask_decoder_mapping": "legacy_endpoint_to_index",
+            "coordinate_head_mapping": "model_index_to_original_index",
             "sensitivity_analysis": mode is ResolutionMode.NATIVE_128,
             "millimetre_conversion": None,
         },
@@ -262,6 +289,9 @@ def evaluate_repository_fixtures(
     path_iou_values: list[float] = []
     angle_errors: list[float] = []
     path_failures = 0
+    missing_path_references = 0
+    empty_path_predictions = 0
+    angle_not_evaluable = 0
     sample_records: list[dict[str, Any]] = []
 
     with torch.inference_mode():
@@ -284,24 +314,37 @@ def evaluate_repository_fixtures(
                 )
                 predicted_path_mask = np.asarray(path_probabilities[local_index, 0] >= 0.5, dtype=np.uint8)
                 reference_path_mask = np.asarray(target == 1, dtype=np.uint8)
-                predicted_path = np.argwhere(skeletonize(predicted_path_mask, method="lee"))[:, :2]
-                reference_path = np.argwhere(reference_path_mask)[:, :2]
-                distance = path_distance(predicted_path, reference_path)
-                hd95 = hausdorff95_distance(predicted_path, reference_path)
-                if distance is None or hd95 is None:
-                    path_failures += 1
+                prediction_empty = not bool(np.any(predicted_path_mask))
+                reference_available = bool(np.any(reference_path_mask))
+                if prediction_empty:
+                    empty_path_predictions += 1
+                if not reference_available:
+                    missing_path_references += 1
+                    distance = None
+                    hd95 = None
+                    path_dice = None
+                    path_iou = None
                 else:
+                    predicted_path = np.argwhere(skeletonize(predicted_path_mask, method="lee"))[:, :2]
+                    reference_path = np.argwhere(reference_path_mask)[:, :2]
+                    distance = path_distance(predicted_path, reference_path)
+                    hd95 = hausdorff95_distance(predicted_path, reference_path)
+                    path_dice = dice_score(predicted_path_mask, reference_path_mask)
+                    path_iou = intersection_over_union(predicted_path_mask, reference_path_mask)
+                    path_dice_values.append(path_dice)
+                    path_iou_values.append(path_iou)
+                if reference_available and (distance is None or hd95 is None):
+                    path_failures += 1
+                elif reference_available:
                     path_distances.append(distance)
                     path_hd95_values.append(hd95)
-                path_dice = dice_score(predicted_path_mask, reference_path_mask)
-                path_iou = intersection_over_union(predicted_path_mask, reference_path_mask)
-                path_dice_values.append(path_dice)
-                path_iou_values.append(path_iou)
                 predicted_angle = _fixture_angle(predicted_path_mask, primary)
-                reference_angle = _fixture_angle(reference_path_mask, reference)
+                reference_angle = _fixture_angle(reference_path_mask, reference) if reference_available else None
                 angle_error = angle_error_degrees(predicted_angle, reference_angle)
                 if angle_error is not None:
                     angle_errors.append(angle_error)
+                else:
+                    angle_not_evaluable += 1
 
                 primary_points.append(primary)
                 diagnostic_points.append(diagnostic)
@@ -314,6 +357,8 @@ def evaluate_repository_fixtures(
                         "mask_decoder_error_px": _point_error(primary, reference),
                         "coordinate_head_diagnostic_rc": _point_list(diagnostic),
                         "coordinate_head_error_px": _point_error(diagnostic, reference),
+                        "path_prediction_empty": prediction_empty,
+                        "path_reference_available": reference_available,
                         "path_distance_px": distance,
                         "path_hd95_px": hd95,
                         "path_dice": path_dice,
@@ -324,7 +369,8 @@ def evaluate_repository_fixtures(
                     }
                 )
 
-    successful_paths = len(inputs) - path_failures
+    path_references = len(inputs) - missing_path_references
+    successful_paths = path_references - path_failures
     return {
         "evaluation_contract": _evaluation_contract(),
         "dataset": {
@@ -352,9 +398,12 @@ def evaluate_repository_fixtures(
         "b1": {
             "model": "UNetPath_original_weights",
             "path": {
-                "references": int(len(inputs)),
+                "references": int(path_references),
+                "missing_references": int(missing_path_references),
                 "successful_predictions": successful_paths,
                 "prediction_failures": path_failures,
+                "empty_predictions": int(empty_path_predictions),
+                "empty_prediction_rate": float(empty_path_predictions / len(inputs)),
                 "distance_px": distribution_summary(path_distances).to_dict(),
                 "distance_mm": distribution_summary(
                     value * FIXTURE_PIXEL_SIZE_MM for value in path_distances
@@ -370,6 +419,8 @@ def evaluate_repository_fixtures(
                 "reference_source": "derived_from_repository_path_gt",
                 "method": "CrackPy_local_path_linear_regression",
                 "radius_mm": 10.0,
+                "successful_predictions": int(len(angle_errors)),
+                "not_evaluable": int(angle_not_evaluable),
                 "error_degrees": distribution_summary(angle_errors).to_dict(),
             },
         },
@@ -502,14 +553,49 @@ def build_b2_result(
     }
 
 
+def classify_b2_correction_status(
+    iteration_log: Any,
+    *,
+    max_iterations: int,
+    step_tolerance_mm: float,
+) -> str:
+    """Distinguish convergence from Legacy Williams failures and exhaustion.
+
+    The legacy correction returns ``[0, 0]`` when an internal fit fails, even
+    after earlier iterations succeeded.  Its iteration log is therefore the
+    only available additive signal: a normal early return must end below the
+    step tolerance, while a non-converged full log exhausted the iteration
+    budget and any other early return indicates an interrupted fit.
+    """
+
+    if not isinstance(max_iterations, int) or isinstance(max_iterations, bool) or max_iterations <= 0:
+        raise ValueError("max_iterations must be a positive integer")
+    if not np.isfinite(step_tolerance_mm) or step_tolerance_mm <= 0:
+        raise ValueError("step_tolerance_mm must be finite and greater than zero")
+    iteration_count = int(len(iteration_log))
+    if iteration_count == 0:
+        return "williams_fit_failed"
+    if "dx" not in iteration_log or "dy" not in iteration_log:
+        raise ValueError("iteration_log must contain dx and dy columns")
+    last_step = iteration_log.iloc[-1]
+    step_norm = float(np.hypot(float(last_step["dx"]), float(last_step["dy"])))
+    if not np.isfinite(step_norm):
+        return "williams_fit_failed"
+    if step_norm < step_tolerance_mm:
+        return "completed"
+    if iteration_count >= max_iterations:
+        return "max_iterations_reached"
+    return "williams_fit_interrupted"
+
+
 def evaluate_b2_example(
     tip_model: nn.Module,
     path_model: nn.Module,
     *,
     repository_root: str | Path,
     device: str | torch.device,
-    warmup_iterations: int = 0,
-    measured_iterations: int = 1,
+    warmup_iterations: int = 1,
+    measured_iterations: int = 3,
 ) -> dict[str, Any]:
     """Run the unchanged Williams correction on CrackPy's stage-52 right DIC example.
 
@@ -553,17 +639,26 @@ def evaluate_b2_example(
         tick_size=0.1,
         terms=[-1, 0, 1, 2],
     )
-    state: dict[str, Any] = {
-        "input": None,
-        "initial_tip_pixels": None,
-        "initial_tip_mm": None,
-        "initial_angle_degrees": None,
-        "correction_vector_mm": None,
-        "iteration_count": 0,
-        "status_code": "completed",
-    }
+    state: dict[str, Any] = {}
+
+    def reset_state() -> None:
+        """Start every warm-up and measured iteration without prior outputs."""
+
+        state.clear()
+        state.update(
+            {
+                "input": None,
+                "initial_tip_pixels": None,
+                "initial_tip_mm": None,
+                "initial_angle_degrees": None,
+                "correction_vector_mm": None,
+                "iteration_count": 0,
+                "status_code": "completed",
+            }
+        )
 
     def preprocess_phase() -> None:
+        reset_state()
         interpolated_displacements, _ = detection.interpolate(data)
         state["input"] = detection.preprocess(interpolated_displacements)
 
@@ -608,16 +703,20 @@ def evaluate_b2_example(
         )
         vector = correction.correct_crack_tip(
             correction_properties,
-            max_iter=100,
-            step_tol=0.005,
+            max_iter=B2_MAX_ITERATIONS,
+            step_tol=B2_STEP_TOLERANCE_MM,
             damper=1,
             method="symbolic_regression",
             plot_intermediate_results=False,
         )
-        state["correction_vector_mm"] = _finite_b2_point(vector, "correction_vector_mm")
         state["iteration_count"] = int(len(correction.iteration_log))
-        if state["iteration_count"] == 0:
-            state["status_code"] = "williams_fit_failed"
+        state["status_code"] = classify_b2_correction_status(
+            correction.iteration_log,
+            max_iterations=B2_MAX_ITERATIONS,
+            step_tolerance_mm=B2_STEP_TOLERANCE_MM,
+        )
+        if state["status_code"] in {"completed", "max_iterations_reached"}:
+            state["correction_vector_mm"] = _finite_b2_point(vector, "correction_vector_mm")
 
     runtime = benchmark_phases(
         {
@@ -761,6 +860,8 @@ def _b2_example_result(result: dict[str, Any]) -> dict[str, Any]:
         "detection_window_mm": 40.0,
         "offset_mm": [-10.0, 0.0],
         "correction_method": "symbolic_regression",
+        "max_iterations": B2_MAX_ITERATIONS,
+        "step_tolerance_mm": B2_STEP_TOLERANCE_MM,
         "plot_generation": False,
     }
     return result
@@ -785,8 +886,10 @@ def _crackmnist_summary(dataset: Any, sample_count: int) -> dict[str, Any]:
         {side for name in experiment_names for side in ("left", "right") if name.lower().endswith(f"_{side}")}
     )
     artifact = Path(str(dataset.download_path)) / "crackmnist_128_S.h5"
+    metadata_artifact = Path(str(dataset.download_path)) / "experiments_metadata.json"
     return {
         "name": "CrackMNIST",
+        "crackmnist_version": _installed_distribution_version("crackmnist"),
         "split": "test",
         "size": "S",
         "pixels": 128,
@@ -794,6 +897,7 @@ def _crackmnist_summary(dataset: Any, sample_count: int) -> dict[str, Any]:
         "sample_count": int(sample_count),
         "total_split_sample_count": int(len(dataset)),
         "h5_md5": _md5_file(artifact) if artifact.is_file() else None,
+        "metadata_sha256": sha256_file(metadata_artifact) if metadata_artifact.is_file() else None,
         "experiment_ids": experiment_ids,
         "experiment_names": experiment_names,
         "experiment_sides": experiment_sides,
@@ -803,6 +907,15 @@ def _crackmnist_summary(dataset: Any, sample_count: int) -> dict[str, Any]:
             "Augmented samples have no exposed source-sample ID; sample-level independence is not claimed."
         ),
     }
+
+
+def _installed_distribution_version(distribution_name: str) -> str | None:
+    """Return optional package provenance without making CrackMNIST a runtime dependency."""
+
+    try:
+        return importlib_metadata.version(distribution_name)
+    except importlib_metadata.PackageNotFoundError:
+        return None
 
 
 def _md5_file(path: Path) -> str:

@@ -30,5 +30,5 @@ All nine steady-state phase names were present, and strict JSON serialization wi
 
 ## Caveat
 
-The cold-start value is an explicit first loader invocation contract, so the final P0 runner must call it before constructing either model in its process.
-It must remain separate from the post-warm-up steady-state timing rather than being averaged into it.
+The final P0 runner now calls the cold-start adapter before constructing either model and stores it separately from the post-warm-up steady-state timing.
+The nine phase-resolved measurements and the older public-API comparison are nested under separate runtime keys in the same strict JSON artifact.

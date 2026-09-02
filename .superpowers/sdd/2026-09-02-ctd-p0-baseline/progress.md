@@ -9,8 +9,8 @@
 
 - [x] Task 1: Baseline-Vertrag und Metrikkern
 - [x] Task 2: Reproduzierbare Inferenz und Laufzeitmessung
-- [ ] Task 3: B0/B1 und CrackMNIST-Adapter
-- [ ] Task 4: B2 und Mendeley-A0
+- [x] Task 3: B0/B1 und CrackMNIST-Adapter
+- [x] Task 4: B2 und Mendeley-A0
 - [ ] Task 5: Vollständiger P0-Lauf und Report
 
 ## Reviews
@@ -21,7 +21,7 @@
 ## Verification
 
 - [x] Baseline tests captured (`63 passed`, 10 existing warnings)
-- [ ] New tests pass
-- [ ] Relevant legacy tests pass
+- [x] New tests pass
+- [x] Relevant legacy tests pass
 - [ ] Full benchmark run complete
 - [ ] Report generated from saved results

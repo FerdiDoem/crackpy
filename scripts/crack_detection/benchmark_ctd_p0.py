@@ -18,6 +18,10 @@ from crackpy.benchmarking.ctd_baseline import (
     load_repository_fixtures,
     measure_inference_contracts,
 )
+from crackpy.benchmarking.ctd_p0_runtime import (
+    measure_b0_b1_fixture_phases,
+    measure_first_in_process_model_loading,
+)
 from crackpy.benchmarking.ctd_runtime import collect_run_metadata, configure_deterministic_execution
 from crackpy.crack_detection.data.preprocess import normalize
 from crackpy.crack_detection.model import get_model
@@ -70,13 +74,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--b2-warmup-iterations",
         type=_non_negative_integer,
-        default=0,
+        default=1,
         help="Warm-up iterations for the optional B2 correction timing.",
     )
     parser.add_argument(
         "--b2-measured-iterations",
         type=_positive_integer,
-        default=1,
+        default=3,
         help="Measured iterations for the optional B2 correction timing.",
     )
     return parser
@@ -87,8 +91,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     repository_root = Path(__file__).resolve().parents[2]
     configure_deterministic_execution(0)
-    tip_model = get_model("ParallelNets", map_location=torch.device(args.device))
-    path_model = get_model("UNetPath", map_location=torch.device(args.device))
+    cold_start, tip_model, path_model = measure_first_in_process_model_loading(
+        lambda: (
+            get_model("ParallelNets", map_location=torch.device(args.device)),
+            get_model("UNetPath", map_location=torch.device(args.device)),
+        ),
+        device=args.device,
+    )
     fixture_inputs, fixture_targets = load_repository_fixtures(repository_root)
     repository_result = evaluate_repository_fixtures(
         tip_model,
@@ -98,7 +107,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         device=args.device,
         batch_size=min(args.batch_size, len(fixture_inputs)),
     )
-    runtime = measure_inference_contracts(
+    phase_runtime = measure_b0_b1_fixture_phases(
+        tip_model,
+        path_model,
+        fixture_inputs=fixture_inputs,
+        device=args.device,
+    )
+    api_runtime = measure_inference_contracts(
         tip_model,
         path_model,
         normalized_inputs=normalize(fixture_inputs).to(dtype=torch.float32),
@@ -126,7 +141,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             git_root=repository_root,
         ).to_dict(),
         "repository_fixtures": repository_result,
-        "runtime": runtime,
+        "runtime": {
+            "cold_start": cold_start,
+            "phase_resolved_b0_b1": phase_runtime,
+            "api_contracts": api_runtime,
+        },
         "crackmnist": None,
         "b2": None,
     }

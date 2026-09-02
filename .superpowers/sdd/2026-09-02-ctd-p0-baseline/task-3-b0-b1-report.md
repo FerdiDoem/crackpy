@@ -30,7 +30,9 @@ After implementing those contracts, all ten focused tests passed.
 - CrackMNIST is restricted to the official test split, size S, 128 pixels, and crack-tip segmentation task.
 - The primary CrackMNIST mode resizes raw fields to 256 pixels with bilinear `align_corners=True` before exact per-channel CrackPy normalization.
 - Native 128-pixel execution is available only as an explicitly marked sensitivity analysis.
-- Predictions are mapped back to the original 128-pixel coordinate span, and no millimetre conversion is emitted without an explicit FOV assumption.
+- Historical decoder points are converted from CrackPy's endpoint-valued convention into original 0-to-127 pixel indices before CrackMNIST errors are computed.
+- Coordinate-head points use the separate endpoint-inclusive model-index mapping, so both outputs are compared in the same reference raster without modifying the original decoder.
+- No millimetre conversion is emitted without an explicit FOV assumption.
 - Empty reference masks count as missing references, while absent predictions against valid references remain detection failures.
 - Compact per-sample records include experiment identity, reference availability, primary and diagnostic coordinates and errors, Dice, and IoU.
 - Dataset provenance includes split, size, pixels, verified H5 MD5, total and evaluated sample counts, experiment side, and the absence of a source-sample ID for augmented samples.
@@ -56,5 +58,13 @@ Both smoke samples produced primary detections and strict-JSON per-sample record
 The complete 5,944-sample CrackMNIST run remains Task 5 work and was deliberately not executed here.
 The augmented CrackMNIST samples have no exposed source-sample ID, so this harness explicitly avoids claiming that all 5,944 records are independent observations.
 Repository angles are derived from the available path labels with the same estimator used for predictions; they are not independently annotated angle ground truth.
-The historic decoder's coordinate convention is intentionally preserved even though its `linspace` spans zero through the pixel count rather than zero through pixel count minus one.
+The historic decoder itself remains unchanged even though its `linspace` spans zero through the pixel count rather than zero through pixel count minus one.
+The benchmark records this convention and removes it only at the comparison boundary so a decoder endpoint cannot be compared directly with a 0-to-127 label index.
+
+## Independent review fixes
+
+An independent Task-3 review found that the first CrackMNIST adapter compared two different coordinate conventions, omitted an explicit empty-path rate, and lacked complete CrackMNIST package provenance.
+Endpoint and midpoint tests now cover both the historical decoder convention and true model-index convention.
+Repository path output now separates empty predictions, missing path references, failed predictions, and non-evaluable angles.
+CrackMNIST provenance now records the installed distribution version and the SHA-256 digest of `experiments_metadata.json` in addition to the H5 digest.
 Smoke-run timing and generated JSON files remain local verification artifacts under `.downloads` and are not committed as final P0 results.
