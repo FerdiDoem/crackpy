@@ -167,7 +167,7 @@ def test_invalid_coordinate_blocks_fusion_but_not_a_mask_only_decoder() -> None:
     assert mask_only.point_rc == pytest.approx((1.0, 1.0))
     assert mask_only.coordinate_point_rc is None
     assert mask_only.disagreement_px is None
-    assert mask_only.uncertainty == pytest.approx(0.2)
+    assert mask_only.uncertainty == 1.0
 
 
 def test_missing_or_malformed_coordinate_is_an_explicit_failed_head() -> None:
@@ -180,6 +180,12 @@ def test_missing_or_malformed_coordinate_is_an_explicit_failed_head() -> None:
         config=_config(fusion_weight=0.0),
         model_pixels=3,
     )
+    confidence_gated = decode_tip(
+        probabilities,
+        None,
+        config=_config(fusion_weight=0.0, uncertainty_threshold=0.5),
+        model_pixels=3,
+    )
     fused = decode_tip(
         probabilities,
         ["not", "numeric"],
@@ -189,6 +195,9 @@ def test_missing_or_malformed_coordinate_is_an_explicit_failed_head() -> None:
 
     assert mask_only.point_rc == pytest.approx((1.0, 1.0))
     assert mask_only.coordinate_point_rc is None
+    assert mask_only.uncertainty == 1.0
+    assert confidence_gated.point_rc is None
+    assert confidence_gated.invalid_reason == "uncertainty_threshold_exceeded"
     assert fused.point_rc is None
     assert fused.invalid_reason == "coordinate_head_required"
 
@@ -212,11 +221,20 @@ def test_coordinate_head_outside_model_grid_is_unavailable(
         config=_config(fusion_weight=0.0),
         model_pixels=3,
     )
+    confidence_gated = decode_tip(
+        probabilities,
+        coordinate,
+        config=_config(fusion_weight=0.0, uncertainty_threshold=0.5),
+        model_pixels=3,
+    )
 
     assert coordinate_only.point_rc is None
     assert coordinate_only.invalid_reason == "coordinate_head_required"
     assert mask_only.point_rc == pytest.approx((1.0, 1.0))
     assert mask_only.coordinate_point_rc is None
+    assert mask_only.uncertainty == 1.0
+    assert confidence_gated.point_rc is None
+    assert confidence_gated.invalid_reason == "uncertainty_threshold_exceeded"
 
 
 def test_disagreement_contributes_to_uncertainty_and_the_frozen_gate_rejects_it() -> None:

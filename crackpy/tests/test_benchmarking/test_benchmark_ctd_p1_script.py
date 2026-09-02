@@ -263,6 +263,31 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
             ] * 8,
         }
 
+    def summarize_dataset(dataset: _Dataset, sample_count: int) -> dict[str, Any]:
+        lifecycle_events.append(f"provenance:dataset:{dataset.split}")
+        return {
+            "name": "CrackMNIST",
+            "crackmnist_version": "2.0.1",
+            "split": "validation" if dataset.split == "val" else "test",
+            "size": "S",
+            "pixels": 128,
+            "task": "crack_tip_segmentation",
+            "sample_count": sample_count,
+            "total_split_sample_count": len(dataset),
+            "h5_md5": "fixture-h5",
+            "metadata_sha256": "fixture-metadata",
+        }
+
+    def collect_metadata(**kwargs: Any) -> SimpleNamespace:
+        lifecycle_events.append("provenance:model_hashes")
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "seed": kwargs["seed"],
+                "device": kwargs["device"],
+                "artifact_sha256": {"ParallelNets": "tip", "UNetPath": "path"},
+            }
+        )
+
     services = P1Services.defaults().replace(
         load_model=load_model,
         measure_model_loading=measure_model_loading,
@@ -274,25 +299,8 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
             stage: object() for stage in ("52", "53", "54", "55")
         },
         benchmark_interpolation=benchmark_interpolation,
-        dataset_summary=lambda dataset, sample_count: {
-            "name": "CrackMNIST",
-            "crackmnist_version": "2.0.1",
-            "split": "validation" if dataset.split == "val" else "test",
-            "size": "S",
-            "pixels": 128,
-            "task": "crack_tip_segmentation",
-            "sample_count": sample_count,
-            "total_split_sample_count": len(dataset),
-            "h5_md5": "fixture-h5",
-            "metadata_sha256": "fixture-metadata",
-        },
-        collect_metadata=lambda **kwargs: SimpleNamespace(
-            to_dict=lambda: {
-                "seed": kwargs["seed"],
-                "device": kwargs["device"],
-                "artifact_sha256": {"ParallelNets": "tip", "UNetPath": "path"},
-            }
-        ),
+        dataset_summary=summarize_dataset,
+        collect_metadata=collect_metadata,
     )
     result = run_p1_benchmark(
         P1RunConfig(
@@ -332,6 +340,12 @@ def test_orchestrator_loads_models_once_and_freezes_each_resolution_before_test(
         > path_attach_index
         for batch in (1, 8, 16, 32)
     )
+    assert lifecycle_events.index("provenance:model_hashes") > max(
+        lifecycle_events.index(f"runtime:tip_path_angle:trained-256:{batch}")
+        for batch in (1, 8, 16, 32)
+    )
+    assert lifecycle_events.index("provenance:dataset:val") > path_attach_index
+    assert lifecycle_events.index("provenance:dataset:test") > path_attach_index
     assert [(split, mode) for split, mode, _ in collection_calls] == [
         ("val", "trained-256"),
         ("test", "trained-256"),

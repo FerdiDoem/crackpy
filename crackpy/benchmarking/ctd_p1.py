@@ -315,17 +315,6 @@ def run_p1_benchmark(
     deterministic = configure_deterministic_execution(0)
     reference = load_p0_reference(config.p0_results_path)
     artifact_paths = _model_artifact_paths()
-    metadata_value = services.collect_metadata(
-        seed=0,
-        device=config.device,
-        artifact_paths=artifact_paths,
-        git_root=config.repository_root,
-    )
-    metadata = (
-        metadata_value.to_dict()
-        if hasattr(metadata_value, "to_dict")
-        else dict(metadata_value)
-    )
 
     tip_cpu_loading, tip_model = services.measure_model_loading(
         lambda: services.load_model(
@@ -343,23 +332,6 @@ def run_p1_benchmark(
 
     validation_dataset = services.load_dataset("val", config.dataset_root)
     test_dataset = services.load_dataset("test", config.dataset_root)
-    evaluated_count = lambda dataset: (
-        len(dataset) if config.limit is None else min(config.limit, len(dataset))
-    )
-    validation_dataset_summary = services.dataset_summary(
-        validation_dataset,
-        evaluated_count(validation_dataset),
-    )
-    test_dataset_summary = services.dataset_summary(
-        test_dataset,
-        evaluated_count(test_dataset),
-    )
-    provenance_verification = verify_p1_provenance(
-        reference,
-        current_artifact_sha256=metadata.get("artifact_sha256", {}),
-        validation_dataset=validation_dataset_summary,
-        test_dataset=test_dataset_summary,
-    )
     resolution_results: dict[str, Any] = {}
     with tempfile.TemporaryDirectory(prefix="crackpy-p1-") as cache_directory:
         cache_root = Path(cache_directory)
@@ -426,6 +398,31 @@ def run_p1_benchmark(
             config=config,
             services=services,
         )
+    )
+    metadata_value = services.collect_metadata(
+        seed=0,
+        device=config.device,
+        artifact_paths=artifact_paths,
+        git_root=config.repository_root,
+    )
+    metadata = (
+        metadata_value.to_dict()
+        if hasattr(metadata_value, "to_dict")
+        else dict(metadata_value)
+    )
+    validation_dataset_summary = services.dataset_summary(
+        validation_dataset,
+        _evaluated_sample_count(validation_dataset, config.limit),
+    )
+    test_dataset_summary = services.dataset_summary(
+        test_dataset,
+        _evaluated_sample_count(test_dataset, config.limit),
+    )
+    provenance_verification = verify_p1_provenance(
+        reference,
+        current_artifact_sha256=metadata.get("artifact_sha256", {}),
+        validation_dataset=validation_dataset_summary,
+        test_dataset=test_dataset_summary,
     )
     return {
         "schema_version": "ctd-p1-v1",
@@ -670,6 +667,12 @@ def _runtime_inputs(dataset: Any, count: int) -> torch.Tensor:
     if fields.shape != (count, 2, 128, 128):
         raise ValueError("CrackMNIST runtime inputs must have shape (n, 2, 128, 128)")
     return torch.as_tensor(fields, dtype=torch.float32, device="cpu")
+
+
+def _evaluated_sample_count(dataset: Any, limit: int | None) -> int:
+    """Return the exact split scope used by accuracy evaluation."""
+
+    return len(dataset) if limit is None else min(limit, len(dataset))
 
 
 def _runtime_sample_sides(dataset: Any, count: int) -> tuple[str, ...]:

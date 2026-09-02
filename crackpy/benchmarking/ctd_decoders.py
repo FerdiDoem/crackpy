@@ -299,6 +299,7 @@ def decode_tip(
         mask_confidence=None if region is None else region.mean_probability,
         disagreement_px=disagreement,
         mask_available=mask_original is not None,
+        coordinate_available=coordinate_original is not None,
         original_pixels=original_pixels,
     )
 
@@ -392,6 +393,7 @@ def decode_tip_grid(
             mask_confidence=None if region is None else region.mean_probability,
             disagreement_px=disagreement,
             mask_available=mask_original is not None,
+            coordinate_available=coordinate_original is not None,
             original_pixels=original_pixels,
         )
         ungated, reason = _fuse_points(mask_original, coordinate_original, config=config)
@@ -690,11 +692,12 @@ def _decoder_uncertainty(
     mask_confidence: float | None,
     disagreement_px: float | None,
     mask_available: bool,
+    coordinate_available: bool,
     original_pixels: int,
 ) -> float:
     """Combine independent confidence warnings on one bounded ranking scale."""
 
-    if not mask_available or mask_confidence is None:
+    if not mask_available or mask_confidence is None or not coordinate_available:
         return 1.0
     uncertainty = float(np.clip(1.0 - mask_confidence, 0.0, 1.0))
     if disagreement_px is not None:
